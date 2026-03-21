@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Proyectista — Presupuesto de Obra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <link rel="stylesheet" href="../css/proyectista.css"/>
+</head>
+<body>
+<div class="noise-overlay"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-block">
+      <a href="../index.html" class="back-home" style="color:var(--text-muted);display:flex;align-items:center;margin-right:6px">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="logo-emblem" style="color:var(--accent-proyectista)"><svg viewBox="0 0 48 48" fill="none"><polygon points="24,4 44,14 44,34 24,44 4,34 4,14" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="24" cy="24" r="4" fill="currentColor"/></svg></div>
+      <div class="logo-text">
+        <span class="logo-main" style="color:var(--accent-proyectista)">Proyectista</span>
+        <span class="logo-sub">H. Ayuntamiento de Temascaltepec</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div id="user-header-badge" class="user-session-badge proy-badge"></div>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+</header>
+
+<div class="page-layout">
+  <aside class="sidebar proy-sidebar">
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Presupuesto</div>
+      <a class="nav-item proy-nav active" data-panel="seleccionar-obra" onclick="showPanel('seleccionar-obra')">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Seleccionar Obra
+      </a>
+      <a class="nav-item proy-nav" data-panel="editor-presupuesto" onclick="showPanel('editor-presupuesto')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Editor de Costos
+      </a>
+      <a class="nav-item proy-nav" data-panel="resumen" onclick="showPanel('resumen')">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M3 15l4-4 3 3 4-5 4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Resumen General
+      </a>
+    </nav>
+    <!-- OBRA SELECCIONADA -->
+    <div class="sidebar-obra-card" id="sidebar-obra-card" style="display:none">
+      <div class="sidebar-obra-label">Trabajando en:</div>
+      <div class="sidebar-obra-nombre" id="sidebar-obra-nombre"></div>
+      <div class="sidebar-obra-presupuesto" id="sidebar-obra-presupuesto"></div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- SELECCIONAR OBRA -->
+    <div class="panel active" id="panel-seleccionar-obra">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Seleccionar Obra</h1>
+          <p class="page-subtitle">Elige la obra para elaborar o editar su presupuesto.</p>
+        </div>
+      </div>
+      <div class="obras-select-grid" id="obras-select-grid"></div>
+    </div>
+
+    <!-- EDITOR DE PRESUPUESTO -->
+    <div class="panel" id="panel-editor-presupuesto">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Editor de Presupuesto</h1>
+          <p id="editor-obra-title" class="page-subtitle">Selecciona una obra primero.</p>
+        </div>
+        <div class="presupuesto-total-badge" id="total-badge">
+          <span class="total-label">Total estimado</span>
+          <span class="total-val" id="total-display">$0.00</span>
+        </div>
+      </div>
+
+      <!-- CATEGORÍAS -->
+      <div class="cat-tabs" id="cat-tabs">
+        <button class="cat-tab active" data-cat="materiales" onclick="switchCat('materiales')">🧱 Materiales</button>
+        <button class="cat-tab" data-cat="mano_obra" onclick="switchCat('mano_obra')">👷 Mano de Obra</button>
+        <button class="cat-tab" data-cat="equipo" onclick="switchCat('equipo')">🚜 Equipo</button>
+        <button class="cat-tab" data-cat="indirectos" onclick="switchCat('indirectos')">📋 Costos Indirectos</button>
+        <button class="cat-tab" data-cat="imprevistos" onclick="switchCat('imprevistos')">⚠️ Imprevistos</button>
+      </div>
+
+      <!-- TABLA DE COSTOS -->
+      <div class="presupuesto-table-wrap">
+        <table class="presupuesto-table" id="presupuesto-table">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>Descripción del Concepto</th>
+              <th style="width:100px">Unidad</th>
+              <th style="width:80px">Cantidad</th>
+              <th style="width:130px">Precio Unitario</th>
+              <th style="width:130px">Importe</th>
+              <th style="width:50px"></th>
+            </tr>
+          </thead>
+          <tbody id="costos-tbody">
+          </tbody>
+          <tfoot>
+            <tr class="subtotal-row">
+              <td colspan="5" style="text-align:right;padding-right:1rem;font-size:0.82rem;color:var(--text-muted)">Subtotal categoría</td>
+              <td id="subtotal-cat" class="subtotal-val">$0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- ADD ROW -->
+      <div class="add-row-form" id="add-row-form">
+        <div class="add-row-inputs">
+          <input type="text" class="form-input add-inp" id="new-desc" placeholder="Descripción del concepto" style="flex:3"/>
+          <input type="text" class="form-input add-inp" id="new-unit" placeholder="Unidad (m², kg, pza…)" style="flex:1.2"/>
+          <input type="number" class="form-input add-inp" id="new-qty" placeholder="Cantidad" min="0" step="0.01" style="flex:1"/>
+          <input type="number" class="form-input add-inp" id="new-price" placeholder="Precio unitario ($)" min="0" step="0.01" style="flex:1.2" oninput="previewImporte()"/>
+          <div class="add-preview" id="add-preview">$0.00</div>
+        </div>
+        <button class="btn-primary" onclick="addCostoRow()" style="background:var(--accent-proyectista);flex-shrink:0">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Agregar
+        </button>
+      </div>
+
+      <div class="presupuesto-footer-actions">
+        <button class="btn-secondary" onclick="clearCategory()">Limpiar categoría</button>
+        <button class="btn-primary" onclick="savePresupuesto()" style="background:var(--accent-proyectista)">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Guardar Presupuesto
+        </button>
+      </div>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="panel" id="panel-resumen">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Resumen de Presupuesto</h1>
+          <p class="page-subtitle">Vista consolidada de todos los costos por categoría.</p>
+        </div>
+      </div>
+      <div id="resumen-container"></div>
+    </div>
+
+  </main>
+</div>
+
+<script src="../js/main.js"></script>
+<script src="../js/proyectista.js"></script>
+</body>
+</html>

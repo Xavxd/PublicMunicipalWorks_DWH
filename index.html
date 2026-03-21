@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Obras Públicas — H. Ayuntamiento Temascaltepec</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<!-- CURSOR CUSTOM -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follower" id="cursor-follower"></div>
+
+<!-- NOISE OVERLAY -->
+<div class="noise-overlay"></div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-block">
+      <div class="logo-emblem">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="24,4 44,14 44,34 24,44 4,34 4,14" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <polygon points="24,10 38,17 38,31 24,38 10,31 10,17" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.4"/>
+          <circle cx="24" cy="24" r="4" fill="currentColor"/>
+          <line x1="24" y1="10" x2="24" y2="17" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="24" y1="31" x2="24" y2="38" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="10" y1="17" x2="16" y2="20.5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="32" y1="27.5" x2="38" y2="31" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="38" y1="17" x2="32" y2="20.5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="16" y1="27.5" x2="10" y2="31" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-main">Obras Públicas</span>
+        <span class="logo-sub">H. Ayuntamiento de Temascaltepec</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="header-year" id="current-date"></span>
+      <div class="status-dot">
+        <span class="dot-pulse"></span>
+        Sistema en línea
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-orb hero-orb-3"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Sistema Integral de Gestión
+    </div>
+    <h1 class="hero-title">
+      <span class="title-line" data-index="0">Dirección de</span>
+      <span class="title-line accent-line" data-index="1">Obras Públicas</span>
+      <span class="title-line thin-line" data-index="2">Estado de México</span>
+    </h1>
+    <p class="hero-desc">
+      Plataforma digital para la administración, supervisión y transparencia de la<br/>
+      infraestructura pública de las comunidades de Temascaltepec.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num" data-target="4">0</span>
+        <span class="stat-label">Comunidades</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="4">0</span>
+        <span class="stat-label">Roles activos</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="100">0</span>
+        <span class="stat-label">% Transparente</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROLES SECTION -->
+<section class="roles-section">
+  <div class="section-header">
+    <div class="section-label">
+      <span class="label-line"></span>
+      Acceso por Rol
+      <span class="label-line"></span>
+    </div>
+    <h2 class="section-title">Selecciona tu perfil<br/><em>de trabajo</em></h2>
+    <p class="section-desc">Cada rol cuenta con permisos específicos que garantizan la integridad y trazabilidad de la información pública.</p>
+  </div>
+
+  <div class="roles-grid">
+
+    <!-- ROL: DIRECTOR -->
+    <div class="role-card" data-role="director" data-index="0">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="13" r="6" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M6 34c0-7.18 6.268-13 14-13s14 5.82 14 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M28 8l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Directivo</div>
+        <h3 class="role-name">Director de Obras</h3>
+        <p class="role-desc">Registro y gestión completa de obras públicas, asignación de constructoras y supervisión general del sistema.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Registrar obras</span>
+          <span class="perm perm-write">✦ Asignar constructoras</span>
+          <span class="perm perm-read">◈ Ver todos los datos</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('director')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">01</div>
+    </div>
+
+    <!-- ROL: SUPERVISOR -->
+    <div class="role-card" data-role="supervisor" data-index="1">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <rect x="8" y="10" width="24" height="20" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M14 18h12M14 22h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="30" cy="10" r="5" fill="var(--accent-supervisor)" opacity="0.9"/>
+              <path d="M28 10l1.5 1.5L32 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Operativo</div>
+        <h3 class="role-name">Supervisor</h3>
+        <p class="role-desc">Generación de informes de avance mensual, registro de avances físicos y financieros de las obras asignadas.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Crear informes</span>
+          <span class="perm perm-read">◈ Ver obra asignada</span>
+          <span class="perm perm-write">✦ Registrar avances</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('supervisor')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">02</div>
+    </div>
+
+    <!-- ROL: PROYECTISTA -->
+    <div class="role-card" data-role="proyectista" data-index="2">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <rect x="7" y="7" width="26" height="26" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M13 14h14M13 19h10M13 24h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="29" cy="27" r="5" fill="var(--accent-proyectista)" opacity="0.9"/>
+              <path d="M27 27h4M29 25v4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Técnico</div>
+        <h3 class="role-name">Proyectista</h3>
+        <p class="role-desc">Elaboración detallada del presupuesto de obra, desglose de costos por categoría con herramientas de cálculo integradas.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Crear presupuestos</span>
+          <span class="perm perm-write">✦ Gestionar costos</span>
+          <span class="perm perm-read">◈ Ver obras activas</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('proyectista')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">03</div>
+    </div>
+
+    <!-- ROL: SECRETARIA -->
+    <div class="role-card" data-role="secretaria" data-index="3">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <path d="M10 8h20v24H10z" stroke="currentColor" stroke-width="1.8" rx="2"/>
+              <path d="M15 14h10M15 18h10M15 22h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M26 28l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Administrativo</div>
+        <h3 class="role-name">Secretaría</h3>
+        <p class="role-desc">Registro de oficios de permisos institucionales y generación del Acta de Entrega con firma de todos los involucrados.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Oficios de permisos</span>
+          <span class="perm perm-write">✦ Acta de entrega</span>
+          <span class="perm perm-read">◈ Gestión documental</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('secretaria')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">04</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ARCHITECTURE STRIP -->
+<section class="arch-strip">
+  <div class="arch-inner">
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>PostgreSQL</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>Python / Flask</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>HTML · CSS · JS</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>Docker</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>Data Warehouse</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="footer-logo">OBRAS PÚBLICAS</span>
+      <span class="footer-mun">H. Ayuntamiento de Temascaltepec · Estado de México</span>
+    </div>
+    <div class="footer-right">
+      <span>Sistema Integral v1.0</span>
+      <span class="footer-dot">·</span>
+      <span>Datos protegidos bajo normativa federal</span>
+    </div>
+  </div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeLogin(event)">
+  <div class="login-modal" id="login-modal">
+    <button class="modal-close" onclick="closeLogin()">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-header">
+      <div class="modal-role-icon" id="modal-role-icon"></div>
+      <div class="modal-role-info">
+        <span class="modal-role-tag" id="modal-role-tag"></span>
+        <h3 class="modal-role-name" id="modal-role-name"></h3>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="login-form">
+        <div class="form-group">
+          <label class="form-label">Usuario / Clave de acceso</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="login-user" placeholder="Tu clave de usuario" class="form-input" autocomplete="off" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V7a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="password" id="login-pass" placeholder="••••••••" class="form-input" />
+            <button class="toggle-pass" onclick="togglePass()" type="button">
+              <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="login-error" id="login-error"></div>
+        <button class="login-submit" id="login-submit" onclick="handleLogin()">
+          <span id="btn-text">Acceder al sistema</span>
+          <div class="btn-loader" id="btn-loader"></div>
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer-note">
+      Sistema de acceso seguro · H. Ayuntamiento Temascaltepec
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
