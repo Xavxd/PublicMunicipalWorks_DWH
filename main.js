@@ -1,8 +1,6 @@
 
 // --- CUSTOM CURSOR ---
-const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:5000" 
-    : "https://backend-obraspublicas.onrender.com";
+const API_BASE = window.API_BASE || "https://backend-obraspublicas.onrender.com";
 const cursor = document.getElementById('cursor');
 const follower = document.getElementById('cursor-follower');
 let mouseX = 0, mouseY = 0;
