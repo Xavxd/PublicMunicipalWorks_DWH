@@ -106,11 +106,13 @@ function openLogin(role) {
   document.getElementById('modal-role-name').textContent = config.name;
   document.getElementById('login-submit').style.background = config.color;
   document.getElementById('login-error').textContent = '';
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
+  document.getElementById('modal-login-user').value = '';
+  document.getElementById('modal-login-pass').value = '';
   const overlay = document.getElementById('modal-overlay');
-  overlay.classList.add('active');
-  setTimeout(() => document.getElementById('login-user').focus(), 300);
+  if (overlay) {
+    overlay.classList.add('active');
+    setTimeout(() => document.getElementById('modal-login-user').focus(), 300);
+  }
 }
 
 function closeLogin(event) {
@@ -124,15 +126,15 @@ document.addEventListener('keydown', e => {
 });
 
 function togglePass() {
-  const input = document.getElementById('login-pass');
+  const input = document.getElementById('modal-login-pass');
   input.type = input.type === 'password' ? 'text' : 'password';
 }
 
 
 
 async function handleLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
+  const user = document.getElementById('modal-login-user').value.trim();
+  const pass = document.getElementById('modal-login-pass').value;
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-submit');
 
