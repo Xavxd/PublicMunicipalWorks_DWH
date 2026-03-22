@@ -56,36 +56,31 @@ function showPanel(id) {
 }
 
 // --- NUEVA OBRA ---
-function submitObra(e) {
+async function submitObra(e) {
   e.preventDefault();
-  const obras = getObras();
-  const nuevaObra = {
-    id: 'OBR' + Date.now(),
-    expediente: document.getElementById('obra-expediente').value,
-    nombre: document.getElementById('obra-nombre').value,
-    etapa: document.getElementById('obra-etapa').value,
-    constructora: document.getElementById('obra-constructora').value,
-    supervisor: document.getElementById('obra-supervisor').value,
-    region: document.getElementById('obra-region').value,
-    barrio: document.getElementById('obra-barrio').value,
-    colonia: document.getElementById('obra-colonia').value,
-    fechaInicio: document.getElementById('obra-fecha-inicio').value,
-    fechaFin: document.getElementById('obra-fecha-fin').value,
-    presupuesto: document.getElementById('obra-presupuesto').value,
-    fuentes: Array.from(document.querySelectorAll('.fuente-check:checked')).map(c => c.value),
-    descripcion: document.getElementById('obra-desc').value,
+  const obraData = {
+    expediente:    document.getElementById('obra-expediente').value,
+    nombre:        document.getElementById('obra-nombre').value,
+    etapa:         document.getElementById('obra-etapa').value,
+    constructoraId: document.getElementById('obra-constructora').value,
+    supervisorId:  document.getElementById('obra-supervisor').value,
+    regionId:      document.getElementById('obra-region').value,
+    barrio:        document.getElementById('obra-barrio').value,
+    colonia:       document.getElementById('obra-colonia').value,
+    fechaInicio:   document.getElementById('obra-fecha-inicio').value,
+    fechaFin:      document.getElementById('obra-fecha-fin').value,
+    presupuesto:   document.getElementById('obra-presupuesto').value,
+    fuentes:       Array.from(document.querySelectorAll('.fuente-check:checked')).map(c => c.value),
+    descripcion:   document.getElementById('obra-desc').value,
     beneficiarios: document.getElementById('obra-beneficiarios').value,
-    status: 'activa',
-    creadoPor: user.id,
-    fechaRegistro: new Date().toISOString()
   };
-  obras.push(nuevaObra);
-  saveObras(obras);
-  updateObraCount();
-  showToast(`Obra "${nuevaObra.nombre}" registrada exitosamente.`);
-  e.target.reset();
-  // Sync to obras list page
-  localStorage.setItem('op_obras_updated', Date.now());
+  try {
+    const result = await createObra(obraData);
+    showToast(`Obra "${obraData.nombre}" registrada en la base de datos.`);
+    e.target.reset();
+  } catch (err) {
+    handleApiError(err);
+  }
 }
 
 function resetObra() {
