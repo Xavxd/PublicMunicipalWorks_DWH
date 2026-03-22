@@ -64,7 +64,7 @@ async function submitObra(e) {
     etapa:         document.getElementById('obra-etapa').value,
     constructoraId: document.getElementById('obra-constructora').value,
     supervisorId:  document.getElementById('obra-supervisor').value,
-    regionId:      document.getElementById('obra-region').value,
+    region: document.getElementById('obra-region').value,
     barrio:        document.getElementById('obra-barrio').value,
     colonia:       document.getElementById('obra-colonia').value,
     fechaInicio:   document.getElementById('obra-fecha-inicio').value,
