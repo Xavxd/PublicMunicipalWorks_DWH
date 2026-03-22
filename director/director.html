@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Director de Obras — Panel de Gestión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <link rel="stylesheet" href="../css/director.css"/>
+</head>
+<body>
+<div class="noise-overlay"></div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-block">
+      <a href="../index.html" class="back-home">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="logo-emblem">
+        <svg viewBox="0 0 48 48" fill="none"><polygon points="24,4 44,14 44,34 24,44 4,34 4,14" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="24" cy="24" r="4" fill="currentColor"/></svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-main">Director de Obras</span>
+        <span class="logo-sub">H. Ayuntamiento de Temascaltepec</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div id="user-header-badge" class="user-session-badge"></div>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+</header>
+
+<div class="page-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Gestión</div>
+      <a class="nav-item active" data-panel="nueva-obra" onclick="showPanel('nueva-obra')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Nueva Obra
+      </a>
+      <a class="nav-item" data-panel="obras-list" onclick="showPanel('obras-list')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="2.5" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2.5" rx="1" fill="currentColor"/><rect x="3" y="13" width="9" height="2.5" rx="1" fill="currentColor"/></svg>
+        Obras Registradas
+      </a>
+      <a class="nav-item" data-panel="constructoras" onclick="showPanel('constructoras')">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M2 17V8l8-5 8 5v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Constructoras
+      </a>
+      <a class="nav-item" data-panel="concurso" onclick="showPanel('concurso')">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Concurso de Selección
+      </a>
+      <div class="nav-section-label" style="margin-top:1.5rem">Consultas</div>
+      <a class="nav-item" data-panel="fuentes" onclick="showPanel('fuentes')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="9" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Fuentes Presupuestarias
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- PANEL: NUEVA OBRA -->
+    <div class="panel active" id="panel-nueva-obra">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Registrar Nueva Obra</h1>
+          <p class="page-subtitle">Completa todos los campos para dar de alta una obra pública en el sistema.</p>
+        </div>
+        <div class="panel-meta">
+          <span id="obra-count-badge" class="obra-badge">— obras registradas</span>
+        </div>
+      </div>
+
+      <form id="form-obra" onsubmit="submitObra(event)">
+        <!-- Datos Generales -->
+        <div class="card">
+          <div class="card-title">Datos Generales de la Obra</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nombre de la Obra *</label>
+              <input type="text" class="form-input" id="obra-nombre" placeholder="Ej. Pavimento Hidráulico en Albarranes" required/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Código de Expediente *</label>
+              <input type="text" class="form-input" id="obra-expediente" placeholder="Ej. EXP-2026-001" required/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Etapa</label>
+              <select class="form-select" id="obra-etapa">
+                <option value="1">Etapa 1</option>
+                <option value="2">Etapa 2</option>
+                <option value="3">Etapa 3</option>
+                <option value="4">Etapa 4</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Constructora Asignada *</label>
+              <select class="form-select" id="obra-constructora" required>
+                <option value="">Seleccionar constructora…</option>
+                <option value="CONSTR001">H. Ayuntamiento (ejecución propia)</option>
+                <option value="CONSTR002">Constructora Vialte S.A.</option>
+                <option value="CONSTR003">Obras del Bosque S.C.</option>
+                <option value="CONSTR004">Grupo Constructor Tollocan</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Supervisor Asignado *</label>
+              <select class="form-select" id="obra-supervisor" required>
+                <option value="">Seleccionar supervisor…</option>
+                <option value="S001">S001 — Uriel González Casiano</option>
+                <option value="S002">S002 — Alejandra Flores Martínez</option>
+                <option value="S003">S003 — Roberto Pérez Luna</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Región / Comunidad *</label>
+              <select class="form-select" id="obra-region" required>
+                <option value="">Seleccionar comunidad…</option>
+                <option value="REG001">Comunidad (Cabecera Municipal)</option>
+                <option value="REG002">Albarranes</option>
+                <option value="REG003">San Francisco</option>
+                <option value="REG004">Telpintla</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Barrio / Sección (opcional)</label>
+              <input type="text" class="form-input" id="obra-barrio" placeholder="Ej. Barrio Temeroso"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Colonia (opcional)</label>
+              <input type="text" class="form-input" id="obra-colonia" placeholder="Ej. Col. Centro"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fechas y Presupuesto -->
+        <div class="card">
+          <div class="card-title">Plazos y Presupuesto</div>
+          <div class="form-grid form-grid-3">
+            <div class="form-group">
+              <label class="form-label">Fecha de Inicio *</label>
+              <input type="date" class="form-input" id="obra-fecha-inicio" required/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha de Finalización *</label>
+              <input type="date" class="form-input" id="obra-fecha-fin" required/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Presupuesto Total Asignado ($)</label>
+              <input type="number" class="form-input" id="obra-presupuesto" placeholder="0.00" step="0.01" min="0"/>
+            </div>
+          </div>
+
+          <!-- Fuentes de Financiamiento -->
+          <div style="margin-top:1.5rem">
+            <div class="subsection-label">Fuentes de Financiamiento</div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem;">Una obra puede tener múltiples fuentes. Selecciona las que apliquen.</p>
+            <div class="fuentes-grid" id="fuentes-grid">
+              <label class="fuente-checkbox">
+                <input type="checkbox" value="F001" class="fuente-check"/>
+                <span class="fuente-label">
+                  <span class="fuente-tag municipal">Municipal</span>
+                  Fondo Municipal
+                </span>
+              </label>
+              <label class="fuente-checkbox">
+                <input type="checkbox" value="F002" class="fuente-check"/>
+                <span class="fuente-label">
+                  <span class="fuente-tag estatal">Estatal</span>
+                  Gobierno del Estado de México
+                </span>
+              </label>
+              <label class="fuente-checkbox">
+                <input type="checkbox" value="F003" class="fuente-check"/>
+                <span class="fuente-label">
+                  <span class="fuente-tag federal">Federal</span>
+                  FISM — Fondo Infr. Social Municipal
+                </span>
+              </label>
+              <label class="fuente-checkbox">
+                <input type="checkbox" value="F004" class="fuente-check"/>
+                <span class="fuente-label">
+                  <span class="fuente-tag federal">Federal</span>
+                  Obras de la Transformación
+                </span>
+              </label>
+              <label class="fuente-checkbox">
+                <input type="checkbox" value="F005" class="fuente-check"/>
+                <span class="fuente-label">
+                  <span class="fuente-tag estatal">Estatal</span>
+                  PROTRAM — Prog. de Transporte
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="card">
+          <div class="card-title">Descripción y Beneficiarios</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Descripción general de la obra</label>
+              <textarea class="form-textarea" id="obra-desc" rows="4" placeholder="Describe el alcance y propósito de la obra…"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Beneficiarios *</label>
+              <input type="text" class="form-input" id="obra-beneficiarios" placeholder="Ej. 350 habitantes de la comunidad de Albarranes" required/>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="resetObra()">Limpiar</button>
+          <button type="submit" class="btn-primary">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Registrar Obra
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- PANEL: OBRAS LIST -->
+    <div class="panel" id="panel-obras-list">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Obras Registradas</h1>
+          <p class="page-subtitle">Historial completo de obras en el sistema.</p>
+        </div>
+        <div class="panel-search">
+          <input type="text" class="search-input" id="search-obras" placeholder="Buscar por nombre, expediente…" oninput="filterObras(this.value)"/>
+        </div>
+      </div>
+      <div class="obras-table-wrap">
+        <table class="obras-table" id="obras-table">
+          <thead>
+            <tr>
+              <th>Expediente</th>
+              <th>Nombre de la Obra</th>
+              <th>Comunidad</th>
+              <th>Etapa</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="obras-tbody">
+            <tr class="empty-row">
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="empty-icon">🏗️</div>
+                  <p>No hay obras registradas aún.</p>
+                  <button class="btn-primary" onclick="showPanel('nueva-obra')" style="margin-top:1rem">Registrar primera obra</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANEL: CONSTRUCTORAS -->
+    <div class="panel" id="panel-constructoras">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Constructoras</h1>
+          <p class="page-subtitle">Catálogo de empresas constructoras registradas.</p>
+        </div>
+        <button class="btn-primary" onclick="openConstructoraModal()">+ Nueva Constructora</button>
+      </div>
+      <div class="constructoras-grid" id="constructoras-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- PANEL: CONCURSO -->
+    <div class="panel" id="panel-concurso">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Concurso de Selección</h1>
+          <p class="page-subtitle">Registro de propuestas y decisiones de adjudicación.</p>
+        </div>
+        <button class="btn-primary" onclick="openConcursoModal()">+ Nueva Propuesta</button>
+      </div>
+      <div id="concurso-list" class="concurso-list"></div>
+    </div>
+
+    <!-- PANEL: FUENTES -->
+    <div class="panel" id="panel-fuentes">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Fuentes Presupuestarias</h1>
+          <p class="page-subtitle">Catálogo de fuentes de financiamiento de obras.</p>
+        </div>
+      </div>
+      <div class="fuentes-catalog" id="fuentes-catalog"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CONSTRUCTORA -->
+<div class="modal-overlay" id="modal-constructora" onclick="closeModalConstructora(event)">
+  <div class="login-modal" style="max-width:520px">
+    <button class="modal-close" onclick="document.getElementById('modal-constructora').classList.remove('active')">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-header">
+      <div class="modal-role-icon">🏢</div>
+      <div class="modal-role-info">
+        <span class="modal-role-tag">Nuevo Registro</span>
+        <h3 class="modal-role-name">Registrar Constructora</h3>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Nombre de la Constructora</label>
+          <input type="text" class="form-input" id="c-nombre" placeholder="Razón social"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">RFC</label>
+          <input type="text" class="form-input" id="c-rfc" placeholder="RFC único"/>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Tipo de Ejecutor</label>
+          <select class="form-select" id="c-tipo">
+            <option value="privada">Empresa Privada</option>
+            <option value="ayuntamiento">H. Ayuntamiento</option>
+            <option value="cooperativa">Cooperativa Local</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center" onclick="saveConstructora()">Guardar Constructora</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONCURSO -->
+<div class="modal-overlay" id="modal-concurso" onclick="closeModalConcurso(event)">
+  <div class="login-modal" style="max-width:560px">
+    <button class="modal-close" onclick="document.getElementById('modal-concurso').classList.remove('active')">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-header">
+      <div class="modal-role-icon">🏆</div>
+      <div class="modal-role-info">
+        <span class="modal-role-tag">Concurso</span>
+        <h3 class="modal-role-name">Registrar Propuesta</h3>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Obra</label>
+          <select class="form-select" id="conc-obra"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Constructora Participante</label>
+          <input type="text" class="form-input" id="conc-constructora" placeholder="Nombre de la constructora"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Resultado</label>
+          <select class="form-select" id="conc-resultado">
+            <option value="aprobada">Aprobada / Adjudicada</option>
+            <option value="rechazada">Rechazada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Razones de la Decisión *</label>
+          <textarea class="form-textarea" id="conc-razones" rows="3" placeholder="Describe las razones técnicas de la decisión (obligatorio para auditorías)…"></textarea>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center" onclick="saveConcurso()">Guardar Registro</button>
+    </div>
+  </div>
+</div>
+<script src="../main.js"></script>
+<script src="director.js"></script>
+</body>
+</html>

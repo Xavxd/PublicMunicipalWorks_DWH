@@ -1,7 +1,3 @@
-// =============================================
-// OBRAS PÚBLICAS — MAIN JS
-// H. Ayuntamiento Temascaltepec
-// =============================================
 
 // --- CUSTOM CURSOR ---
 const cursor = document.getElementById('cursor');
@@ -71,29 +67,31 @@ const roleConfig = {
     tag: 'Nivel Directivo',
     name: 'Director de Obras',
     color: '#3b82f6',
-    redirect: 'pages/director.html'
+    redirect: 'director/director.html'
   },
   supervisor: {
     icon: '📋',
     tag: 'Nivel Operativo',
     name: 'Supervisor de Obra',
     color: '#10b981',
-    redirect: 'pages/supervisor.html'
+    redirect: 'supervisor/supervisor.html'
   },
   proyectista: {
     icon: '📐',
     tag: 'Nivel Técnico',
     name: 'Proyectista',
     color: '#f59e0b',
-    redirect: 'pages/proyectista.html'
+    redirect: 'proyectista/proyectista.html'
   },
   secretaria: {
     icon: '📄',
     tag: 'Nivel Administrativo',
     name: 'Secretaría',
     color: '#8b5cf6',
-    redirect: 'pages/secretaria.html'
+    redirect: 'secretaria/secretaria.html'
   }
+
+  
 };
 
 let currentRole = null;
@@ -127,6 +125,8 @@ function togglePass() {
   const input = document.getElementById('login-pass');
   input.type = input.type === 'password' ? 'text' : 'password';
 }
+
+
 
 async function handleLogin() {
   const user = document.getElementById('login-user').value.trim();
