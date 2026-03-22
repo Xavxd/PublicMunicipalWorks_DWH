@@ -6,6 +6,8 @@ let mouseX = 0, mouseY = 0;
 let followerX = 0, followerY = 0;
 
 if (cursor && follower) {
+  cursor.style.pointerEvents = 'none';
+  follower.style.pointerEvents = 'none';
   document.addEventListener('mousemove', e => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -182,13 +184,16 @@ function shake(el) {
 
 // Add shake keyframe
 const style = document.createElement('style');
-style.textContent = `@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
-}`;
+style.textContent = `
+  .noise-overlay, #cursor, #cursor-follower { pointer-events: none !important; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+`;
 document.head.appendChild(style);
 
 // --- UTILITY: Show Toast ---

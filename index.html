@@ -15,7 +15,7 @@
 <div class="cursor-follower" id="cursor-follower"></div>
 
 <!-- NOISE OVERLAY -->
-<div class="noise-overlay"></div>
+<div class="noise-overlay" style="pointer-events: none;"></div>
 
 <!-- HEADER -->
 <header class="site-header">
@@ -292,14 +292,14 @@
           <label class="form-label">Usuario / Clave de acceso</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <input type="text" id="login-user" placeholder="Tu clave de usuario" class="form-input" autocomplete="off" />
+            <input type="text" id="modal-login-user" placeholder="Tu clave de usuario" class="form-input" />
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Contraseña</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V7a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <input type="password" id="login-pass" placeholder="••••••••" class="form-input" />
+            <input type="password" id="modal-login-pass" placeholder="••••••••" class="form-input" />
             <button class="toggle-pass" onclick="togglePass()" type="button">
               <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke="currentColor" stroke-width="1.5"/></svg>
             </button>
@@ -318,6 +318,6 @@
   </div>
 </div>
 
-<script src="js/main.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
