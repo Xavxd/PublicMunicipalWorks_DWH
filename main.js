@@ -166,12 +166,12 @@ async function handleLogin() {
 
   if (validUser) {
     sessionStorage.setItem('op_user', JSON.stringify({
-  role: 'director',
-  id: 'D001',
-  nombre: 'Ing. Uriel',
-  username: 'dir_obras'
+  role: currentRole,
+  id: validUser.id,
+  nombre: validUser.nombre,
+  username: validUser.user
 }));
-window.location.href = "director/director.html";
+window.location.href = roleConfig[currentRole].redirect;
   } else {
     errEl.textContent = 'Usuario o contraseña incorrectos.';
     shake(btn);
