@@ -10,7 +10,10 @@
   <link rel="stylesheet" href="../css/director.css"/>
 </head>
 <body>
-<div class="noise-overlay"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follower" id="cursor-follower"></div>
+
+<div class="noise-overlay" style="pointer-events: none;"></div>
 
 <!-- HEADER -->
 <header class="site-header">
@@ -383,6 +386,7 @@
     </div>
   </div>
 </div>
+<script src="../js/api_client.js"></script>
 <script src="../main.js"></script>
 <script src="director.js"></script>
 </body>
