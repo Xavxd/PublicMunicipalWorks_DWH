@@ -1,6 +1,5 @@
 
 // --- CUSTOM CURSOR ---
-const API_BASE = window.API_BASE || "https://backend-obraspublicas.onrender.com";
 const cursor = document.getElementById('cursor');
 const follower = document.getElementById('cursor-follower');
 let mouseX = 0, mouseY = 0;
