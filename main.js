@@ -1,5 +1,8 @@
 
 // --- CUSTOM CURSOR ---
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5000" 
+    : "https://backend-obraspublicas.onrender.com";
 const cursor = document.getElementById('cursor');
 const follower = document.getElementById('cursor-follower');
 let mouseX = 0, mouseY = 0;
@@ -150,7 +153,6 @@ async function handleLogin() {
   // Simulated auth — replace with real API call
   await delay(900);
 
-  // Mock credentials for demo (replace with backend call)
   const mockUsers = {
     director: [{ user: 'dir_obras', pass: 'admin123', id: 'D001', nombre: 'Ing. Director' }],
     supervisor: [{ user: 'sup_001', pass: 'super123', id: 'S001', nombre: 'Uriel González' }],
@@ -164,13 +166,12 @@ async function handleLogin() {
 
   if (validUser) {
     sessionStorage.setItem('op_user', JSON.stringify({
-      role: currentRole,
-      id: validUser.id,
-      nombre: validUser.nombre,
-      username: validUser.user
-    }));
-    // Redirect to role page
-    window.location.href = roleConfig[currentRole].redirect;
+  role: 'director',
+  id: 'D001',
+  nombre: 'Ing. Uriel',
+  username: 'dir_obras'
+}));
+window.location.href = "director/director.html";
   } else {
     errEl.textContent = 'Usuario o contraseña incorrectos.';
     shake(btn);
