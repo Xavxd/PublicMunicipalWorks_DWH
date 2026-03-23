@@ -1,4 +1,5 @@
 ⚠️ Sistema Integral de Gestión de Obras Públicas
+
 H. Ayuntamiento de Temascaltepec, Estado de México
 Este sistema es una plataforma web robusta diseñada para la administración, supervisión y transparencia de la infraestructura pública. Permite el control total del ciclo de vida de una obra: desde la planeación presupuestal hasta la entrega final.
 
@@ -45,48 +46,14 @@ Documentación: Gestión de oficios de permisos y actas de entrega.
 Validación: Asegura que la obra cumpla con los requisitos legales antes de cerrarse en el sistema.
 
 💻 Detalles Técnicos Relevantes
+
 Sistema de Sesiones
 La autenticación es simulada mediante un objeto de configuración en main.js. Al iniciar sesión, se genera un token en sessionStorage:
+Incluye un usuario por cada uno de los ingresos. 
 
-JavaScript
-sessionStorage.setItem('op_user', JSON.stringify({ role: 'director', ... }));
-Cada página interna cuenta con un Auth Guard que redirige al index.html si el rol no coincide o la sesión no existe.
 
-Cursor Personalizado y UX
-Se implementó un sistema de cursor dual (punto + seguidor) que utiliza requestAnimationFrame para un movimiento fluido. Los elementos interactivos activan una transformación de escala (scale(2.5)) para mejorar la retroalimentación visual.
+EJEMPLOS DEL DESGLOSE DE LA SESION:
 
-Estructura de Datos (JSON)
-El sistema utiliza un esquema relacional simulado en objetos JSON:
+<img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/9550f1a7-8405-47f0-b1f0-5e7c14395137" />
+<img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/0446ed60-43ba-403d-b29e-efa5553e7199" />
 
-op_obras: Contiene el ID, expediente, presupuesto base y supervisor asignado.
-
-op_presupuestos: Indexado por obraId, contiene el desglose de costos del proyectista.
-
-op_informes: Histórico de reportes del supervisor.
-
-🚀 Instalación y Despliegue
-Requisitos
-Servidor web (Nginx, Apache) o extensión "Live Server" en VS Code.
-
-Navegador moderno (soporte para CSS Grid y ES6).
-
-Ejecución con Podman
-Bash
-# Construir la imagen
-podman build -t sistema-obras .
-
-# Ejecutar el contenedor
-podman run -d -p 8080:80 --name gestor-obras sistema-obras
-📂 Estructura de Archivos
-Plaintext
-├── css/
-│   ├── main.css        # Estilos globales y tokens de diseño
-│   ├── director.css    # Estilos específicos del panel directivo
-│   └── ...
-├── js/
-│   ├── main.js         # Lógica de login y cursor
-│   ├── director.js     # Lógica de gestión de obras
-│   └── ...
-├── director/           # Vistas de nivel directivo
-├── supervisor/         # Vistas de nivel operativo
-└── index.html          # Punto de entrada y login
