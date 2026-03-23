@@ -1,4 +1,11 @@
-⚠️ Sistema Integral de Gestión de Obras Públicas
+⚠️ Sistema de Información — Dirección de Obras Públicas de Temascaltepec
+
+> **Alumnos:** González Casiano Uriel  Maldonado Mejia Marco Tulio
+> **Docente:** Hurtado Avilés Gabriel · ESCOM · IPN  
+> **Materia:** Bases de Datos · Grupo 3CV2 · Turno Vespertino  
+> **Carrera:** Ingeniería en Sistemas Computacionales · Semestre 2026-1
+
+CASO DE ESTUDIO: 
 
 H. Ayuntamiento de Temascaltepec, Estado de México
 Este sistema es una plataforma web robusta diseñada para la administración, supervisión y transparencia de la infraestructura pública. Permite el control total del ciclo de vida de una obra: desde la planeación presupuestal hasta la entrega final.
