@@ -57,5 +57,6 @@ Incluye un usuario por cada uno de los ingresos.
 EJEMPLOS DEL DESGLOSE DE LA SESION:
 
 <img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/9550f1a7-8405-47f0-b1f0-5e7c14395137" />
+<img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/ff2e23f9-02bd-4a0c-a113-d38aa02e6304" />
 <img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/0446ed60-43ba-403d-b29e-efa5553e7199" />
 
