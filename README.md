@@ -1,6 +1,7 @@
 ⚠️ Sistema de Información — Dirección de Obras Públicas de Temascaltepec
 
 > **Alumnos:** González Casiano Uriel  Maldonado Mejia Marco Tulio
+
 > **Docente:** Hurtado Avilés Gabriel · ESCOM · IPN  
 > **Materia:** Bases de Datos · Grupo 3CV2 · Turno Vespertino  
 > **Carrera:** Ingeniería en Sistemas Computacionales · Semestre 2026-1
