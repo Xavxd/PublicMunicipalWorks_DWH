@@ -4,6 +4,7 @@ H. Ayuntamiento de Temascaltepec, Estado de México
 Este sistema es una plataforma web robusta diseñada para la administración, supervisión y transparencia de la infraestructura pública. Permite el control total del ciclo de vida de una obra: desde la planeación presupuestal hasta la entrega final.
 
 🏗️ Arquitectura del Proyecto
+
 El proyecto sigue una arquitectura de Single Page Application (SPA) simulada mediante el manejo de paneles dinámicos y persistencia de datos en el lado del cliente.
 
 Frontend: HTML5, CSS3 (Custom Properties, Flexbox, Grid) y JavaScript Vanila (ES6+).
@@ -15,6 +16,7 @@ Persistencia: LocalStorage para datos globales (obras, presupuestos) y SessionSt
 Contenedores: Configurado para desplegarse mediante Podman/Docker para asegurar la paridad de entornos.
 
 🛠️ Lógica de Negocio por Roles
+
 El sistema se divide en 4 niveles de acceso, cada uno con una lógica programática específica:
 
 1. Director de Obras (Nivel Directivo)
