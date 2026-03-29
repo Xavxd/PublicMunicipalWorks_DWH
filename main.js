@@ -1,5 +1,3 @@
-
-// --- CUSTOM CURSOR ---
 const cursor = document.getElementById('cursor');
 const follower = document.getElementById('cursor-follower');
 let mouseX = 0, mouseY = 0;
@@ -36,14 +34,12 @@ if (cursor && follower) {
   });
 }
 
-// --- DATE ---
 const dateEl = document.getElementById('current-date');
 if (dateEl) {
   const d = new Date();
   dateEl.textContent = d.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-// --- COUNTER ANIMATION ---
 const countEls = document.querySelectorAll('.stat-num[data-target]');
 const observer = new IntersectionObserver(entries => {
   entries.forEach(entry => {
@@ -62,7 +58,6 @@ const observer = new IntersectionObserver(entries => {
 }, { threshold: 0.5 });
 countEls.forEach(el => observer.observe(el));
 
-// --- LOGIN MODAL ---
 const roleConfig = {
   director: {
     icon: '🏛️',
@@ -147,7 +142,6 @@ async function handleLogin() {
   btn.classList.add('loading');
   errEl.textContent = '';
 
-  // Simulated auth — replace with real API call
   await delay(900);
 
   const mockUsers = {
@@ -182,7 +176,6 @@ function shake(el) {
   setTimeout(() => el.style.animation = '', 400);
 }
 
-// Add shake keyframe
 const style = document.createElement('style');
 style.textContent = `
   .noise-overlay, #cursor, #cursor-follower { pointer-events: none !important; }
@@ -196,7 +189,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// --- UTILITY: Show Toast ---
 function showToast(message) {
   let toast = document.querySelector('.success-toast');
   if (!toast) {
