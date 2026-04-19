@@ -1,91 +1,121 @@
+/**
+ * js/api_client.js
+ * Cliente HTTP centralizado para el backend de Obras Públicas.
+ * Inyecta automáticamente los headers de autenticación
+ * desde sessionStorage en cada petición.
+ */
+
 const API_BASE = window.API_BASE || "https://backend-obraspublicas.onrender.com";
 
-// ── Leer usuario de sessionStorage ──────────────────────────────
+// ── Usuario actual ───────────────────────────────────────────────
 function getCurrentUser() {
   return JSON.parse(sessionStorage.getItem("op_user") || "null");
 }
 
-// ── Headers de autenticación ────────────────────────────────────
-// Estos headers van en TODAS las peticiones al backend.
-// El middleware auth.py los lee para validar el rol y el id.
+// ── Headers de autenticación ─────────────────────────────────────
 function authHeaders() {
   const u = getCurrentUser();
   if (!u) return { "Content-Type": "application/json" };
   return {
     "Content-Type": "application/json",
-    "X-User-Role": u.role, // Debe ser 'director'
-    "X-User-Id":   u.id    // Debe ser 'D001'
+    "X-User-Role":     u.role,
+    "X-User-Id":       u.id,
+    "X-User-Nombre":   u.nombre   || "",
+    "X-User-Username": u.username || "",
   };
 }
 
-// ── Fetch helper genérico ────────────────────────────────────────
+// ── Fetch genérico con manejo de errores ─────────────────────────
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) },
-  });
-  const json = await res.json().catch(() => ({ success: false, message: "Respuesta inválida del servidor." }));
-  if (!res.ok && !json.success) {
-    throw new Error(json.message || `HTTP ${res.status}`);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: { ...authHeaders(), ...(options.headers || {}) },
+    });
+
+    const json = await res.json().catch(() => ({
+      success: false,
+      message: "Respuesta inválida del servidor.",
+    }));
+
+    if (!res.ok && !json.success) {
+      throw new Error(json.message || `HTTP ${res.status}`);
+    }
+    return json;
+
+  } catch (err) {
+    // Re-lanzar para que cada llamador maneje el error con contexto
+    throw err;
   }
-  return json;
 }
 
 // ── Métodos de conveniencia ──────────────────────────────────────
 const API = {
-  get:    (path)         => apiFetch(path, { method: "GET" }),
-  post:   (path, body)   => apiFetch(path, { method: "POST",   body: JSON.stringify(body) }),
-  put:    (path, body)   => apiFetch(path, { method: "PUT",    body: JSON.stringify(body) }),
-  delete: (path)         => apiFetch(path, { method: "DELETE" }),
+  get:    (path)       => apiFetch(path, { method: "GET" }),
+  post:   (path, body) => apiFetch(path, { method: "POST",   body: JSON.stringify(body) }),
+  put:    (path, body) => apiFetch(path, { method: "PUT",    body: JSON.stringify(body) }),
+  delete: (path)       => apiFetch(path, { method: "DELETE" }),
 };
 
 
-// ── AUTH ─────────────────────────────────────────────────────────
+// ================================================================
+//  AUTH
+// ================================================================
+
 /**
- * Reemplaza: handleLogin() en main.js
- * Llama al backend en lugar de comparar mockUsers.
+ * Inicia sesión contra el backend.
+ * Reemplaza la comparación con mockUsers en main.js.
  */
 async function loginUser(username, password, role) {
   const json = await API.post("/api/auth/login", { username, password, role });
-  if (json.success) {
+  if (json.success && json.data) {
     sessionStorage.setItem("op_user", JSON.stringify(json.data));
   }
   return json;
 }
 
-// ── OBRAS ─────────────────────────────────────────────────────────
+
+// ================================================================
+//  OBRAS
+// ================================================================
+
 /**
- * Reemplaza: getObras() en director.js / supervisor.js / proyectista.js
- * @param {object} params - filtros opcionales { supervisor, status, q }
+ * Lista obras con filtros opcionales.
+ * @param {object} params - { supervisor, status, q }
+ * @returns {Array}
  */
 async function fetchObras(params = {}) {
   const query = new URLSearchParams();
   if (params.supervisor) query.append("supervisor", params.supervisor);
-  if (params.status)     query.append("status", params.status);
-  if (params.q)          query.append("q", params.q);
-
-  const json = await API.get(`/api/obras${query.toString() ? "?" + query.toString() : ""}`);
+  if (params.status)     query.append("status",     params.status);
+  if (params.q)          query.append("q",          params.q);
+  const qs = query.toString() ? "?" + query.toString() : "";
+  const json = await API.get(`/api/obras${qs}`);
   return json.data || [];
 }
 
 /**
- * Reemplaza: submitObra(e) en director.js
- * @param {object} obraData - todos los campos del formulario
+ * Crea una obra (Paso 3 del wizard del Director).
  */
 async function createObra(obraData) {
   return await API.post("/api/obras", obraData);
 }
 
 /**
- * Reemplaza: deleteObra(id) en director.js
+ * Elimina una obra y sus dependencias.
  */
 async function deleteObra(id) {
-  return await API.delete(`/api/obras/${id}`);
+  return await API.delete(`/api/obras/${encodeURIComponent(id.trim())}`);
 }
 
-// ── CONSTRUCTORAS ────────────────────────────────────────────────
+
+// ================================================================
+//  CONSTRUCTORAS
+// ================================================================
+
 /**
- * Reemplaza: getConstructoras() en director.js
+ * Lista el catálogo de constructoras.
+ * @returns {Array}
  */
 async function fetchConstructoras() {
   const json = await API.get("/api/constructoras");
@@ -93,168 +123,186 @@ async function fetchConstructoras() {
 }
 
 /**
- * Reemplaza: saveConstructora() en director.js
+ * Registra una constructora (Paso 1 del wizard).
  */
 async function createConstructora(data) {
   return await API.post("/api/constructoras", data);
 }
 
-// ── CONCURSOS ────────────────────────────────────────────────────
+
+// ================================================================
+//  REGIONES
+// ================================================================
+
 /**
- * Reemplaza: getConcursos() en director.js
+ * Lista las regiones/comunidades registradas.
+ * @returns {Array}
+ */
+async function fetchRegiones() {
+  const json = await API.get("/api/regiones");
+  return json.data || [];
+}
+
+/**
+ * Registra una región (Paso 2 del wizard).
+ */
+async function createRegion(data) {
+  return await API.post("/api/regiones", data);
+}
+
+
+// ================================================================
+//  SUPERVISORES
+// ================================================================
+
+/**
+ * Lista supervisores para el selector del Paso 3.
+ * @returns {Array}
+ */
+async function fetchSupervisores() {
+  const json = await API.get("/api/supervisores");
+  return json.data || [];
+}
+
+
+// ================================================================
+//  CONCURSOS
+// ================================================================
+
+/**
+ * Lista concursos (filtro opcional por obra).
+ * Disponible para Director (lectura) y Secretaría (escritura).
  */
 async function fetchConcursos(obraId = null) {
-  const qs = obraId ? `?obra=${obraId}` : "";
+  const qs = obraId ? `?obra=${encodeURIComponent(obraId)}` : "";
   const json = await API.get(`/api/concursos${qs}`);
   return json.data || [];
 }
 
 /**
- * Reemplaza: saveConcurso() en director.js
+ * Registra una propuesta de concurso (solo Secretaría).
  */
 async function createConcurso(data) {
   return await API.post("/api/concursos", data);
 }
 
-// ── FUENTES ──────────────────────────────────────────────────────
+
+// ================================================================
+//  FUENTES
+// ================================================================
+
 /**
- * Reemplaza: fuentesCatalog (array hardcodeado) en director.js
+ * Catálogo de fuentes presupuestarias.
+ * @returns {Array}
  */
 async function fetchFuentes() {
   const json = await API.get("/api/fuentes");
   return json.data || [];
 }
 
-// ── INFORMES (SUPERVISOR) ────────────────────────────────────────
-/**
- * Reemplaza: getInformes() + filtro por supervisorId en supervisor.js
- * El backend ya filtra por supervisor automáticamente desde el header.
- */
+
+// ================================================================
+//  INFORMES (SUPERVISOR)
+// ================================================================
+
 async function fetchInformes(params = {}) {
   const qs = new URLSearchParams(
-    Object.fromEntries(Object.entries(params).filter(([_, v]) => v))
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v))
   ).toString();
   const json = await API.get(`/api/informes${qs ? "?" + qs : ""}`);
   return json.data || [];
 }
 
-/**
- * Reemplaza: submitInforme(e) en supervisor.js
- */
 async function createInforme(data) {
   return await API.post("/api/informes", data);
 }
 
-/**
- * Reemplaza: botón eliminar en el libro de informes
- */
 async function deleteInforme(id) {
   return await API.delete(`/api/informes/${id}`);
 }
 
-// ── PRESUPUESTO (PROYECTISTA) ────────────────────────────────────
-/**
- * Reemplaza: getPresupuestos()[obraId] en proyectista.js
- * Devuelve el presupuesto completo con todos los costos agrupados.
- */
+
+// ================================================================
+//  PRESUPUESTO (PROYECTISTA)
+// ================================================================
+
 async function fetchPresupuesto(obraId) {
-  const json = await API.get(`/api/presupuestos/${obraId}`);
+  const json = await API.get(`/api/presupuestos/${encodeURIComponent(obraId)}`);
   return json.data || null;
 }
 
-/**
- * Reemplaza: savePresupuesto() — crea la cabecera si no existe
- */
 async function createPresupuesto(obraId) {
   return await API.post("/api/presupuestos", { obraId });
 }
 
-/**
- * Reemplaza: addCostoRow() en proyectista.js
- */
 async function addCosto(obraId, costoData) {
-  return await API.post(`/api/presupuestos/${obraId}/costos`, costoData);
+  return await API.post(`/api/presupuestos/${encodeURIComponent(obraId)}/costos`, costoData);
 }
 
-/**
- * Reemplaza: updateRow(index, field, value) en proyectista.js
- */
 async function updateCosto(obraId, costoId, data) {
-  return await API.put(`/api/presupuestos/${obraId}/costos/${costoId}`, data);
+  return await API.put(`/api/presupuestos/${encodeURIComponent(obraId)}/costos/${costoId}`, data);
 }
 
-/**
- * Reemplaza: deleteRow(index) en proyectista.js
- */
 async function deleteCosto(obraId, costoId) {
-  return await API.delete(`/api/presupuestos/${obraId}/costos/${costoId}`);
+  return await API.delete(`/api/presupuestos/${encodeURIComponent(obraId)}/costos/${costoId}`);
 }
 
-/**
- * Reemplaza: renderResumen() en proyectista.js — obtiene totales del servidor
- */
 async function fetchResumen(obraId) {
-  const json = await API.get(`/api/presupuestos/${obraId}/resumen`);
+  const json = await API.get(`/api/presupuestos/${encodeURIComponent(obraId)}/resumen`);
   return json.data || null;
 }
 
-// ── PERMISOS (SECRETARÍA) ────────────────────────────────────────
-/**
- * Reemplaza: getData('op_permisos') en secretaria.js
- */
+
+// ================================================================
+//  PERMISOS (SECRETARÍA)
+// ================================================================
+
 async function fetchPermisos(params = {}) {
   const qs = new URLSearchParams(
-    Object.fromEntries(Object.entries(params).filter(([_, v]) => v))
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v))
   ).toString();
   const json = await API.get(`/api/permisos${qs ? "?" + qs : ""}`);
   return json.data || [];
 }
 
-/**
- * Reemplaza: submitPermiso() en secretaria.js
- */
 async function createPermiso(data) {
   return await API.post("/api/permisos", data);
 }
 
-/**
- * Reemplaza: deletePermiso(id) en secretaria.js
- */
 async function deletePermiso(id) {
   return await API.delete(`/api/permisos/${id}`);
 }
 
-// ── ACTAS (SECRETARÍA) ───────────────────────────────────────────
-/**
- * Reemplaza: getData('op_actas') en secretaria.js
- */
+
+// ================================================================
+//  ACTAS (SECRETARÍA)
+// ================================================================
+
 async function fetchActas(obraId = null) {
-  const qs = obraId ? `?obra=${obraId}` : "";
+  const qs = obraId ? `?obra=${encodeURIComponent(obraId)}` : "";
   const json = await API.get(`/api/actas${qs}`);
   return json.data || [];
 }
 
-/**
- * Reemplaza: submitActa() en secretaria.js
- */
 async function createActa(data) {
   return await API.post("/api/actas", data);
 }
 
-/**
- * Reemplaza: deleteActa(id) en secretaria.js
- */
 async function deleteActa(id) {
   return await API.delete(`/api/actas/${id}`);
 }
 
-// ── Utilidad de error UI ─────────────────────────────────────────
+
+// ================================================================
+//  UTILIDADES DE UI
+// ================================================================
+
 /**
  * Muestra un toast de error al usuario cuando el API falla.
- * Llama al showToast() que ya existe en cada módulo JS.
+ * Depende de que cada módulo exporte showToast().
  */
 function handleApiError(err, fallbackMsg = "Error al comunicarse con el servidor.") {
-  console.error("[API]", err);
+  console.error("[API ERROR]", err);
   if (typeof showToast === "function") {
     showToast(err.message || fallbackMsg, "error");
   }
