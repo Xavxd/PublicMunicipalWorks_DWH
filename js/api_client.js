@@ -5,7 +5,7 @@
  * desde sessionStorage en cada petición.
  */
 
-const API_BASE = window.API_BASE || "https://obraspublicas-backend-production.up.railway.app/api/health";
+const API_BASE = window.API_BASE || "https://obraspublicas-backend-production.up.railway.app";
 
 // ── Usuario actual ───────────────────────────────────────────────
 function getCurrentUser() {
