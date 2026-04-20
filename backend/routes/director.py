@@ -1,32 +1,3 @@
-# Back/app/routes/director.py
-# ================================================================
-#  MÓDULO: DIRECTOR DE OBRAS
-#  Panel: H. Ayuntamiento de Temascaltepec
-#
-#  Flujo del wizard (3 pasos, mismo orden que el HTML):
-#
-#    Paso 1 → POST /api/constructoras
-#               Registra la constructora en public.constructora
-#               Devuelve { id, nombre, rfc }
-#
-#    Paso 2 → POST /api/regiones
-#               Registra la región en public.region
-#               Devuelve { id, comunidad, barrio }
-#
-#    Paso 3 → POST /api/obras
-#               Recibe constructoraId + regionId del wizard state
-#               Inserta en public.obra → public.presupuesto_obra
-#               Inserta en public.financia por cada fuente elegida
-#               Devuelve { id, expediente, nombre }
-#
-#  IDs generados AUTOMÁTICAMENTE en el backend.
-#  El frontend NUNCA envía ni conoce claves artificiales.
-#
-#  Nota sobre Supabase / Transaction Pooler (puerto 6543):
-#    psycopg2 ya maneja la conexión vía ShadowVault en database.py.
-#    Aquí sólo usamos el context manager get_db().
-# ================================================================
-
 from flask import Blueprint, request
 from app.database import get_db
 from app.helpers import (
@@ -38,9 +9,6 @@ from app.middleware.auth import require_auth
 director_bp = Blueprint("director", __name__)
 
 
-# ── Generadores de ID ────────────────────────────────────────────
-# Cada función consulta el último ID existente y deriva el siguiente.
-# Respetan el CHAR(N) exacto de cada columna según el schema real.
 
 def _gen_constructora_id(cur) -> str:
     """
