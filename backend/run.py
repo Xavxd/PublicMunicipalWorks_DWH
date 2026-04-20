@@ -1,19 +1,3 @@
-"""
-backend/run.py
-Punto de entrada de la aplicación Flask.
-
-Desarrollo local:
-    cd backend
-    python run.py
-
-Producción (cualquier servidor Linux con Gunicorn):
-    cd backend
-    gunicorn run:app --workers 2 --bind 0.0.0.0:5000 --timeout 120
-
-Alternativa Windows (Waitress):
-    cd backend
-    waitress-serve --host=0.0.0.0 --port=5000 run:app
-"""
 
 import sys
 import os
