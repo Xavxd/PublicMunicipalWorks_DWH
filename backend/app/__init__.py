@@ -10,7 +10,7 @@ def create_app() -> Flask:
     
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
-    CORS(app, origins="*", supports_credentials=True)
+    CORS(app, origins="*", methods=["GET","POST","PUT","DELETE","OPTIONS"], allow_headers="*")
 
 
     from routes.director    import director_bp
