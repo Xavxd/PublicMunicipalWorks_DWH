@@ -158,16 +158,15 @@ def create_constructora(current_user):
         (id_constructora, nombre_const, rfc, tipo_ejecutor)
       VALUES ($1, $2, $3, $4)
     """
-    return bad_request(f"ESTOY EJECUTANDO: {__file__}")
     body = request.get_json(silent=True) or {}
     # El JS manda "tipoEjecutor", normalizamos aquí
     valid, err = require_fields(body, "nombre", "rfc", "tipoEjecutor")
     if not valid:
-        return bad_request("ESTO ES UNA PRUEBA DE URI")
+        return err
 
     nombre = body["nombre"].strip()
     rfc    = body["rfc"].strip().upper()
-    tipo   = body["tipoEjecutor"].strip()
+    tipo   = body["tipo"].strip()
 
     # Validación mínima de RFC mexicano (3–4 letras + 6 dígitos + 3 alfanuméricos)
     import re
