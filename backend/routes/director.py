@@ -161,6 +161,8 @@ def create_constructora(current_user):
     body = request.get_json(silent=True) or {}
     # El JS manda "tipoEjecutor", normalizamos aquí
     valid, err = require_fields(body, "nombre", "rfc", "tipo")
+    print(f"DEBUG - body recibido: {body}")
+    print(f"DEBUG - validación: valid={valid}, err={err}")
     if not valid:
         return err
 
