@@ -1,0 +1,15 @@
+# Servidor Web y Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Conexión a Base de Datos (PostgreSQL)
+# psycopg2-binary es más fácil de instalar en servidores sin dependencias de C complejas
+psycopg2-binary==2.9.9
+
+# Servidores de Producción (Escoge uno según tu OS)
+gunicorn==21.2.0      # Indispensable para Linux (mencionado en tu run.py)
+waitress==3.0.0      # Por si llegas a probar en Windows
+
+# Seguridad y Utilidades
+Flask-Cors==4.0.0    # Necesario si tu frontend y backend están en puertos/dominios distintos
+python-dotenv==1.0.0 # Para manejar variables de entorno como FLASK_ENV o DATABASE_URL
