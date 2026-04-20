@@ -6,8 +6,6 @@ import sys
 from dotenv import load_dotenv
 load_dotenv()
 
-
-
 def create_app() -> Flask:
     
     app = Flask(__name__)
@@ -26,11 +24,7 @@ def create_app() -> Flask:
 
     @app.route("/api/health")
     def health():
-        from app.database import test_connection
-        db_ok = test_connection()
-        return jsonify({"status":"ok" if db_ok else "degraded",
-                        "database":"connected" if db_ok else "unreachable",
-                        "service":"Obras Públicas — API v2.0"}), 200 if db_ok else 503
+    return jsonify({"status": "ok", "service": "Obras Públicas — API v2.0"}), 200
 
     @app.errorhandler(404)
     def h404(e): return jsonify({"success":False,"message":"Ruta no encontrada."}), 404
