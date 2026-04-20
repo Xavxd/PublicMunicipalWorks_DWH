@@ -1,18 +1,31 @@
-"""
-backend/app/routes/director.py
-================================================================
-MÓDULO: DIRECTOR DE OBRAS
-Registro modular y progresivo:
-  Paso 1 — Constructora       → POST /api/constructoras
-  Paso 2 — Región             → POST /api/regiones
-  Paso 3 — Obra               → POST /api/obras  (consume FKs anteriores)
-  Paso 4 — Fuentes            → POST /api/obras/<id>/fuentes
-  Consultas  → GET /api/obras | /api/constructoras | /api/regiones | /api/fuentes | /api/concursos
-  Eliminación → DELETE /api/obras/<id>
-
-Sin cambios de lógica — solo actualización de ruta de imports.
-================================================================
-"""
+# Back/app/routes/director.py
+# ================================================================
+#  MÓDULO: DIRECTOR DE OBRAS
+#  Panel: H. Ayuntamiento de Temascaltepec
+#
+#  Flujo del wizard (3 pasos, mismo orden que el HTML):
+#
+#    Paso 1 → POST /api/constructoras
+#               Registra la constructora en public.constructora
+#               Devuelve { id, nombre, rfc }
+#
+#    Paso 2 → POST /api/regiones
+#               Registra la región en public.region
+#               Devuelve { id, comunidad, barrio }
+#
+#    Paso 3 → POST /api/obras
+#               Recibe constructoraId + regionId del wizard state
+#               Inserta en public.obra → public.presupuesto_obra
+#               Inserta en public.financia por cada fuente elegida
+#               Devuelve { id, expediente, nombre }
+#
+#  IDs generados AUTOMÁTICAMENTE en el backend.
+#  El frontend NUNCA envía ni conoce claves artificiales.
+#
+#  Nota sobre Supabase / Transaction Pooler (puerto 6543):
+#    psycopg2 ya maneja la conexión vía ShadowVault en database.py.
+#    Aquí sólo usamos el context manager get_db().
+# ================================================================
 
 from flask import Blueprint, request
 from app.database import get_db
@@ -21,86 +34,124 @@ from app.helpers import (
     db_error_response, require_fields,
 )
 from app.middleware.auth import require_auth
-import re
 
 director_bp = Blueprint("director", __name__)
 
 
-# ================================================================
-#  GENERACIÓN DE IDs
-# ================================================================
+# ── Generadores de ID ────────────────────────────────────────────
+# Cada función consulta el último ID existente y deriva el siguiente.
+# Respetan el CHAR(N) exacto de cada columna según el schema real.
 
-def _next_id_constructora(cur):
-    cur.execute("""
-        SELECT COALESCE(
-            MAX(CAST(TRIM(SUBSTRING(id_constructora FROM 5)) AS INTEGER)), 0
-        ) + 1
-        FROM public.constructora
-        WHERE id_constructora ~ '^CONS[0-9]+\\s*$'
-    """)
-    return f"CONS{cur.fetchone()[0]:06d}"
-
-
-def _next_id_region(cur):
-    cur.execute("""
-        SELECT COALESCE(
-            MAX(CAST(TRIM(SUBSTRING(id_region FROM 2)) AS INTEGER)), 0
-        ) + 1
-        FROM public.region
-        WHERE id_region ~ '^R[0-9]+\\s*$'
-    """)
-    return f"R{cur.fetchone()[0]:03d}"
-
-
-def _next_id_obra(cur):
-    cur.execute("""
-        SELECT COALESCE(
-            MAX(CAST(TRIM(SUBSTRING(id_obra FROM 5)) AS BIGINT)), 0
-        ) + 1
-        FROM public.obra
-        WHERE id_obra ~ '^OBRA[0-9]+\\s*$'
-    """)
-    return f"OBRA{cur.fetchone()[0]:015d}".ljust(20)
+def _gen_constructora_id(cur) -> str:
+    """
+    Tabla: public.constructora
+    Columna: id_constructora  CHAR(10)
+    Formato: CONS000001 … CONS999999
+    """
+    cur.execute(
+        "SELECT id_constructora FROM public.constructora ORDER BY id_constructora DESC LIMIT 1"
+    )
+    row = cur.fetchone()
+    if not row:
+        num = 1
+    else:
+        last = (row["id_constructora"] or "CONS000000").strip()
+        try:
+            num = int(last[4:]) + 1        # 'CONS000003' → 3 → 4
+        except ValueError:
+            cur.execute("SELECT COUNT(*) AS n FROM public.constructora")
+            num = cur.fetchone()["n"] + 1
+    return f"CONS{num:06d}"               # 'CONS000004' — 10 chars
 
 
-def _next_expediente(cur, anio):
-    cur.execute("""
-        SELECT COALESCE(MAX(
-            CAST(TRIM(SPLIT_PART(codigo_expediente, '-', 3)) AS INTEGER)
-        ), 0) + 1
-        FROM public.obra
-        WHERE codigo_expediente LIKE %s
-          AND codigo_expediente ~ '^EXP-[0-9]{4}-[0-9]+'
-    """, (f"EXP-{anio}-%",))
-    return f"EXP-{anio}-{cur.fetchone()[0]:03d}"
+def _gen_region_id(cur) -> str:
+    """
+    Tabla: public.region
+    Columna: id_region  CHAR(5)
+    Formato: R001 … R999 (con un espacio de padding para CHAR(5))
+    """
+    cur.execute(
+        "SELECT id_region FROM public.region ORDER BY id_region DESC LIMIT 1"
+    )
+    row = cur.fetchone()
+    if not row:
+        num = 1
+    else:
+        last = (row["id_region"] or "R000").strip()
+        try:
+            num = int(last[1:]) + 1        # 'R004' → 4 → 5
+        except ValueError:
+            cur.execute("SELECT COUNT(*) AS n FROM public.region")
+            num = cur.fetchone()["n"] + 1
+    raw = f"R{num:03d}"                   # 'R005' — 4 chars → CHAR(5) se llena solo
+    return raw                            # psycopg2 + Postgres hace el padding de CHAR
 
 
-def _next_id_presupuesto(cur):
-    cur.execute("""
-        SELECT COALESCE(
-            MAX(CAST(TRIM(SUBSTRING(id_presupuesto FROM 5)) AS INTEGER)), 0
-        ) + 1
-        FROM public.presupuesto_obra
-        WHERE id_presupuesto ~ '^PRES[0-9]+\\s*$'
-    """)
-    return f"PRES{cur.fetchone()[0]:06d}"
+def _gen_obra_id(cur) -> str:
+    """
+    Tabla: public.obra
+    Columna: id_obra  CHAR(20)
+    Formato: OBRA000000000000001 … (longitud total 20)
+    """
+    cur.execute(
+        "SELECT id_obra FROM public.obra ORDER BY id_obra DESC LIMIT 1"
+    )
+    row = cur.fetchone()
+    if not row:
+        num = 1
+    else:
+        last = (row["id_obra"] or "OBRA" + "0" * 16).strip()
+        try:
+            num = int(last[4:]) + 1       # 'OBRA000000000000001' → 1 → 2
+        except ValueError:
+            cur.execute("SELECT COUNT(*) AS n FROM public.obra")
+            num = cur.fetchone()["n"] + 1
+    return f"OBRA{num:016d}"              # 20 chars en total
 
 
-# ================================================================
+def _gen_presupuesto_id(cur) -> str:
+    """
+    Tabla: public.presupuesto_obra
+    Columna: id_presupuesto  CHAR(10)
+    Formato: PRES000001 … PRES999999
+    """
+    cur.execute(
+        "SELECT id_presupuesto FROM public.presupuesto_obra ORDER BY id_presupuesto DESC LIMIT 1"
+    )
+    row = cur.fetchone()
+    if not row:
+        num = 1
+    else:
+        last = (row["id_presupuesto"] or "PRES000000").strip()
+        try:
+            num = int(last[4:]) + 1
+        except ValueError:
+            cur.execute("SELECT COUNT(*) AS n FROM public.presupuesto_obra")
+            num = cur.fetchone()["n"] + 1
+    return f"PRES{num:06d}"              # 10 chars
+
+
+# ════════════════════════════════════════════════════════════════
 #  CONSTRUCTORAS
-# ================================================================
+# ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/constructoras", methods=["GET"])
 @require_auth("director", "supervisor", "proyectista", "secretaria")
 def get_constructoras(current_user):
+    """
+    Catálogo completo de constructoras.
+    Usado por el panel 'Constructoras' y el select de búsqueda.
+    Respuesta item:
+      { id, nombre, rfc, tipo }
+    """
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
             cur.execute("""
                 SELECT
-                    TRIM(id_constructora) AS "id",
-                    TRIM(nombre_const)    AS "nombre",
-                    TRIM(rfc)             AS "rfc",
-                    TRIM(tipo_ejecutor)   AS "tipo"
+                    TRIM(id_constructora) AS id,
+                    TRIM(nombre_const)    AS nombre,
+                    TRIM(rfc)             AS rfc,
+                    TRIM(tipo_ejecutor)   AS tipo
                 FROM public.constructora
                 ORDER BY nombre_const ASC
             """)
@@ -114,67 +165,104 @@ def get_constructoras(current_user):
 @require_auth("director")
 def create_constructora(current_user):
     """
-    PASO 1 del wizard. Registra la constructora ejecutora.
-    Body: { "nombre", "rfc", "tipoEjecutor" }
+    PASO 1 del wizard.
+
+    Body esperado (coincide con lo que envía director.js):
+    {
+      "nombre":       "Constructora Vías del Sur S.A. de C.V.",
+      "rfc":          "CVS020415T34",
+      "tipoEjecutor": "Empresa Externa"
+    }
+
+    Respuesta exitosa:
+    {
+      "success": true,
+      "data":    { "id": "CONS000005", "nombre": "...", "rfc": "..." },
+      "message": "Constructora registrada: CONS000005"
+    }
+
+    Regla anti-duplicado:
+      Si el RFC ya existe, devuelve el registro existente con
+      "reused": true.  El wizard continúa con ese ID sin crear ruido.
+
+    SQL que se ejecuta:
+      INSERT INTO public.constructora
+        (id_constructora, nombre_const, rfc, tipo_ejecutor)
+      VALUES ($1, $2, $3, $4)
     """
     body = request.get_json(silent=True) or {}
+
+    # El JS manda "tipoEjecutor", normalizamos aquí
     valid, err = require_fields(body, "nombre", "rfc", "tipoEjecutor")
     if not valid:
         return err
 
-    rfc_clean = body["rfc"].strip().upper()
-    if not re.match(r'^[A-Z&]{3,4}[0-9]{6}[A-Z0-9]{3}$', rfc_clean):
+    nombre = body["nombre"].strip()
+    rfc    = body["rfc"].strip().upper()
+    tipo   = body["tipoEjecutor"].strip()
+
+    # Validación mínima de RFC mexicano (3–4 letras + 6 dígitos + 3 alfanuméricos)
+    import re
+    if not re.match(r'^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$', rfc, re.IGNORECASE):
         return bad_request(
-            "El RFC no tiene el formato válido (ej. CVS020415T34)."
+            "El RFC no tiene un formato válido. Ejemplo correcto: CVS020415T34"
         )
 
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
+
+            # ── Verificar RFC duplicado ───────────────────────────
             cur.execute(
-                "SELECT TRIM(id_constructora) FROM public.constructora WHERE TRIM(rfc) = %s",
-                (rfc_clean,)
+                "SELECT TRIM(id_constructora) AS id FROM public.constructora WHERE TRIM(rfc) = %s",
+                (rfc,)
             )
             existing = cur.fetchone()
             if existing:
-                return bad_request(
-                    f"RFC {rfc_clean} ya registrado. "
-                    f"ID existente: {list(existing.values())[0]}"
+                return ok(
+                    {
+                        "id":     existing["id"],
+                        "nombre": nombre,
+                        "rfc":    rfc,
+                        "reused": True,
+                    },
+                    f"RFC ya registrado. Reutilizando constructora {existing['id']}."
                 )
 
-            new_id = _next_id_constructora(cur)
+            # ── Generar ID y registrar ────────────────────────────
+            new_id = _gen_constructora_id(cur)
+
             cur.execute("""
                 INSERT INTO public.constructora
-                    (id_constructora, rfc, nombre_const, tipo_ejecutor)
+                    (id_constructora, nombre_const, rfc, tipo_ejecutor)
                 VALUES (%s, %s, %s, %s)
-            """, (
-                new_id,
-                rfc_clean.ljust(12),
-                body["nombre"][:150].ljust(150),
-                body["tipoEjecutor"][:100].ljust(100),
-            ))
+            """, (new_id, nombre[:150], rfc, tipo[:100]))
 
         return created(
-            {"id": new_id, "nombre": body["nombre"]},
-            f"Constructora '{body['nombre']}' registrada con ID {new_id}."
+            {"id": new_id, "nombre": nombre, "rfc": rfc},
+            f"Constructora registrada: {new_id}"
         )
+
     except Exception as exc:
         return db_error_response(exc)
 
 
-# ================================================================
+# ════════════════════════════════════════════════════════════════
 #  REGIONES
-# ================================================================
+# ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/regiones", methods=["GET"])
 @require_auth("director", "supervisor", "proyectista", "secretaria")
 def get_regiones(current_user):
+    """
+    Lista todas las regiones.  Útil para búsquedas o autocompletado.
+    """
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
             cur.execute("""
                 SELECT
-                    TRIM(id_region) AS "id",
-                    TRIM(comunidad) AS "comunidad",
-                    TRIM(barrio)    AS "barrio",
+                    TRIM(id_region) AS id,
+                    TRIM(comunidad) AS comunidad,
+                    TRIM(barrio)    AS barrio,
                     colonia
                 FROM public.region
                 ORDER BY comunidad, barrio
@@ -189,140 +277,135 @@ def get_regiones(current_user):
 @require_auth("director")
 def create_region(current_user):
     """
-    PASO 2 del wizard. Registra la región donde se ejecuta la obra.
-    Body: { "comunidad", "barrio", "colonia"? }
+    PASO 2 del wizard.
+
+    Body esperado (coincide con lo que envía director.js):
+    {
+      "comunidad": "Albarranes",
+      "barrio":    "Barrio Temeroso",
+      "colonia":   "Col. Centro"      ← puede ser null / ausente
+    }
+
+    Respuesta exitosa:
+    {
+      "success": true,
+      "data":    { "id": "R005", "comunidad": "Albarranes", "barrio": "Barrio Temeroso" },
+      "message": "Región registrada: R005"
+    }
+
+    Regla anti-duplicado:
+      Si ya existe la misma combinación comunidad+barrio, se devuelve
+      el ID existente con "reused": true.
+
+    SQL que se ejecuta:
+      INSERT INTO public.region
+        (id_region, comunidad, barrio, colonia)
+      VALUES ($1, $2, $3, $4)
     """
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(body, "comunidad", "barrio")
     if not valid:
         return err
 
+    comunidad = body["comunidad"].strip()[:50]
+    barrio    = body["barrio"].strip()[:150]
+    colonia   = (body.get("colonia") or "").strip() or None
+
     try:
-        with get_db() as (_, cur):
-            new_id = _next_id_region(cur)
+        with get_db() as (conn, cur):
+
+            # ── Verificar duplicado por comunidad + barrio ────────
             cur.execute("""
-                INSERT INTO public.region (id_region, comunidad, barrio, colonia)
+                SELECT TRIM(id_region) AS id
+                FROM public.region
+                WHERE TRIM(LOWER(comunidad)) = LOWER(%s)
+                  AND TRIM(LOWER(barrio))    = LOWER(%s)
+                LIMIT 1
+            """, (comunidad, barrio))
+            existing = cur.fetchone()
+            if existing:
+                return ok(
+                    {
+                        "id":       existing["id"],
+                        "comunidad": comunidad,
+                        "barrio":   barrio,
+                        "reused":   True,
+                    },
+                    f"Región ya existente. Reutilizando {existing['id']}."
+                )
+
+            # ── Generar ID y registrar ────────────────────────────
+            new_id = _gen_region_id(cur)
+
+            cur.execute("""
+                INSERT INTO public.region
+                    (id_region, comunidad, barrio, colonia)
                 VALUES (%s, %s, %s, %s)
-            """, (
-                new_id.ljust(5),
-                body["comunidad"][:50],
-                body["barrio"][:150],
-                body.get("colonia") or None,
-            ))
+            """, (new_id, comunidad, barrio, colonia))
 
         return created(
-            {"id": new_id, "comunidad": body["comunidad"], "barrio": body["barrio"]},
-            f"Región registrada con ID {new_id}."
+            {"id": new_id, "comunidad": comunidad, "barrio": barrio},
+            f"Región registrada: {new_id}"
         )
+
     except Exception as exc:
         return db_error_response(exc)
 
 
-# ================================================================
-#  SUPERVISORES
-# ================================================================
-
-@director_bp.route("/api/supervisores", methods=["GET"])
-@require_auth("director", "secretaria")
-def get_supervisores(current_user):
-    try:
-        with get_db() as (_, cur):
-            cur.execute("""
-                SELECT
-                    TRIM(s.codigo_personal)  AS "id",
-                    TRIM(p.nombre)           AS "nombre",
-                    TRIM(p.apellido_paterno) AS "apellidoPaterno",
-                    TRIM(COALESCE(p.apellido_materno, '')) AS "apellidoMaterno",
-                    s.telefono
-                FROM public.supervisor s
-                JOIN public.personal p
-                    ON TRIM(s.codigo_personal) = TRIM(p.codigo_personal)
-                ORDER BY p.apellido_paterno, p.nombre
-            """)
-            rows = [dict(r) for r in cur.fetchall()]
-        return ok(rows)
-    except Exception as exc:
-        return db_error_response(exc)
-
-
-# ================================================================
+# ════════════════════════════════════════════════════════════════
 #  OBRAS
-# ================================================================
+# ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/obras", methods=["GET"])
 @require_auth("director", "supervisor", "proyectista", "secretaria")
 def get_obras(current_user):
     """
-    Lista obras con datos enriquecidos.
-    Supervisores solo ven sus propias obras (filtro automático por rol).
-    """
-    supervisor_filter = request.args.get("supervisor")
-    status_filter     = request.args.get("status")
-    search            = request.args.get("q", "").strip()
+    Lista obras con joins a constructora y región.
+    Acepta ?q=<texto> para filtrar por nombre o expediente.
 
-    if current_user["role"] == "supervisor":
-        supervisor_filter = current_user["id"]
+    Respuesta item (usada por renderObrasTable en director.js):
+    {
+      "id":                "OBRA0000...",
+      "expediente":        "EXP-2026-001",
+      "nombre":            "Pavimento Hidráulico...",
+      "regionComunidad":   "Albarranes",
+      "regionBarrio":      "Barrio Temeroso",
+      "constructoraNombre":"Constructora Vías...",
+      "constructoraTipo":  "Empresa Externa",
+      "fechaInicio":       "2026-03-01",
+      "fechaFin":          "2026-09-30",
+      "status":            "activa"
+    }
+    """
+    q = request.args.get("q", "").strip()
 
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
             cur.execute("""
                 SELECT
-                    TRIM(o.id_obra)             AS "id",
-                    TRIM(o.codigo_expediente)   AS "expediente",
-                    TRIM(o.nombre_obra)         AS "nombre",
-                    o.etapa,
-                    o.fecha_inicio              AS "fechaInicio",
-                    o.fecha_final               AS "fechaFin",
-                    o.descripcion,
-                    o.beneficiarios,
-                    TRIM(o.id_constructora)     AS "constructoraId",
-                    TRIM(c.nombre_const)        AS "constructoraNombre",
-                    TRIM(c.tipo_ejecutor)       AS "constructoraTipo",
-                    TRIM(o.id_region)           AS "regionId",
-                    TRIM(r.comunidad)           AS "regionComunidad",
-                    TRIM(r.barrio)              AS "regionBarrio",
-                    r.colonia                   AS "regionColonia",
-                    TRIM(o.codigo_supervisor)   AS "supervisorId",
-                    TRIM(p.nombre || ' ' || p.apellido_paterno) AS "supervisorNombre",
-                    COALESCE(o.status, 'activa') AS "status",
-                    po.presupuesto_total        AS "presupuesto",
-                    COALESCE(
-                        json_agg(TRIM(f.id_fuente))
-                        FILTER (WHERE f.id_fuente IS NOT NULL), '[]'
-                    ) AS "fuentes"
+                    TRIM(o.id_obra)           AS id,
+                    TRIM(o.codigo_expediente) AS expediente,
+                    TRIM(o.nombre_obra)       AS nombre,
+                    TRIM(r.comunidad)         AS "regionComunidad",
+                    TRIM(r.barrio)            AS "regionBarrio",
+                    TRIM(c.nombre_const)      AS "constructoraNombre",
+                    TRIM(c.tipo_ejecutor)     AS "constructoraTipo",
+                    o.fecha_inicio            AS "fechaInicio",
+                    o.fecha_final             AS "fechaFin",
+                    COALESCE(o.status, 'activa') AS status
                 FROM public.obra o
-                JOIN public.constructora c
+                LEFT JOIN public.constructora c
                     ON TRIM(c.id_constructora) = TRIM(o.id_constructora)
-                JOIN public.region r
+                LEFT JOIN public.region r
                     ON TRIM(r.id_region) = TRIM(o.id_region)
-                JOIN public.personal p
-                    ON TRIM(p.codigo_personal) = TRIM(o.codigo_supervisor)
-                LEFT JOIN public.financia f
-                    ON TRIM(f.id_obra) = TRIM(o.id_obra)
-                LEFT JOIN public.presupuesto_obra po
-                    ON TRIM(po.id_obra) = TRIM(o.id_obra)
                 WHERE
-                    (%s IS NULL OR TRIM(o.codigo_supervisor) = %s)
-                    AND (%s IS NULL OR TRIM(COALESCE(o.status, 'activa')) = %s)
-                    AND (%s = '' OR (
-                        LOWER(o.nombre_obra) LIKE '%%' || LOWER(%s) || '%%'
-                        OR LOWER(o.codigo_expediente) LIKE '%%' || LOWER(%s) || '%%'
-                    ))
-                GROUP BY
-                    o.id_obra, o.codigo_expediente, o.nombre_obra, o.etapa,
-                    o.fecha_inicio, o.fecha_final, o.descripcion, o.beneficiarios,
-                    o.id_constructora, c.nombre_const, c.tipo_ejecutor,
-                    o.id_region, r.comunidad, r.barrio, r.colonia,
-                    o.codigo_supervisor, p.nombre, p.apellido_paterno,
-                    o.status, po.presupuesto_total
+                    %s = ''
+                    OR TRIM(o.nombre_obra)       ILIKE %s
+                    OR TRIM(o.codigo_expediente) ILIKE %s
                 ORDER BY o.fecha_inicio DESC NULLS LAST
-            """, (
-                supervisor_filter, supervisor_filter,
-                status_filter, status_filter,
-                search, search, search,
-            ))
-            obras = [dict(r) for r in cur.fetchall()]
-        return ok(obras)
+            """, (q, f"%{q}%", f"%{q}%"))
+            rows = [dict(r) for r in cur.fetchall()]
+        return ok(rows)
     except Exception as exc:
         return db_error_response(exc)
 
@@ -331,124 +414,247 @@ def get_obras(current_user):
 @require_auth("director")
 def create_obra(current_user):
     """
-    PASO 3 del wizard. Recibe constructoraId y regionId ya persistidos.
-    Body: { constructoraId, regionId, supervisorId, nombre, etapa,
-            fechaInicio, fechaFin, descripcion, beneficiarios,
-            presupuesto, fuentes[] }
+    PASO 3 del wizard — llamado por submitObra() en director.js.
+
+    Body esperado (ver director.js líneas 296–308):
+    {
+      "constructoraId":  "CONS000005",       ← del wizardState
+      "regionId":        "R005",              ← del wizardState
+      "supervisorId":    "SUP...",            ← select del paso 3
+      "nombre":          "Pavimento Hidráulico...",
+      "etapa":           1,
+      "fechaInicio":     "2026-03-01",
+      "fechaFin":        "2026-09-30",
+      "descripcion":     "...",
+      "beneficiarios":   "450 habitantes...",
+      "presupuesto":     1250000.00,
+      "fuentes":         ["FP0000001", "FP0000003"]
+    }
+
+    Operaciones en orden (transacción única):
+      1. Verifica existencia de constructora, región y supervisor.
+      2. Genera codigo_expediente automático (EXP-YYYY-NNN).
+      3. INSERT public.obra
+      4. INSERT public.presupuesto_obra
+      5. INSERT public.financia  (una fila por fuente seleccionada)
+
+    Respuesta:
+    {
+      "success":    true,
+      "data":       { "id": "OBRA0000...", "expediente": "EXP-2026-005", "nombre": "..." },
+      "message":    "Obra registrada exitosamente."
+    }
     """
     body = request.get_json(silent=True) or {}
+
     valid, err = require_fields(
         body,
         "constructoraId", "regionId", "supervisorId",
-        "nombre", "fechaInicio", "fechaFin",
+        "nombre", "fechaInicio", "fechaFin", "beneficiarios"
     )
     if not valid:
         return err
 
-    if body["fechaInicio"] >= body["fechaFin"]:
+    # Extraer y limpiar campos
+    constructora_id = body["constructoraId"].strip()
+    region_id       = body["regionId"].strip()
+    supervisor_id   = body["supervisorId"].strip()
+    nombre          = body["nombre"].strip()[:200]
+    etapa           = int(body.get("etapa") or 1)
+    fecha_inicio    = body["fechaInicio"]
+    fecha_fin       = body["fechaFin"]
+    descripcion     = (body.get("descripcion") or "Sin descripción.").strip()[:500]
+    beneficiarios   = body["beneficiarios"].strip()[:500]
+    presupuesto     = float(body.get("presupuesto") or 0)
+    fuentes         = body.get("fuentes") or []   # lista de IDs de fuentes
+
+    # Validar rango de fechas
+    if fecha_inicio >= fecha_fin:
         return bad_request(
-            "La fecha de inicio debe ser anterior a la fecha de finalización."
+            "La fecha de finalización debe ser posterior a la de inicio."
         )
 
     try:
-        with get_db() as (_, cur):
-            # Verificar existencia de FKs
+        with get_db() as (conn, cur):
+
+            # ── 1. Verificar entidades relacionadas ───────────────
+
             cur.execute(
                 "SELECT 1 FROM public.constructora WHERE TRIM(id_constructora) = %s",
-                (body["constructoraId"].strip(),)
+                (constructora_id,)
             )
             if not cur.fetchone():
                 return bad_request(
-                    f"Constructora '{body['constructoraId']}' no encontrada. "
-                    "Completa el Paso 1 primero."
+                    f"La constructora '{constructora_id}' no existe en la base de datos. "
+                    "Completa el Paso 1 antes de continuar."
                 )
 
             cur.execute(
                 "SELECT 1 FROM public.region WHERE TRIM(id_region) = %s",
-                (body["regionId"].strip(),)
+                (region_id,)
             )
             if not cur.fetchone():
                 return bad_request(
-                    f"Región '{body['regionId']}' no encontrada. "
-                    "Completa el Paso 2 primero."
+                    f"La región '{region_id}' no existe en la base de datos. "
+                    "Completa el Paso 2 antes de continuar."
                 )
 
             cur.execute(
                 "SELECT 1 FROM public.supervisor WHERE TRIM(codigo_personal) = %s",
-                (body["supervisorId"].strip(),)
+                (supervisor_id,)
             )
             if not cur.fetchone():
                 return bad_request(
-                    f"Supervisor '{body['supervisorId']}' no encontrado."
+                    f"El supervisor '{supervisor_id}' no está registrado en el sistema."
                 )
 
-            # Generar IDs
-            anio     = body["fechaInicio"][:4]
-            obra_id  = _next_id_obra(cur)
-            exp      = _next_expediente(cur, anio)
-            pres_id  = _next_id_presupuesto(cur)
+            # ── 2. Generar código de expediente ───────────────────
+            # Formato: EXP-YYYY-NNN  (NNN = total de obras + 1)
+            from datetime import date
+            anio = date.today().year
+            cur.execute("SELECT COUNT(*) AS n FROM public.obra")
+            total = cur.fetchone()["n"]
+            expediente = f"EXP-{anio}-{total + 1:03d}"
 
-            # INSERT obra
+            # ── 3. Generar ID de obra ─────────────────────────────
+            obra_id = _gen_obra_id(cur)
+
+            # ── 4. INSERT obra ────────────────────────────────────
             cur.execute("""
                 INSERT INTO public.obra (
-                    id_obra, codigo_expediente, nombre_obra, etapa,
-                    fecha_inicio, fecha_final, descripcion, beneficiarios,
-                    id_constructora, id_region, codigo_supervisor
+                    id_obra,
+                    codigo_expediente,
+                    nombre_obra,
+                    etapa,
+                    fecha_inicio,
+                    fecha_final,
+                    descripcion,
+                    beneficiarios,
+                    id_constructora,
+                    id_region,
+                    codigo_supervisor
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING TRIM(id_obra) AS id
             """, (
                 obra_id,
-                exp.ljust(15),
-                body["nombre"][:200],
-                int(body.get("etapa", 1)),
-                body["fechaInicio"],
-                body["fechaFin"],
-                (body.get("descripcion") or "Sin descripción.")[:2000],
-                (body.get("beneficiarios") or "Por definir.")[:2000],
-                body["constructoraId"].strip().ljust(10),
-                body["regionId"].strip().ljust(5),
-                body["supervisorId"].strip().ljust(20),
+                expediente,
+                nombre,
+                etapa,
+                fecha_inicio,
+                fecha_fin,
+                descripcion,
+                beneficiarios,
+                constructora_id,
+                region_id,
+                supervisor_id,
             ))
-            inserted_id = list(cur.fetchone().values())[0]
 
-            # INSERT presupuesto_obra
-            presupuesto = float(body.get("presupuesto") or 0)
-            if presupuesto > 0:
-                cur.execute("""
-                    SELECT TRIM(codigo_personal) AS id
-                    FROM public.proyectista LIMIT 1
-                """)
-                proy_row = cur.fetchone()
-                proy_id  = list(proy_row.values())[0] if proy_row else "PRY0000000000000001"
+            # ── 5. INSERT presupuesto_obra ────────────────────────
+            # Busca el primer proyectista disponible para asociar el
+            # presupuesto inicial.  El director asignará uno formalmente
+            # después (flujo del proyectista).
+            cur.execute("""
+                SELECT TRIM(codigo_personal) AS id
+                FROM public.proyectista
+                ORDER BY codigo_personal
+                LIMIT 1
+            """)
+            proy_row = cur.fetchone()
+            proy_id  = proy_row["id"] if proy_row else None
 
+            if proy_id:
+                pres_id = _gen_presupuesto_id(cur)
                 cur.execute("""
                     INSERT INTO public.presupuesto_obra
                         (id_presupuesto, presupuesto_total, id_proyectista, id_obra)
                     VALUES (%s, %s, %s, %s)
-                    ON CONFLICT (id_obra) DO NOTHING
-                """, (
-                    pres_id.ljust(10),
-                    presupuesto,
-                    proy_id.ljust(20),
-                    obra_id,
-                ))
+                """, (pres_id, presupuesto, proy_id, obra_id))
 
-            # INSERT fuentes
-            for fuente_id in (body.get("fuentes") or []):
-                cur.execute("""
-                    INSERT INTO public.financia (id_obra, id_fuente)
-                    VALUES (%s, %s)
-                    ON CONFLICT DO NOTHING
-                """, (obra_id, fuente_id.strip().ljust(10)))
+            # ── 6. INSERT financia (una fila por fuente) ──────────
+            for fuente_id in fuentes:
+                fuente_id = fuente_id.strip()
+                if not fuente_id:
+                    continue
+                # Verificar que la fuente existe antes de insertar
+                cur.execute(
+                    "SELECT 1 FROM public.fuente_presupuestaria WHERE TRIM(id_fuente) = %s",
+                    (fuente_id,)
+                )
+                if cur.fetchone():
+                    cur.execute("""
+                        INSERT INTO public.financia (id_obra, id_fuente)
+                        VALUES (%s, %s)
+                        ON CONFLICT DO NOTHING
+                    """, (obra_id, fuente_id))
 
         return created(
             {
-                "id":           inserted_id.strip(),
-                "expediente":   exp,
-                "presupuestoId": pres_id if presupuesto > 0 else None,
+                "id":         obra_id,
+                "expediente": expediente,
+                "nombre":     nombre,
             },
-            f"Obra '{body['nombre']}' registrada con expediente {exp}."
+            "Obra registrada exitosamente."
         )
+
+    except Exception as exc:
+        return db_error_response(exc)
+
+
+@director_bp.route("/api/obras/<obra_id>", methods=["GET"])
+@require_auth("director", "supervisor", "proyectista", "secretaria")
+def get_obra(obra_id, current_user):
+    """Detalle completo de una obra con sus fuentes."""
+    try:
+        with get_db() as (conn, cur):
+            cur.execute("""
+                SELECT
+                    TRIM(o.id_obra)           AS id,
+                    TRIM(o.codigo_expediente) AS expediente,
+                    TRIM(o.nombre_obra)       AS nombre,
+                    o.etapa,
+                    o.fecha_inicio            AS "fechaInicio",
+                    o.fecha_final             AS "fechaFin",
+                    TRIM(o.descripcion)       AS descripcion,
+                    TRIM(o.beneficiarios)     AS beneficiarios,
+                    TRIM(o.id_constructora)   AS "constructoraId",
+                    TRIM(c.nombre_const)      AS "constructoraNombre",
+                    TRIM(o.id_region)         AS "regionId",
+                    TRIM(r.comunidad)         AS "regionComunidad",
+                    TRIM(r.barrio)            AS "regionBarrio",
+                    TRIM(o.codigo_supervisor) AS "supervisorId",
+                    COALESCE(po.presupuesto_total, 0) AS presupuesto,
+                    COALESCE(o.status, 'activa')      AS status
+                FROM public.obra o
+                LEFT JOIN public.constructora c
+                    ON TRIM(c.id_constructora) = TRIM(o.id_constructora)
+                LEFT JOIN public.region r
+                    ON TRIM(r.id_region) = TRIM(o.id_region)
+                LEFT JOIN public.presupuesto_obra po
+                    ON TRIM(po.id_obra) = TRIM(o.id_obra)
+                WHERE TRIM(o.id_obra) = %s
+                LIMIT 1
+            """, (obra_id.strip(),))
+            obra = cur.fetchone()
+
+            if not obra:
+                return not_found("Obra no encontrada.")
+
+            # Fuentes vinculadas
+            cur.execute("""
+                SELECT
+                    TRIM(f.id_fuente)          AS id,
+                    TRIM(fp.grado_nivel)       AS nivel,
+                    fp.programa
+                FROM public.financia f
+                JOIN public.fuente_presupuestaria fp
+                    ON TRIM(fp.id_fuente) = TRIM(f.id_fuente)
+                WHERE TRIM(f.id_obra) = %s
+            """, (obra_id.strip(),))
+            fuentes = [dict(r) for r in cur.fetchall()]
+
+        result = dict(obra)
+        result["fuentes"] = fuentes
+        return ok(result)
+
     except Exception as exc:
         return db_error_response(exc)
 
@@ -456,60 +662,94 @@ def create_obra(current_user):
 @director_bp.route("/api/obras/<obra_id>", methods=["DELETE"])
 @require_auth("director")
 def delete_obra(obra_id, current_user):
+    """
+    Elimina una obra y todas sus dependencias (presupuesto, financia).
+    Llamado por deleteObraConfirm() en director.js.
+    """
     try:
-        clean = obra_id.strip()
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
+
+            # Verificar existencia
             cur.execute(
-                "SELECT 1 FROM public.acta_entrega WHERE TRIM(id_obra) = %s", (clean,)
+                "SELECT TRIM(nombre_obra) AS nombre FROM public.obra WHERE TRIM(id_obra) = %s",
+                (obra_id.strip(),)
             )
-            if cur.fetchone():
-                return bad_request(
-                    "No se puede eliminar una obra con Acta de Entrega registrada."
-                )
+            row = cur.fetchone()
+            if not row:
+                return not_found(f"La obra '{obra_id}' no existe.")
 
-            cur.execute("""
-                DELETE FROM public.obra WHERE TRIM(id_obra) = %s
-                RETURNING TRIM(id_obra) AS id
-            """, (clean,))
-            if not cur.fetchone():
-                return not_found(f"Obra '{clean}' no encontrada.")
+            nombre = row["nombre"]
 
-        return ok(message=f"Obra '{clean}' eliminada junto con sus dependencias.")
+            # Eliminar dependencias en orden (FK)
+            cur.execute(
+                "DELETE FROM public.financia WHERE TRIM(id_obra) = %s",
+                (obra_id.strip(),)
+            )
+            cur.execute(
+                "DELETE FROM public.presupuesto_obra WHERE TRIM(id_obra) = %s",
+                (obra_id.strip(),)
+            )
+            cur.execute(
+                "DELETE FROM public.obra WHERE TRIM(id_obra) = %s",
+                (obra_id.strip(),)
+            )
+
+        return ok(message=f"Obra '{nombre}' eliminada correctamente.")
+
     except Exception as exc:
         return db_error_response(exc)
 
 
-@director_bp.route("/api/obras/<obra_id>/fuentes", methods=["POST"])
-@require_auth("director")
-def add_fuente_to_obra(obra_id, current_user):
-    body = request.get_json(silent=True) or {}
-    fuente_id = (body.get("fuenteId") or "").strip()
-    if not fuente_id:
-        return bad_request("Falta el campo 'fuenteId'.")
+# ════════════════════════════════════════════════════════════════
+#  SUPERVISORES  (select del Paso 3)
+# ════════════════════════════════════════════════════════════════
+
+@director_bp.route("/api/supervisores", methods=["GET"])
+@require_auth("director", "secretaria")
+def get_supervisores(current_user):
+    """
+    Listado de supervisores para poblar el <select> del Paso 3.
+    El JS espera: { id, nombre, apellidoPaterno }
+    Ver director.js línea 213–215.
+    """
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
             cur.execute("""
-                INSERT INTO public.financia (id_obra, id_fuente)
-                VALUES (%s, %s) ON CONFLICT DO NOTHING
-            """, (obra_id.strip().ljust(20), fuente_id.ljust(10)))
-        return created(message="Fuente vinculada a la obra.")
+                SELECT
+                    TRIM(s.codigo_personal)       AS id,
+                    TRIM(p.nombre)                AS nombre,
+                    TRIM(p.apellido_paterno)      AS "apellidoPaterno"
+                FROM public.supervisor s
+                JOIN public.personal p
+                    ON TRIM(p.codigo_personal) = TRIM(s.codigo_personal)
+                ORDER BY p.nombre, p.apellido_paterno
+            """)
+            rows = [dict(r) for r in cur.fetchall()]
+        return ok(rows)
     except Exception as exc:
         return db_error_response(exc)
 
 
-# ================================================================
-#  FUENTES
-# ================================================================
+# ════════════════════════════════════════════════════════════════
+#  FUENTES PRESUPUESTARIAS
+# ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/fuentes", methods=["GET"])
 @require_auth("director", "supervisor", "proyectista", "secretaria")
 def get_fuentes(current_user):
+    """
+    Catálogo de fuentes presupuestarias.
+    El JS espera: { id, nivel, programa }
+    Ver director.js línea 227–234 (nivelClass) y línea 461.
+    El campo 'nivel' debe ser FEDERAL | ESTATAL | MUNICIPAL
+    (en mayúsculas tal como lo usa el JS para el CSS class).
+    """
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
             cur.execute("""
                 SELECT
-                    TRIM(id_fuente)   AS "id",
-                    TRIM(grado_nivel) AS "nivel",
+                    TRIM(id_fuente)              AS id,
+                    UPPER(TRIM(grado_nivel))     AS nivel,
                     programa
                 FROM public.fuente_presupuestaria
                 ORDER BY grado_nivel, programa
@@ -520,27 +760,30 @@ def get_fuentes(current_user):
         return db_error_response(exc)
 
 
-# ================================================================
-#  CONCURSO — solo lectura (escritura en secretaria.py)
-# ================================================================
+# ════════════════════════════════════════════════════════════════
+#  CONCURSOS DE SELECCIÓN
+#  Sólo se pueden registrar si la obra ya existe.
+#  El alta la gestiona Secretaría; el director consulta.
+# ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/concursos", methods=["GET"])
 @require_auth("director", "supervisor", "secretaria")
 def get_concursos(current_user):
+    """Lista concursos, opcionalmente filtrados por ?obra=<id_obra>."""
     obra_filter = request.args.get("obra")
     try:
-        with get_db() as (_, cur):
+        with get_db() as (conn, cur):
             cur.execute("""
                 SELECT
-                    TRIM(s.id_participante)   AS "id",
-                    TRIM(s.id_obra)           AS "obraId",
-                    TRIM(o.nombre_obra)       AS "obraNombre",
-                    TRIM(o.codigo_expediente) AS "expediente",
-                    TRIM(s.constructora)      AS "constructora",
+                    TRIM(s.id_participante)    AS id,
+                    TRIM(s.id_obra)            AS "obraId",
+                    TRIM(o.nombre_obra)        AS "obraNombre",
+                    TRIM(s.constructora)       AS constructora,
                     s.aprobado,
-                    s.razones_decision        AS "razones"
+                    s.razones_decision         AS razones
                 FROM public.opcion_seleccion s
-                JOIN public.obra o ON TRIM(o.id_obra) = TRIM(s.id_obra)
+                JOIN public.obra o
+                    ON TRIM(o.id_obra) = TRIM(s.id_obra)
                 WHERE (%s IS NULL OR TRIM(s.id_obra) = %s)
                 ORDER BY s.id_participante DESC
             """, (obra_filter, obra_filter))
