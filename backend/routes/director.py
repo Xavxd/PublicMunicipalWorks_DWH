@@ -158,8 +158,8 @@ def create_constructora(current_user):
         (id_constructora, nombre_const, rfc, tipo_ejecutor)
       VALUES ($1, $2, $3, $4)
     """
+    return bad_request(f"ESTOY EJECUTANDO: {__file__}")
     body = request.get_json(silent=True) or {}
-
     # El JS manda "tipoEjecutor", normalizamos aquí
     valid, err = require_fields(body, "nombre", "rfc", "tipoEjecutor")
     if not valid:
