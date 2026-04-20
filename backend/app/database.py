@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 class ShadowVault:
    
-    _BLOB = "0kXLd1zH/xKwjSXvzGQ6TC1JEW+NOs7y1JsyXdKC63eAGjMMA8EzdzlTc6J+1aIQQ4uLpHIlozkEfKBijoKwykWkf3E+udwZtk+mC3JUPNqulleJ35B0zI7j6p1+JgcmXX0G1I636mNSrj+OHTBT3VrjANcIovB8kM8N0pFHhm+S169/c4pZQ3uZBRMckV1X0QDpp0HfN61ojgOXs6mxGHoKVsdTFBWnvzC4FEgKnGpmdOhasmBJt494hiRlQH16DxzV+rfFJzsTR0MEo953UxNniH+0sH9MWuZsiv+q6PWYO7c1/6bwCwonkhFXMcMCLaoubxugTBmvWDd+RuuKjA=="
+    _BLOB = "bZw1Z0rAXH5scY7AzxRE9IStf86hkBHJDNrPY27A8ZvkjENbc4tudULbXCF7Q2kWeF6F1eMYyeujPDWB3Hz/eay02yApLHIlIWPAnigrkgq2VxAeh1GASdkZM+GK/kCcsyyNhzfd4+oNkvb1UQjeJc8QjsU8HIahgi7bq+brdAhid18sJCJtQ/L8xv7Xx2J2MF+7Xg/mqmBkgBVvWPAXvhgj4GTbgEqXY+dRU9KEH+JRtzb3UwMjzFU6ip9vMPAekLRbj9JArXsVkwgfzoq1Kb2nhthivXWChFHNHMjeyHfK0TwIDqO6puwCycRGziP0q4/wIldAlxX0qhOSGkFKzw=="
     _URL = None
 
     @classmethod
