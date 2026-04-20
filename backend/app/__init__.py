@@ -24,7 +24,7 @@ def create_app() -> Flask:
 
     @app.route("/api/health")
     def health():
-    return jsonify({"status": "ok", "service": "Obras Públicas — API v2.0"}), 200
+        return jsonify({"status": "ok", "service": "Obras Públicas — API v2.0"}), 200
 
     @app.errorhandler(404)
     def h404(e): return jsonify({"success":False,"message":"Ruta no encontrada."}), 404
