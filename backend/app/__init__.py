@@ -2,10 +2,14 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
+import sys
 from dotenv import load_dotenv
 load_dotenv()
 
+
+
 def create_app() -> Flask:
+    
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
     CORS(app, origins="*",
