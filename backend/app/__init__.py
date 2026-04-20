@@ -12,19 +12,14 @@ def create_app() -> Flask:
          allow_headers=["Content-Type","X-User-Role","X-User-Id","X-User-Nombre","X-User-Username"],
          methods=["GET","POST","PUT","DELETE","OPTIONS"])
 
-    from app.routes.auth        import auth_bp
+    from app.middleware.auth import auth_bp
     from app.routes.director    import director_bp
     from app.routes.supervisor  import supervisor_bp
-    from app.routes.proyectista import proyectista_bp
-    from app.routes.secretaria  import secretaria_bp
-    from app.routes.reportes    import reportes_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(director_bp)
     app.register_blueprint(supervisor_bp)
-    app.register_blueprint(proyectista_bp)
-    app.register_blueprint(secretaria_bp)
-    app.register_blueprint(reportes_bp)
+
 
     @app.route("/api/health")
     def health():
