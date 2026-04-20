@@ -108,8 +108,7 @@ async function submitConstructora() {
   setBtnLoading(btn, true);
 
   try {
-    const res = await API.post('/api/constructoras', {
-      id: Date.now().toString(),  
+    const res = await API.post('/api/constructoras', { 
       nombre: nombre.trim(),
       rfc: rfc.trim(),
       tipo: tipo   
