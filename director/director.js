@@ -1,12 +1,4 @@
-// =============================================
-// DIRECTOR DE OBRAS — JS
-// Registro modular en 3 pasos:
-//   Paso 1 → Constructora ejecutora
-//   Paso 2 → Región / Comunidad
-//   Paso 3 → Datos de obra + fuentes
-// =============================================
 
-// ---- AUTH GUARD ----
 const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
 if (!user || user.role !== 'director') window.location.href = '../index.html';
 
@@ -108,7 +100,7 @@ async function submitConstructora() {
   const tipo        = document.getElementById('c-tipo').value;
 
   if (!nombre || !rfc || !tipo) {
-    showToast('Completa todos los campos de la constructora.', 'error');
+    showToast("Todos los campos son obligatorios", "error");
     return;
   }
 
@@ -117,10 +109,15 @@ async function submitConstructora() {
 
   try {
     const res = await API.post('/api/constructoras', {
-      nombre,
-      rfc,
-      tipoEjecutor: tipo,
+      nombre: nombre.trim(),
+      rfc: rfc.trim(),
+      tipoEjecutor: tipo 
     });
+
+    if (res.ok) {
+      showToast("Constructora registrada con éxito", "success");
+      // Limpiar formulario o cerrar modal
+    }
 
     wizardState.constructoraId     = res.data.id;
     wizardState.constructoraNombre = nombre;
@@ -142,6 +139,7 @@ async function submitConstructora() {
     showToast(`Constructora registrada con ID ${res.data.id}`);
 
   } catch (err) {
+    showToast("Error al conectar con el servidor", "error");
     handleApiError(err);
   } finally {
     setBtnLoading(btn, false);
