@@ -109,9 +109,10 @@ async function submitConstructora() {
 
   try {
     const res = await API.post('/api/constructoras', {
+      id: Date.now().toString(),  
       nombre: nombre.trim(),
       rfc: rfc.trim(),
-      tipoEjecutor: tipo 
+      tipo: tipo   
     });
 
     if (res.ok) {
