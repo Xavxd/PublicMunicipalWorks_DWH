@@ -163,7 +163,7 @@ def create_constructora(current_user):
     # El JS manda "tipoEjecutor", normalizamos aquí
     valid, err = require_fields(body, "nombre", "rfc", "tipoEjecutor")
     if not valid:
-        return err
+        return bad_request("ESTO ES UNA PRUEBA DE URI")
 
     nombre = body["nombre"].strip()
     rfc    = body["rfc"].strip().upper()
