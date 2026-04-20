@@ -12,11 +12,10 @@ def create_app() -> Flask:
          allow_headers=["Content-Type","X-User-Role","X-User-Id","X-User-Nombre","X-User-Username"],
          methods=["GET","POST","PUT","DELETE","OPTIONS"])
 
-    from app.middleware.auth import auth_bp
-    from app.routes.director    import director_bp
-    from app.routes.supervisor  import supervisor_bp
 
-    app.register_blueprint(auth_bp)
+    from routes.director    import director_bp
+    from routes.supervisor  import supervisor_bp
+
     app.register_blueprint(director_bp)
     app.register_blueprint(supervisor_bp)
 
