@@ -702,28 +702,128 @@ def get_supervisores(current_user):
 #  FUENTES PRESUPUESTARIAS
 # ════════════════════════════════════════════════════════════════
 
+def _gen_fuente_id(nivel: str, programa: str) -> str:
+    import hashlib
+    nivel_up = nivel.strip().upper()
+    prog_up  = programa.strip().upper()
+
+    letra  = nivel_up[0] if nivel_up else "O"     # E/M/F/O(tro)
+    digest = hashlib.sha1(prog_up.encode()).hexdigest().upper()[:4]
+
+    raw = f"FP{letra}{digest}"                    # 'FPE3A7F' — 7 chars
+    return raw[:10]                               # CHAR(10) en Supabase
+
+
 @director_bp.route("/api/fuentes", methods=["GET"])
 @require_auth("director", "supervisor", "proyectista", "secretaria")
 def get_fuentes(current_user):
     """
     Catálogo de fuentes presupuestarias.
-    El JS espera: { id, nivel, programa }
-    Ver director.js línea 227–234 (nivelClass) y línea 461.
-    El campo 'nivel' debe ser FEDERAL | ESTATAL | MUNICIPAL
-    (en mayúsculas tal como lo usa el JS para el CSS class).
+    El JS espera: [ { id, nivel, programa }, … ]
+    El campo 'nivel' viaja en MAYÚSCULAS (FEDERAL|ESTATAL|MUNICIPAL|OTRO)
+    para que director.js lo use como clase CSS directamente.
     """
     try:
         with get_db() as (conn, cur):
             cur.execute("""
                 SELECT
-                    TRIM(id_fuente)              AS id,
-                    UPPER(TRIM(grado_nivel))     AS nivel,
-                    programa
+                    TRIM(id_fuente)          AS id,
+                    UPPER(TRIM(grado_nivel)) AS nivel,
+                    TRIM(programa)           AS programa
                 FROM public.fuente_presupuestaria
-                ORDER BY grado_nivel, programa
+                ORDER BY grado_nivel ASC, programa ASC
             """)
             rows = [dict(r) for r in cur.fetchall()]
         return ok(rows)
+    except Exception as exc:
+        return db_error_response(exc)
+
+
+@director_bp.route("/api/fuentes", methods=["POST"])
+@require_auth("director")
+def create_fuente(current_user):
+    """
+    Registra una nueva fuente presupuestaria.
+    Llamado por agregarFuente() en director.js al pulsar el botón "+".
+
+    Body esperado:
+    {
+      "nivel":    "ESTATAL",
+      "programa": "OBRAS DE LA TRANSFORMACIÓN"
+    }
+
+    Regla anti-duplicado:
+      El ID se genera de forma determinista a partir de nivel+programa
+      (ambos normalizados a MAYÚSCULAS).  Si ya existe ese ID en la tabla
+      se devuelve el registro existente con "reused": true, y el wizard
+      lo toma como si lo hubiera creado — sin duplicar el dato.
+
+    Respuesta exitosa:
+    {
+      "success": true,
+      "data":    { "id": "FPE3A7F", "nivel": "ESTATAL",
+                   "programa": "OBRAS DE LA TRANSFORMACIÓN", "reused": false },
+      "message": "Fuente registrada."
+    }
+    """
+    body = request.get_json(silent=True) or {}
+    valid, err = require_fields(body, "nivel", "programa")
+    if not valid:
+        return err
+
+    # Normalizar a MAYÚSCULAS antes de procesar
+    nivel    = body["nivel"].strip().upper()[:50]
+    programa = body["programa"].strip().upper()
+
+    # Validar que el nivel sea uno de los permitidos
+    NIVELES_VALIDOS = {"FEDERAL", "ESTATAL", "MUNICIPAL", "OTRO"}
+    if nivel not in NIVELES_VALIDOS:
+        return bad_request(
+            f"Nivel inválido: '{nivel}'. "
+            f"Valores permitidos: {', '.join(sorted(NIVELES_VALIDOS))}"
+        )
+
+    fuente_id = _gen_fuente_id(nivel, programa)
+
+    try:
+        with get_db() as (conn, cur):
+
+            # ── Verificar si ya existe (por ID determinista) ──────
+            cur.execute(
+                "SELECT TRIM(id_fuente) AS id FROM public.fuente_presupuestaria "
+                "WHERE TRIM(id_fuente) = %s",
+                (fuente_id,)
+            )
+            existing = cur.fetchone()
+            if existing:
+                return ok(
+                    {
+                        "id":       fuente_id,
+                        "nivel":    nivel,
+                        "programa": programa,
+                        "reused":   True,
+                    },
+                    f"Esta fuente ya está registrada (ID: {fuente_id}). "
+                    "Se reutiliza el registro existente."
+                )
+
+            # ── INSERT ────────────────────────────────────────────
+            cur.execute("""
+                INSERT INTO public.fuente_presupuestaria
+                    (id_fuente, grado_nivel, programa)
+                VALUES (%s, %s, %s)
+            """, (fuente_id, nivel[:50], programa))
+
+        return created(
+            {
+                "id":       fuente_id,
+                "nivel":    nivel,
+                "programa": programa,
+                "reused":   False,
+            },
+            f"Fuente '{programa}' registrada con ID {fuente_id}."
+        )
+
     except Exception as exc:
         return db_error_response(exc)
 
