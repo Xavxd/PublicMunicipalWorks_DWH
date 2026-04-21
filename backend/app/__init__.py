@@ -18,7 +18,7 @@ def create_app() -> Flask:
     from routes.secretaria  import secretaria_bp
 
     app.register_blueprint(director_bp)
-    app.register_blueprint(supervisor_bp)\
+    app.register_blueprint(supervisor_bp)
     app.register_blueprint(secretaria_bp)
 
 
