@@ -1,4 +1,3 @@
-
 const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
 if (!user || user.role !== 'director') window.location.href = '../index.html';
 
@@ -16,7 +15,7 @@ const wizardState = {
   constructoraNombre: null,
   regionId:         null,
   regionLabel:      null,
-  currentStep:      1,    // 1 | 2 | 3
+  currentStep:      1,
 };
 
 // ---- PANEL NAVIGATION ----
@@ -35,24 +34,26 @@ function showPanel(id) {
 }
 
 // ================================================================
-//  WIZARD — REGISTRO MODULAR EN 3 PASOS
+//  WIZARD
 // ================================================================
 
+// CAMBIO 1 — agrega resetFuentes() al final para limpiar la lista
+// de fuentes cada vez que se inicia un nuevo registro.
 function initWizard() {
-  // Resetear estado al entrar al wizard
-  wizardState.constructoraId    = null;
+  wizardState.constructoraId     = null;
   wizardState.constructoraNombre = null;
-  wizardState.regionId          = null;
-  wizardState.regionLabel       = null;
-  wizardState.currentStep       = 1;
+  wizardState.regionId           = null;
+  wizardState.regionLabel        = null;
+  wizardState.currentStep        = 1;
 
   renderWizardStep(1);
   updateStepIndicator(1);
   clearWizardBreadcrumb();
+
+  if (typeof resetFuentes === 'function') resetFuentes();
 }
 
 function renderWizardStep(step) {
-  // Ocultar todos los steps
   document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(`wizard-step-${step}`);
   if (target) target.classList.add('active');
@@ -81,7 +82,6 @@ function addBreadcrumbChip(icon, text) {
   chip.className = 'breadcrumb-chip';
   chip.innerHTML = `<span class="bc-icon">${icon}</span><span>${text}</span>`;
   el.appendChild(chip);
-  // Separador
   if (el.children.length > 1) {
     const sep = document.createElement('span');
     sep.className = 'bc-sep';
@@ -94,10 +94,12 @@ function addBreadcrumbChip(icon, text) {
 //  PASO 1 — CONSTRUCTORA EJECUTORA
 // ================================================================
 
+// CAMBIO 2 — se elimina el bloque "if (res.ok)" que cortaba el flujo
+// antes de guardar wizardState. El resto es idéntico al original.
 async function submitConstructora() {
-  const nombre      = document.getElementById('c-nombre').value.trim();
-  const rfc         = document.getElementById('c-rfc').value.trim();
-  const tipo        = document.getElementById('c-tipo').value;
+  const nombre = document.getElementById('c-nombre').value.trim();
+  const rfc    = document.getElementById('c-rfc').value.trim();
+  const tipo   = document.getElementById('c-tipo').value;
 
   if (!nombre || !rfc || !tipo) {
     showToast("Todos los campos son obligatorios", "error");
@@ -108,21 +110,15 @@ async function submitConstructora() {
   setBtnLoading(btn, true);
 
   try {
-    const res = await API.post('/api/constructoras', { 
+    const res = await API.post('/api/constructoras', {
       nombre: nombre.trim(),
-      rfc: rfc.trim(),
-      tipo: tipo   
+      rfc:    rfc.trim(),
+      tipo:   tipo,
     });
-
-    if (res.ok) {
-      showToast("Constructora registrada con éxito", "success");
-      // Limpiar formulario o cerrar modal
-    }
 
     wizardState.constructoraId     = res.data.id;
     wizardState.constructoraNombre = nombre;
 
-    // Mostrar confirmación en la pantalla
     document.getElementById('step1-confirm').innerHTML = `
       <div class="confirm-banner">
         <span class="confirm-icon">✓</span>
@@ -132,7 +128,6 @@ async function submitConstructora() {
         </div>
       </div>`;
 
-    // Esperar 800ms para que el usuario vea la confirmación
     await delay(800);
     addBreadcrumbChip('🏢', nombre);
     renderWizardStep(2);
@@ -150,6 +145,8 @@ async function submitConstructora() {
 //  PASO 2 — REGIÓN / COMUNIDAD
 // ================================================================
 
+// CAMBIO 3 — se elimina la llamada a initStep3() (función que se
+// borra) y se mueve aquí el resumen de pasos anteriores.
 async function submitRegion() {
   const comunidad = document.getElementById('r-comunidad').value.trim();
   const barrio    = document.getElementById('r-barrio').value.trim();
@@ -181,8 +178,22 @@ async function submitRegion() {
     await delay(800);
     addBreadcrumbChip('📍', `${comunidad} / ${barrio}`);
 
-    // Cargar supervisores disponibles en el step 3
     await loadSupervisoresSelect();
+
+    // Poblar el resumen de pasos anteriores en el Paso 3
+    const summaryEl = document.getElementById('obra-prev-summary');
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div class="prev-summary-row">
+          <span class="prev-label">🏢 Constructora</span>
+          <span class="prev-val">${wizardState.constructoraNombre} <code>${wizardState.constructoraId}</code></span>
+        </div>
+        <div class="prev-summary-row">
+          <span class="prev-label">📍 Región</span>
+          <span class="prev-val">${comunidad} — ${barrio} <code>${res.data.id}</code></span>
+        </div>`;
+    }
+
     renderWizardStep(3);
     showToast(`Región registrada con ID ${res.data.id}`);
 
@@ -193,7 +204,6 @@ async function submitRegion() {
   }
 }
 
-// Volver al paso anterior sin perder datos
 function goBackStep(step) {
   renderWizardStep(step);
 }
@@ -216,43 +226,8 @@ async function loadSupervisoresSelect() {
   }
 }
 
-async function loadFuentesCheckboxes() {
-  const grid = document.getElementById('fuentes-grid-step3');
-  if (!grid) return;
-  try {
-    const res = await API.get('/api/fuentes');
-    const fuentes = res.data || [];
-    const nivelClass = { FEDERAL: 'federal', ESTATAL: 'estatal', MUNICIPAL: 'municipal' };
-    grid.innerHTML = fuentes.map(f => `
-      <label class="fuente-checkbox">
-        <input type="checkbox" value="${f.id}" class="fuente-check"/>
-        <span class="fuente-label">
-          <span class="fuente-tag ${nivelClass[f.nivel] || ''}">${f.nivel}</span>
-          ${f.programa}
-        </span>
-      </label>`).join('');
-  } catch {
-    grid.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem">Error al cargar fuentes.</p>';
-  }
-}
-
-// Llamar al abrir el paso 3
-async function initStep3() {
-  await Promise.all([loadSupervisoresSelect(), loadFuentesCheckboxes()]);
-  // Mostrar el resumen de pasos anteriores
-  const summaryEl = document.getElementById('obra-prev-summary');
-  if (summaryEl) {
-    summaryEl.innerHTML = `
-      <div class="prev-summary-row">
-        <span class="prev-label">🏢 Constructora</span>
-        <span class="prev-val">${wizardState.constructoraNombre} <code>${wizardState.constructoraId}</code></span>
-      </div>
-      <div class="prev-summary-row">
-        <span class="prev-label">📍 Región</span>
-        <span class="prev-val">${wizardState.regionLabel} <code>${wizardState.regionId}</code></span>
-      </div>`;
-  }
-}
+// loadFuentesCheckboxes() — ELIMINADA (el HTML ya no tiene #fuentes-grid-step3)
+// initStep3()             — ELIMINADA (absorbida por submitRegion())
 
 async function submitObra(e) {
   e.preventDefault();
@@ -266,17 +241,19 @@ async function submitObra(e) {
     renderWizardStep(2); return;
   }
 
-  const nombre       = document.getElementById('obra-nombre').value.trim();
-  const etapa        = document.getElementById('obra-etapa').value;
-  const supervisorId = document.getElementById('obra-supervisor').value;
-  const fechaInicio  = document.getElementById('obra-fecha-inicio').value;
-  const fechaFin     = document.getElementById('obra-fecha-fin').value;
-  const presupuesto  = parseFloat(document.getElementById('obra-presupuesto').value || 0);
-  const descripcion  = document.getElementById('obra-desc').value.trim();
+  const nombre        = document.getElementById('obra-nombre').value.trim();
+  const etapa         = document.getElementById('obra-etapa').value;
+  const supervisorId  = document.getElementById('obra-supervisor').value;
+  const fechaInicio   = document.getElementById('obra-fecha-inicio').value;
+  const fechaFin      = document.getElementById('obra-fecha-fin').value;
+  const presupuesto   = parseFloat(document.getElementById('obra-presupuesto').value || 0);
+  const descripcion   = document.getElementById('obra-desc').value.trim();
   const beneficiarios = document.getElementById('obra-beneficiarios').value.trim();
-  const fuentes      = Array.from(
-    document.querySelectorAll('.fuente-check:checked')
-  ).map(c => c.value);
+
+  // CAMBIO 4 — ya no lee checkboxes .fuente-check:checked porque ese
+  // elemento no existe. Lee el array en memoria que gestiona
+  // agregarFuente() desde el <script> inline del HTML.
+  const fuentes = typeof getFuentesIds === 'function' ? getFuentesIds() : [];
 
   if (!nombre || !supervisorId || !fechaInicio || !fechaFin || !beneficiarios) {
     showToast('Completa todos los campos obligatorios marcados con *.', 'error');
@@ -299,8 +276,8 @@ async function submitObra(e) {
       etapa:           parseInt(etapa),
       fechaInicio,
       fechaFin,
-      descripcion:     descripcion  || 'Sin descripción.',
-      beneficiarios:   beneficiarios,
+      descripcion:     descripcion || 'Sin descripción.',
+      beneficiarios,
       presupuesto,
       fuentes,
     });
@@ -308,7 +285,6 @@ async function submitObra(e) {
     const obraId     = res.data.id;
     const expediente = res.data.expediente;
 
-    // Éxito — mostrar resumen final
     document.getElementById('step3-confirm').innerHTML = `
       <div class="confirm-banner success-banner">
         <span class="confirm-icon">🏗️</span>
@@ -326,7 +302,6 @@ async function submitObra(e) {
     showToast(`Obra "${nombre}" registrada · ${expediente}`);
 
     await delay(1200);
-    // Reiniciar wizard para un nuevo registro
     e.target.reset();
     updateObraCountBadge();
     initWizard();
@@ -340,7 +315,7 @@ async function submitObra(e) {
 }
 
 // ================================================================
-//  OBRAS LIST (tabla de gestión)
+//  OBRAS LIST
 // ================================================================
 
 async function renderObrasTable(filter = '') {
@@ -416,7 +391,7 @@ async function deleteObraConfirm(id, nombre) {
 function filterObras(val) { renderObrasTable(val); }
 
 // ================================================================
-//  CONSTRUCTORAS LIST (panel catálogo)
+//  CONSTRUCTORAS LIST
 // ================================================================
 
 async function renderConstructorasList() {
@@ -479,7 +454,6 @@ function updateObraCountBadge(count) {
     el.textContent = `${count} obra${count !== 1 ? 's' : ''} registrada${count !== 1 ? 's' : ''}`;
     return;
   }
-  // Actualizar conteo desde API
   fetchObras().then(obras => {
     el.textContent = `${obras.length} obra${obras.length !== 1 ? 's' : ''} registrada${obras.length !== 1 ? 's' : ''}`;
   }).catch(() => {});
@@ -515,8 +489,8 @@ function showToast(msg, type = 'success') {
     toast.className = 'success-toast';
     document.body.appendChild(toast);
   }
-  const iconColor = type === 'error' ? '#ef4444' : 'var(--accent-supervisor)';
-  const icon      = type === 'error' ? '✕' : '✓';
+  const iconColor   = type === 'error' ? '#ef4444' : 'var(--accent-supervisor)';
+  const icon        = type === 'error' ? '✕' : '✓';
   const borderColor = type === 'error' ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)';
   toast.innerHTML = `<span class="toast-icon" style="color:${iconColor}">${icon}</span><span class="toast-msg">${msg}</span>`;
   toast.style.borderColor = borderColor;
