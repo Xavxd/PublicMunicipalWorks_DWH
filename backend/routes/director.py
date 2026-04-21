@@ -360,7 +360,7 @@ def get_obras(current_user):
                     TRIM(c.tipo_ejecutor)     AS "constructoraTipo",
                     o.fecha_inicio            AS "fechaInicio",
                     o.fecha_final             AS "fechaFin",
-                    COALESCE(o.status, 'activa') AS status
+                    'activa' AS status
                 FROM public.obra o
                 LEFT JOIN public.constructora c
                     ON TRIM(c.id_constructora) = TRIM(o.id_constructora)
