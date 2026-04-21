@@ -8,6 +8,162 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="../css/main.css"/>
   <link rel="stylesheet" href="../css/director.css"/>
+
+  <style>
+    /* ── SECCIÓN FUENTES — estilos inline para no tocar director.css ── */
+
+    .fuentes-builder {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Fila de captura */
+    .fuente-input-row {
+      display: grid;
+      grid-template-columns: 180px 1fr auto;
+      gap: 10px;
+      align-items: end;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+    }
+
+    .fuente-input-row .form-group { margin: 0; }
+
+    .btn-agregar-fuente {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 18px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.35);
+      border-radius: var(--radius-sm);
+      color: var(--accent-director);
+      font-family: var(--font-body);
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      align-self: flex-end;
+    }
+    .btn-agregar-fuente:hover {
+      background: rgba(59,130,246,0.22);
+      transform: translateY(-1px);
+    }
+    .btn-agregar-fuente svg { width: 16px; height: 16px; }
+
+    /* Lista de fuentes ya agregadas */
+    .fuentes-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 20px;
+    }
+
+    .fuente-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      animation: fade-up 0.25s ease;
+    }
+    .fuente-chip.reused {
+      border-color: rgba(245,158,11,0.35);
+      background: rgba(245,158,11,0.05);
+    }
+    .fuente-chip-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .fuente-nivel-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .fuente-nivel-badge.federal   { background: rgba(59,130,246,0.15);  color: var(--accent-director); }
+    .fuente-nivel-badge.estatal   { background: rgba(245,158,11,0.15);  color: var(--accent-proyectista); }
+    .fuente-nivel-badge.municipal { background: rgba(16,185,129,0.15);  color: var(--accent-supervisor); }
+    .fuente-nivel-badge.otro      { background: rgba(139,92,246,0.15);  color: var(--accent-secretaria); }
+
+    .fuente-chip-programa {
+      font-size: 0.83rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .fuente-chip-id {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      flex-shrink: 0;
+    }
+    .fuente-chip-reused-tag {
+      font-size: 0.68rem;
+      color: var(--accent-proyectista);
+      background: rgba(245,158,11,0.12);
+      border-radius: 4px;
+      padding: 2px 7px;
+    }
+    .btn-remove-fuente {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-remove-fuente:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+    .fuentes-empty-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 1rem;
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Spinner inline en botón agregar */
+    .btn-agregar-fuente.loading .btn-agregar-text { opacity: 0; }
+    .btn-agregar-fuente .btn-agregar-spin {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(59,130,246,0.3);
+      border-top-color: var(--accent-director);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%,-50%);
+    }
+    .btn-agregar-fuente { position: relative; }
+    .btn-agregar-fuente.loading .btn-agregar-spin { display: block; }
+
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    @media (max-width: 640px) {
+      .fuente-input-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 <div class="cursor" id="cursor"></div>
@@ -139,13 +295,10 @@
             </div>
           </div>
 
-          <!-- Zona de confirmación -->
           <div id="step1-confirm"></div>
 
           <div class="form-actions">
-            <div class="actions-note">
-              Los datos se enviarán a la base de datos al presionar "Continuar"
-            </div>
+            <div class="actions-note">Los datos se enviarán a la base de datos al presionar "Continuar"</div>
             <button type="button" id="btn-step1" class="btn-primary btn-wizard"
                     onclick="submitConstructora()">
               <span class="btn-text-inner">Registrar y Continuar</span>
@@ -205,11 +358,9 @@
               </svg>
               Regresar
             </button>
-            <div class="actions-note">
-              Los datos de región se guardarán al continuar
-            </div>
+            <div class="actions-note">Los datos de región se guardarán al continuar</div>
             <button type="button" id="btn-step2" class="btn-primary btn-wizard"
-                    onclick="submitRegion(); initStep3();">
+                    onclick="submitRegion()">
               <span class="btn-text-inner">Registrar y Continuar</span>
               <span class="btn-loader-inner"></span>
               <svg class="btn-arrow" viewBox="0 0 20 20" fill="none">
@@ -225,8 +376,10 @@
         <form id="form-obra" onsubmit="submitObra(event)">
 
           <!-- Resumen de pasos anteriores -->
-          <div class="prev-steps-summary card" id="obra-prev-summary" style="margin-bottom:1.25rem;padding:1.25rem 1.5rem;"></div>
+          <div class="prev-steps-summary card" id="obra-prev-summary"
+               style="margin-bottom:1.25rem;padding:1.25rem 1.5rem;"></div>
 
+          <!-- Datos principales de la obra -->
           <div class="card">
             <div class="card-title">
               <span class="step-badge">03</span>
@@ -274,15 +427,64 @@
             </div>
           </div>
 
-          <!-- Fuentes de financiamiento -->
+          <!-- ════════════════════════════════════════════════════
+               FUENTES DE FINANCIAMIENTO
+               El director registra n fuentes presupuestarias.
+               Cada una se persiste en Supabase al pulsar "+".
+               El ID es determinista: misma fuente = mismo ID → sin duplicados.
+               ════════════════════════════════════════════════════ -->
           <div class="card">
             <div class="card-title">Fuentes de Financiamiento</div>
-            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.25rem">
-              Selecciona todas las fuentes que financian esta obra.
-              Una obra puede tener múltiples fuentes.
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.5rem">
+              Agrega las fuentes que financian esta obra. Puedes agregar tantas como sean necesarias.
+              Si una fuente ya existe en el sistema, el registro se reutilizará automáticamente.
             </p>
-            <div class="fuentes-grid" id="fuentes-grid-step3">
-              <div class="loading-inline">Cargando fuentes…</div>
+
+            <div class="fuentes-builder">
+
+              <!-- Fila de captura -->
+              <div class="fuente-input-row">
+                <div class="form-group">
+                  <label class="form-label">Nivel *</label>
+                  <select class="form-select" id="fuente-nivel"
+                          onchange="this.value=this.value.toUpperCase()">
+                    <option value="">Seleccionar…</option>
+                    <option value="FEDERAL">FEDERAL</option>
+                    <option value="ESTATAL">ESTATAL</option>
+                    <option value="MUNICIPAL">MUNICIPAL</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Programa / Nombre de la Fuente *</label>
+                  <input type="text" class="form-input" id="fuente-programa"
+                         placeholder="Ej. FONDO DE INFRAESTRUCTURA SOCIAL MUNICIPAL"
+                         style="padding-left:14px;text-transform:uppercase"
+                         oninput="this.value=this.value.toUpperCase()"
+                         onkeydown="if(event.key==='Enter'){event.preventDefault();agregarFuente();}"/>
+                </div>
+
+                <button type="button" id="btn-agregar-fuente"
+                        class="btn-agregar-fuente"
+                        onclick="agregarFuente()">
+                  <span class="btn-agregar-text">
+                    <svg viewBox="0 0 20 20" fill="none">
+                      <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Agregar
+                  </span>
+                  <span class="btn-agregar-spin"></span>
+                </button>
+              </div>
+
+              <!-- Lista de fuentes ya agregadas -->
+              <div class="fuentes-lista" id="fuentes-lista">
+                <div class="fuentes-empty-note" id="fuentes-empty">
+                  Aún no se ha agregado ninguna fuente. Usa el formulario de arriba.
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -382,16 +584,18 @@
     </div>
 
     <!-- ============================================================
-         PANEL: FUENTES PRESUPUESTARIAS
+         PANEL: FUENTES PRESUPUESTARIAS (consulta global)
          ============================================================ -->
     <div class="panel" id="panel-fuentes">
       <div class="panel-header">
         <div>
           <h1 class="page-title">Fuentes Presupuestarias</h1>
-          <p class="page-subtitle">Catálogo de fuentes de financiamiento disponibles para las obras públicas.</p>
+          <p class="page-subtitle">Catálogo completo de fuentes de financiamiento registradas en el sistema.</p>
         </div>
       </div>
-      <div class="fuentes-catalog" id="fuentes-catalog"></div>
+      <div class="fuentes-catalog" id="fuentes-catalog">
+        <div class="loading-inline">Cargando…</div>
+      </div>
     </div>
 
   </main>
@@ -400,5 +604,154 @@
 <script src="../js/api_client.js"></script>
 <script src="../main.js"></script>
 <script src="director.js"></script>
+
+<!-- ════════════════════════════════════════════════════════════
+     LÓGICA DE FUENTES — inline para no depender del orden de carga
+     de director.js. Usa las funciones globales de api_client.js.
+     ════════════════════════════════════════════════════════════ -->
+<script>
+/**
+ * Estado en memoria de las fuentes que el director ha agregado
+ * en la sesión actual del Paso 3.
+ * Cada entrada: { id, nivel, programa, reused }
+ */
+const fuentesAgregadas = [];
+
+/**
+ * agregarFuente()
+ * 1. Lee nivel + programa del formulario (ya en MAYÚSCULAS por oninput).
+ * 2. Llama POST /api/fuentes → backend genera ID determinista.
+ * 3. Si el backend responde reused:true → la fuente ya existía, se reutiliza.
+ * 4. Evita duplicados en la lista local (mismo ID no se agrega dos veces).
+ * 5. Renderiza el chip en la lista.
+ */
+async function agregarFuente() {
+  const nivelEl    = document.getElementById('fuente-nivel');
+  const programaEl = document.getElementById('fuente-programa');
+  const btn        = document.getElementById('btn-agregar-fuente');
+
+  const nivel    = (nivelEl.value   || '').toUpperCase().trim();
+  const programa = (programaEl.value || '').toUpperCase().trim();
+
+  if (!nivel) {
+    showToast('Selecciona el nivel de la fuente (Federal, Estatal, Municipal…)', 'error');
+    nivelEl.focus();
+    return;
+  }
+  if (!programa) {
+    showToast('Escribe el nombre del programa o fuente presupuestaria.', 'error');
+    programaEl.focus();
+    return;
+  }
+
+  // Activar spinner
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const res = await API.post('/api/fuentes', { nivel, programa });
+    const data = res.data;
+
+    // Evitar duplicado en lista local (mismo id ya en fuentesAgregadas)
+    if (fuentesAgregadas.some(f => f.id === data.id)) {
+      showToast(
+        `La fuente "${programa}" ya está en la lista de esta obra.`,
+        'error'
+      );
+      return;
+    }
+
+    // Agregar al estado local
+    fuentesAgregadas.push({
+      id:      data.id,
+      nivel:   data.nivel,
+      programa: data.programa,
+      reused:  data.reused || false,
+    });
+
+    renderFuentesLista();
+
+    // Limpiar campos
+    nivelEl.value    = '';
+    programaEl.value = '';
+    programaEl.focus();
+
+    const msg = data.reused
+      ? `Fuente reutilizada: "${programa}" (ya existía en el sistema).`
+      : `Fuente registrada: "${programa}" → ID ${data.id}`;
+    showToast(msg);
+
+  } catch (err) {
+    handleApiError(err);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+/**
+ * renderFuentesLista()
+ * Dibuja los chips de fuentes en #fuentes-lista.
+ */
+function renderFuentesLista() {
+  const lista   = document.getElementById('fuentes-lista');
+  const empty   = document.getElementById('fuentes-empty');
+
+  if (!fuentesAgregadas.length) {
+    lista.innerHTML = '';
+    lista.appendChild(empty);
+    return;
+  }
+
+  // Eliminar el mensaje vacío si existe
+  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+
+  lista.innerHTML = fuentesAgregadas.map((f, idx) => `
+    <div class="fuente-chip ${f.reused ? 'reused' : ''}" id="fchip-${idx}">
+      <div class="fuente-chip-left">
+        <span class="fuente-nivel-badge ${f.nivel.toLowerCase()}">${f.nivel}</span>
+        <span class="fuente-chip-programa">${f.programa}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="fuente-chip-id">${f.id}</span>
+        ${f.reused ? '<span class="fuente-chip-reused-tag">Reutilizada</span>' : ''}
+        <button class="btn-remove-fuente" onclick="quitarFuente(${idx})"
+                title="Quitar de esta obra">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/**
+ * quitarFuente(idx)
+ * Elimina la fuente de la lista local (NO la borra de la BD).
+ */
+function quitarFuente(idx) {
+  fuentesAgregadas.splice(idx, 1);
+  renderFuentesLista();
+}
+
+/**
+ * getFuentesIds()
+ * Retorna el array de IDs para incluirlo en el body de submitObra().
+ * director.js ya lo llama así: body.fuentes = getFuentesIds()
+ */
+function getFuentesIds() {
+  return fuentesAgregadas.map(f => f.id);
+}
+
+/**
+ * resetFuentes()
+ * Limpia la lista al reiniciar el wizard.
+ * director.js la llama desde initWizard().
+ */
+function resetFuentes() {
+  fuentesAgregadas.length = 0;
+  renderFuentesLista();
+  document.getElementById('fuente-nivel').value    = '';
+  document.getElementById('fuente-programa').value = '';
+}
+</script>
+
 </body>
 </html>
