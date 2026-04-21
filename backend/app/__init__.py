@@ -15,9 +15,11 @@ def create_app() -> Flask:
 
     from routes.director    import director_bp
     from routes.supervisor  import supervisor_bp
+    from routes.secretaria  import secretaria_bp
 
     app.register_blueprint(director_bp)
-    app.register_blueprint(supervisor_bp)
+    app.register_blueprint(supervisor_bp)\
+    app.register_blueprint(secretaria_bp)
 
 
     @app.route("/api/health")
