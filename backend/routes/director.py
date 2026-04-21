@@ -590,7 +590,7 @@ def get_obra(obra_id, current_user):
                     TRIM(r.barrio)            AS "regionBarrio",
                     TRIM(o.codigo_supervisor) AS "supervisorId",
                     COALESCE(po.presupuesto_total, 0) AS presupuesto,
-                    COALESCE(o.status, 'activa')      AS status
+                    'activa' AS status
                 FROM public.obra o
                 LEFT JOIN public.constructora c
                     ON TRIM(c.id_constructora) = TRIM(o.id_constructora)
