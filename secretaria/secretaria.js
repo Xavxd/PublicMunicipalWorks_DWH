@@ -15,12 +15,11 @@ document.querySelectorAll('.user-name').forEach(el =>
 );
 document.documentElement.style.setProperty('--accent', '#8b5cf6');
 
-// ── HTTP CLIENT (autocontenido, igual que director.js) ───────
 const API_BASE = (() => {
   const h = window.location.hostname;
   return (h === 'localhost' || h === '127.0.0.1')
     ? 'http://localhost:5000'
-    : (window.BACKEND_URL || 'https://tu-backend.onrender.com');
+    : 'https://obraspublicas-backend-production.up.railway.app';
 })();
 
 const http = {
