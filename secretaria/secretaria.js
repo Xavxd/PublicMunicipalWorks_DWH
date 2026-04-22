@@ -1,3 +1,18 @@
+// ================================================================
+//  SECRETARÍA — secretaria.js
+//  Campos alineados con la BD real (bd_obras_publicas):
+//
+//  permisos:         id_oficio, nombre_instancia,
+//                    oficio_acreditacion, id_obra
+//  acta_entrega:     id_acta, acta_entrega,
+//                    fecha_expedicion, id_obra
+//  firmantes:        id_firmante, nombre, apellido_paterno,
+//                    apellido_materno, cargo, id_acta
+//  opcion_seleccion: id_participante, constructora,
+//                    aprobado, razones_decision, id_obra
+//                    (sin rfc, sin monto)
+// ================================================================
+
 const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
 if (!user || user.role !== 'secretaria') {
   window.location.href = '../index.html';
@@ -7,19 +22,20 @@ document.querySelectorAll('.user-name').forEach(el =>
 );
 document.documentElement.style.setProperty('--accent', '#8b5cf6');
 
+// ── Cliente HTTP propio (Railway en producción, localhost en dev) ─
 const SEC_API_BASE = (() => {
   const h = window.location.hostname;
   return (h === 'localhost' || h === '127.0.0.1')
     ? 'http://localhost:5000'
     : 'https://obraspublicas-backend-production.up.railway.app';
 })();
-   
+
 const http = {
   async _req(method, path, body = null) {
     const opts = {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':    'application/json',
         'X-User-Role':     user?.role     || 'secretaria',
         'X-User-Id':       user?.id       || 'SEC_DEV',
         'X-User-Nombre':   user?.nombre   || '',
@@ -47,17 +63,17 @@ const http = {
   delete: path       => http._req('DELETE', path),
 };
 
-// ── ESTADO GLOBAL ────────────────────────────────────────────
-let OBRAS      = [];   // cargadas desde la BD
-let PERMISOS   = [];
-let ACTAS      = [];
-let CONCURSOS  = [];
+// ── ESTADO GLOBAL ────────────────────────────────────────────────
+let OBRAS     = [];
+let PERMISOS  = [];
+let ACTAS     = [];
+let CONCURSOS = [];
 
-// ══════════════════════════════════════════════════════════════
-//  INIT — carga inicial de todo
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════
 async function init() {
-  await loadObras();           // primero obras — las demás dependen de esto
+  await loadObras();
   await Promise.all([
     loadPermisos(),
     loadActas(),
@@ -69,9 +85,9 @@ async function init() {
   updateStats();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  OBRAS — cargadas desde la BD
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  OBRAS
+// ════════════════════════════════════════════════════════════════
 async function loadObras() {
   try {
     const res = await http.get('/api/obras');
@@ -88,26 +104,22 @@ async function loadObras() {
 }
 
 function populateAllObraSelects() {
-  // IDs de todos los selects de obras en la página
   ['perm-obra', 'acta-obra', 'conc-obra'].forEach(selId => {
     const sel     = document.getElementById(selId);
     const loading = document.getElementById(`${selId}-loading`);
     if (!sel) return;
-
     sel.innerHTML = '<option value="">— Seleccionar obra —</option>' +
       OBRAS.map(o =>
         `<option value="${o.id}">${o.id.trim()} · ${o.nombre}</option>`
       ).join('');
-
-    // Ocultar spinner, mostrar select
     if (loading) loading.style.display = 'none';
     sel.style.display = 'block';
   });
 }
 
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  TABS
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 function switchTab(tabId) {
   document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -118,18 +130,20 @@ document.querySelectorAll('.doc-tab').forEach(btn =>
   btn.addEventListener('click', () => switchTab(btn.dataset.tab))
 );
 
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  STATS
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 function updateStats() {
   document.getElementById('stat-permisos').textContent  = PERMISOS.length;
   document.getElementById('stat-actas').textContent     = ACTAS.length;
   document.getElementById('stat-concursos').textContent = CONCURSOS.length;
 }
 
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  PERMISOS
-// ══════════════════════════════════════════════════════════════
+//  POST body → { obraId, instancia, oficio }
+//  GET devuelve → { id, obraId, obraNombre, instancia, oficio }
+// ════════════════════════════════════════════════════════════════
 const INSTANCIAS_KNOWN = ['CFE','CONAGUA','SCT','SEMARNAT','INAH','IMSS','Municipio','Otra'];
 const INST_ICONS = {
   CFE:'⚡', CONAGUA:'💧', SCT:'🛤️', SEMARNAT:'🌿',
@@ -167,28 +181,27 @@ async function loadPermisos() {
 }
 
 async function submitPermiso() {
-  const obraId   = document.getElementById('perm-obra').value;
-  const checked  = document.querySelector('input[name="instancia_chip"]:checked');
+  const obraId  = document.getElementById('perm-obra').value;
+  const checked = document.querySelector('input[name="instancia_chip"]:checked');
   const instancia = checked
     ? (checked.value === 'Otra'
         ? document.getElementById('otra-instancia')?.value?.trim()
         : checked.value)
     : '';
+  // Campo oficio_acreditacion TEXT en BD
   const oficio = document.getElementById('perm-oficio').value.trim();
-  const desc   = document.getElementById('perm-desc').value.trim();
-  const fecha  = document.getElementById('perm-fecha').value;
 
   if (!obraId || !instancia || !oficio) {
     showToast('Completa los campos obligatorios: Obra, Instancia y Oficio.', 'error');
     return;
   }
 
-  const btn = document.getElementById('form-permisos')
-    .querySelector('.btn-primary');
+  const btn = document.getElementById('form-permisos').querySelector('.btn-primary');
   setBtnLoading(btn, true);
 
   try {
-    await http.post('/api/permisos', { obraId, instancia, oficio, desc, fecha });
+    // Body alineado con secretaria.py: { obraId, instancia, oficio }
+    await http.post('/api/permisos', { obraId, instancia, oficio });
     document.getElementById('form-permisos').reset();
     document.querySelectorAll('.instancia-chip input').forEach(r => r.checked = false);
     const w = document.getElementById('otra-instancia-wrap');
@@ -208,7 +221,8 @@ function renderPermisosList(filter = '') {
   if (!list) return;
   const q = filter.toLowerCase();
   const items = PERMISOS.filter(p =>
-    !q || p.oficio?.toLowerCase().includes(q) ||
+    !q ||
+    p.oficio?.toLowerCase().includes(q)    ||
     p.instancia?.toLowerCase().includes(q) ||
     p.obraNombre?.toLowerCase().includes(q)
   );
@@ -223,19 +237,20 @@ function renderPermisosList(filter = '') {
     <div class="doc-card" style="animation-delay:${i * 0.04}s">
       <div class="doc-card-icon">${INST_ICONS[p.instancia] || '📋'}</div>
       <div class="doc-card-body">
-        <div class="doc-card-num">${p.id} · ${p.fecha || '—'}</div>
+        <div class="doc-card-num">${p.id}</div>
         <div class="doc-card-title">${p.oficio}</div>
         <div class="doc-card-meta">
           <span>🏢 ${p.instancia}</span>
           <span>📍 ${p.obraNombre || p.obraId}</span>
         </div>
-        ${p.desc ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:5px">${p.desc}</div>` : ''}
       </div>
       <div class="doc-card-actions">
         <span class="badge-status badge-active">Registrado</span>
-        <button class="btn-icon-sm" onclick="deletePermisoItem('${p.id}')" title="Eliminar">
+        <button class="btn-icon-sm" onclick="deletePermisoItem('${p.id}')"
+                title="Eliminar">
           <svg viewBox="0 0 20 20" fill="none">
-            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor"
+                  stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
@@ -258,9 +273,16 @@ document.getElementById('search-permisos')?.addEventListener('input', e =>
   renderPermisosList(e.target.value.trim())
 );
 
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  ACTAS DE ENTREGA
-// ══════════════════════════════════════════════════════════════
+//  POST body → { obraId, fecha, contenido?, firmantes[] }
+//  GET devuelve → { id, obraId, obraNombre, contenido,
+//                   fecha, firmantes[] }
+//
+//  Nota: se eliminaron los campos numero_acta y obs
+//        porque no existen en la BD real.
+//        Solo quedan: obra + fecha + firmantes.
+// ════════════════════════════════════════════════════════════════
 const FIRMANTE_ROLES = [
   { key: 'delegado',     cargo: 'Delegado / Rep. de Beneficiarios' },
   { key: 'constructora', cargo: 'Representante de la Constructora'  },
@@ -297,11 +319,10 @@ async function loadActas() {
 }
 
 async function submitActa() {
-  const obraId  = document.getElementById('acta-obra').value;
-  const fecha   = document.getElementById('acta-fecha').value;
-  const numActa = document.getElementById('acta-numero').value.trim();
-  const obs     = document.getElementById('acta-obs').value.trim();
+  const obraId = document.getElementById('acta-obra').value;
+  const fecha  = document.getElementById('acta-fecha').value;
 
+  // Validar solo obra y fecha — son los únicos campos obligatorios en la BD
   if (!obraId || !fecha) {
     showToast('Selecciona la obra y la fecha de expedición.', 'error');
     return;
@@ -324,7 +345,10 @@ async function submitActa() {
   setBtnLoading(btn, true);
 
   try {
-    await http.post('/api/actas', { obraId, numeroActa: numActa, fecha, obs, firmantes });
+    // Body alineado con secretaria.py:
+    // { obraId, fecha, contenido?, firmantes[] }
+    // Sin numeroActa ni obs — no existen en la BD.
+    await http.post('/api/actas', { obraId, fecha, firmantes });
     document.getElementById('form-acta').reset();
     buildFirmantesForm();
     await loadActas();
@@ -342,7 +366,8 @@ function renderActasList(filter = '') {
   if (!list) return;
   const q = filter.toLowerCase();
   const items = ACTAS.filter(a =>
-    !q || a.id?.toLowerCase().includes(q) ||
+    !q ||
+    a.id?.toLowerCase().includes(q) ||
     a.obraNombre?.toLowerCase().includes(q)
   );
   if (!items.length) {
@@ -356,11 +381,10 @@ function renderActasList(filter = '') {
     <div class="doc-card" style="animation-delay:${i * 0.04}s">
       <div class="doc-card-icon">📜</div>
       <div class="doc-card-body">
-        <div class="doc-card-num">${a.id} · ${a.fecha}</div>
+        <div class="doc-card-num">${a.id} · ${a.fecha || '—'}</div>
         <div class="doc-card-title">${a.obraNombre || a.obraId}</div>
         <div class="doc-card-meta">
           <span>✍️ ${(a.firmantes || []).filter(f => f.nombre).length} firmantes</span>
-          ${a.obs ? `<span>📝 ${a.obs.slice(0, 40)}…</span>` : ''}
         </div>
         <div class="acta-preview">
           <div class="acta-preview-title">Firmantes registrados</div>
@@ -377,9 +401,11 @@ function renderActasList(filter = '') {
       </div>
       <div class="doc-card-actions">
         <span class="badge-status badge-closed">Cerrada</span>
-        <button class="btn-icon-sm" onclick="deleteActaItem('${a.id}')" title="Eliminar">
+        <button class="btn-icon-sm" onclick="deleteActaItem('${a.id}')"
+                title="Eliminar">
           <svg viewBox="0 0 20 20" fill="none">
-            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor"
+                  stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
@@ -402,11 +428,14 @@ document.getElementById('search-actas')?.addEventListener('input', e =>
   renderActasList(e.target.value.trim())
 );
 
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  CONCURSO DE SELECCIÓN
-// ══════════════════════════════════════════════════════════════
+//  POST body → { obraId, constructora, razones, aprobado }
+//  GET devuelve → { id, obraId, obraNombre, constructora,
+//                   aprobado, razones }
+//  (sin rfc, sin monto — no existen en la BD real)
+// ════════════════════════════════════════════════════════════════
 
-// Mostrar/ocultar hint cuando marcan "Aprobada"
 document.querySelectorAll('input[name="conc_resultado"]').forEach(r =>
   r.addEventListener('change', () => {
     const hint = document.getElementById('conc-aprobada-hint');
@@ -414,28 +443,27 @@ document.querySelectorAll('input[name="conc_resultado"]').forEach(r =>
   })
 );
 
-// Cuando cambia la obra seleccionada: verificar si ya hay un aprobado
 async function onConcursoObraChange() {
   const obraId = document.getElementById('conc-obra')?.value;
   const aviso  = document.getElementById('conc-obra-aviso');
   if (!obraId || !aviso) return;
 
-  // Buscar en los concursos ya cargados si hay uno aprobado para esa obra
   const tieneGanador = CONCURSOS.some(
     c => c.obraId?.trim() === obraId.trim() && c.aprobado === true
   );
   if (tieneGanador) {
     aviso.style.display = 'flex';
     aviso.innerHTML = `
-      <svg viewBox="0 0 20 20" fill="none" style="width:14px;height:14px;flex-shrink:0;color:#f59e0b">
+      <svg viewBox="0 0 20 20" fill="none"
+           style="width:14px;height:14px;flex-shrink:0;color:#f59e0b">
         <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M10 7v4M10 13h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M10 7v4M10 13h.01" stroke="currentColor"
+              stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      Esta obra ya tiene una constructora aprobada. Solo puedes registrar participantes no aprobados.`;
-    // Forzar "No aprobada" y deshabilitar "Aprobada"
-    const radios = document.querySelectorAll('input[name="conc_resultado"]');
-    radios.forEach(r => {
-      if (r.value === 'true') { r.disabled = true; r.checked = false; }
+      Esta obra ya tiene una constructora aprobada.
+      Solo puedes registrar participantes no aprobados.`;
+    document.querySelectorAll('input[name="conc_resultado"]').forEach(r => {
+      if (r.value === 'true')  { r.disabled = true;  r.checked = false; }
       if (r.value === 'false') { r.checked = true; }
     });
   } else {
@@ -449,7 +477,6 @@ async function onConcursoObraChange() {
 function buildConcursoFilterSelect() {
   const sel = document.getElementById('conc-filter-obra');
   if (!sel) return;
-  // Mantener opción "Todas"
   sel.innerHTML = '<option value="">Todas las obras</option>' +
     OBRAS.map(o =>
       `<option value="${o.id}">${o.id.trim()} · ${o.nombre}</option>`
@@ -469,13 +496,16 @@ async function loadConcursos() {
 async function submitConcurso() {
   const obraId      = document.getElementById('conc-obra')?.value?.trim();
   const constructora = document.getElementById('conc-constructora')?.value?.trim();
-  const rfc         = document.getElementById('conc-rfc')?.value?.trim() || null;
-  const monto       = parseFloat(document.getElementById('conc-monto')?.value || 0) || null;
-  const aprobado    = document.querySelector('input[name="conc_resultado"]:checked')?.value === 'true';
-  const razones     = document.getElementById('conc-razones')?.value?.trim();
+  const aprobado    = document.querySelector(
+    'input[name="conc_resultado"]:checked'
+  )?.value === 'true';
+  const razones = document.getElementById('conc-razones')?.value?.trim();
 
   if (!obraId || !constructora || !razones) {
-    showToast('Completa los campos obligatorios: Obra, Constructora y Razones.', 'error');
+    showToast(
+      'Completa los campos obligatorios: Obra, Constructora y Razones.',
+      'error'
+    );
     return;
   }
 
@@ -483,17 +513,12 @@ async function submitConcurso() {
   setBtnLoading(btn, true);
 
   try {
-    await http.post('/api/concursos', {
-      obraId,
-      constructora,
-      rfc,
-      monto,
-      aprobado,
-      razones,
-    });
+    // Body alineado con secretaria.py:
+    // { obraId, constructora, razones, aprobado }
+    // Sin rfc, sin monto — no existen en la BD real.
+    await http.post('/api/concursos', { obraId, constructora, razones, aprobado });
 
     document.getElementById('form-concurso').reset();
-    // Re-habilitar radio aprobada por si estaba bloqueado
     document.querySelectorAll('input[name="conc_resultado"]').forEach(r => {
       r.disabled = false;
     });
@@ -503,7 +528,6 @@ async function submitConcurso() {
     buildConcursoFilterSelect();
     updateStats();
     showToast(`Participante "${constructora}" registrado correctamente.`);
-
   } catch (err) {
     showToast(err.message || 'Error al registrar el participante.', 'error');
   } finally {
@@ -514,7 +538,9 @@ async function submitConcurso() {
 function renderConcursosList() {
   const list       = document.getElementById('concursos-list');
   const filterObra = document.getElementById('conc-filter-obra')?.value?.trim();
-  const searchQ    = (document.getElementById('search-concursos')?.value || '').toLowerCase().trim();
+  const searchQ    = (
+    document.getElementById('search-concursos')?.value || ''
+  ).toLowerCase().trim();
   if (!list) return;
 
   let items = CONCURSOS;
@@ -539,19 +565,21 @@ function renderConcursosList() {
       <div class="doc-card-body">
         <div class="doc-card-num">${c.id} · ${c.obraNombre || c.obraId}</div>
         <div class="doc-card-title">${c.constructora}</div>
-        <div class="doc-card-meta">
-          ${c.rfc ? `<span>🪪 ${c.rfc}</span>` : ''}
-          ${c.monto ? `<span>💰 $${Number(c.monto).toLocaleString('es-MX')}</span>` : ''}
-        </div>
-        ${c.razones ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:5px">${c.razones.slice(0,80)}${c.razones.length > 80 ? '…' : ''}</div>` : ''}
+        ${c.razones
+          ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:5px">
+               ${c.razones.slice(0, 80)}${c.razones.length > 80 ? '…' : ''}
+             </div>`
+          : ''}
       </div>
       <div class="doc-card-actions">
         <span class="badge-status ${c.aprobado ? 'badge-ganador' : 'badge-no-aprobado'}">
           ${c.aprobado ? '✓ Aprobada' : 'No aprobada'}
         </span>
-        <button class="btn-icon-sm" onclick="deleteConcursoItem('${c.id}')" title="Eliminar">
+        <button class="btn-icon-sm"
+                onclick="deleteConcursoItem('${c.id}')" title="Eliminar">
           <svg viewBox="0 0 20 20" fill="none">
-            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor"
+                  stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
@@ -574,12 +602,12 @@ document.getElementById('search-concursos')?.addEventListener('input',
   () => renderConcursosList()
 );
 
-// ══════════════════════════════════════════════════════════════
-//  HELPERS UI
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  HELPERS UI  (sin cambios respecto a la versión original)
+// ════════════════════════════════════════════════════════════════
 function setBtnLoading(btn, loading) {
   if (!btn) return;
-  if (loading) { btn.classList.add('loading');  btn.disabled = true;  }
+  if (loading) { btn.classList.add('loading');   btn.disabled = true;  }
   else         { btn.classList.remove('loading'); btn.disabled = false; }
 }
 
@@ -591,7 +619,7 @@ function showToast(msg, type = 'success') {
     toast.className = 'success-toast';
     document.body.appendChild(toast);
   }
-  const isErr  = type === 'error';
+  const isErr = type === 'error';
   toast.innerHTML = `
     <span class="toast-icon" style="color:${isErr ? '#ef4444' : '#10b981'}">
       ${isErr ? '✕' : '✓'}
@@ -602,7 +630,7 @@ function showToast(msg, type = 'success') {
   setTimeout(() => toast.classList.remove('show'), 3800);
 }
 
-// ── Cursor personalizado ─────────────────────────────────────
+// Cursor personalizado
 const cursor   = document.getElementById('cursor');
 const follower = document.getElementById('cursor-follower');
 if (cursor && follower) {
@@ -619,5 +647,5 @@ if (cursor && follower) {
   loop();
 }
 
-// ── ARRANQUE ─────────────────────────────────────────────────
+// ── ARRANQUE ─────────────────────────────────────────────────────
 init();
