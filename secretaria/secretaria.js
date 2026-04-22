@@ -1,11 +1,3 @@
-// =============================================
-// SECRETARÍA — secretaria.js  v2.0
-// Tabs: Oficios de Permisos | Actas de Entrega | Concurso
-// Todas las obras vienen de la BD (GET /api/obras).
-// Permisos, Actas y Concursos se persisten vía backend.
-// =============================================
-
-// ── AUTH GUARD ───────────────────────────────────────────────
 const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
 if (!user || user.role !== 'secretaria') {
   window.location.href = '../index.html';
@@ -15,7 +7,7 @@ document.querySelectorAll('.user-name').forEach(el =>
 );
 document.documentElement.style.setProperty('--accent', '#8b5cf6');
 
-const API_BASE = (() => {
+const SEC_API_BASE = (() => {
   const h = window.location.hostname;
   return (h === 'localhost' || h === '127.0.0.1')
     ? 'http://localhost:5000'
@@ -37,7 +29,7 @@ const http = {
     if (body) opts.body = JSON.stringify(body);
     let res;
     try {
-      res = await fetch(`${API_BASE}${path}`, opts);
+      res = await fetch(`${SEC_API_BASE}${path}`, opts);
     } catch {
       throw new Error('No se pudo conectar con el servidor.');
     }
