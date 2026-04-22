@@ -13,7 +13,7 @@ const SEC_API_BASE = (() => {
     ? 'http://localhost:5000'
     : 'https://obraspublicas-backend-production.up.railway.app';
 })();
-
+   
 const http = {
   async _req(method, path, body = null) {
     const opts = {
