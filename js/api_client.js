@@ -1,18 +1,9 @@
-/**
- * js/api_client.js
- * Cliente HTTP centralizado para el backend de Obras Públicas.
- * Inyecta automáticamente los headers de autenticación
- * desde sessionStorage en cada petición.
- */
-
 const API_BASE = window.API_BASE || "https://obraspublicas-backend-production.up.railway.app";
 
-// ── Usuario actual ───────────────────────────────────────────────
 function getCurrentUser() {
   return JSON.parse(sessionStorage.getItem("op_user") || "null");
 }
 
-// ── Headers de autenticación ─────────────────────────────────────
 function authHeaders() {
   const u = getCurrentUser();
   if (!u) return { "Content-Type": "application/json" };
@@ -165,14 +156,6 @@ async function fetchSupervisores() {
 }
 
 
-// ================================================================
-//  CONCURSOS
-// ================================================================
-
-/**
- * Lista concursos (filtro opcional por obra).
- * Disponible para Director (lectura) y Secretaría (escritura).
- */
 async function fetchConcursos(obraId = null) {
   const qs = obraId ? `?obra=${encodeURIComponent(obraId)}` : "";
   const json = await API.get(`/api/concursos${qs}`);
@@ -187,23 +170,11 @@ async function createConcurso(data) {
 }
 
 
-// ================================================================
-//  FUENTES
-// ================================================================
-
-/**
- * Catálogo de fuentes presupuestarias.
- * @returns {Array}
- */
 async function fetchFuentes() {
   const json = await API.get("/api/fuentes");
   return json.data || [];
 }
 
-
-// ================================================================
-//  INFORMES (SUPERVISOR)
-// ================================================================
 
 async function fetchInformes(params = {}) {
   const qs = new URLSearchParams(
@@ -273,11 +244,6 @@ async function deletePermiso(id) {
   return await API.delete(`/api/permisos/${id}`);
 }
 
-
-// ================================================================
-//  ACTAS (SECRETARÍA)
-// ================================================================
-
 async function fetchActas(obraId = null) {
   const qs = obraId ? `?obra=${encodeURIComponent(obraId)}` : "";
   const json = await API.get(`/api/actas${qs}`);
@@ -293,14 +259,6 @@ async function deleteActa(id) {
 }
 
 
-// ================================================================
-//  UTILIDADES DE UI
-// ================================================================
-
-/**
- * Muestra un toast de error al usuario cuando el API falla.
- * Depende de que cada módulo exporte showToast().
- */
 function handleApiError(err, fallbackMsg = "Error al comunicarse con el servidor.") {
   console.error("[API ERROR]", err);
   if (typeof showToast === "function") {
