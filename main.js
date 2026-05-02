@@ -210,5 +210,6 @@ async function loginUser(username, password, role) {
 
   localStorage.setItem('user_id', result.data.id); 
   localStorage.setItem('user_role', role);
+  localStorage.setItem('user_name', result.data.nombre);
   return result;
 }
