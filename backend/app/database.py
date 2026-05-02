@@ -45,5 +45,12 @@ def init_db(app):
 
     app.config['SQLALCHEMY_DATABASE_URI'] = ShadowVault.get_url()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "pool_size": 10,           
+        "max_overflow": 2,        
+        "pool_recycle": 300,      
+        "pool_pre_ping": True      
+     }
     
     db.init_app(app)
