@@ -37,17 +37,26 @@ def create_app() -> Flask:
         password = data.get("password")
         role = data.get("role")
 
-        if username == "dir001" and password == "abc123":
+        user = Personal.query.filter_by(usuario=username, rol=role).first()
+
+        if user and user.contrasena == password: 
             return jsonify({
                 "success": True,
-                "message": "Bienvenido al sistema de Obras",
+                "message": f"Bienvenido al sistema, {user.nombre}",
                 "data": {
-                    "id_personal": "123", 
-                    "nombre": "Uriel"
+                    "id_personal": user.id_personal,
+                    "nombre": user.nombre,
+                    "rol": user.rol
                 }
             }), 200
         
-        return jsonify({"success": False, "message": "Credenciales incorrectas"}), 401
+        return jsonify({
+            "success": False, 
+            "message": "Usuario, contraseña o rol incorrectos"
+        }), 401
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
     @app.route("/api/health")
     def health():
