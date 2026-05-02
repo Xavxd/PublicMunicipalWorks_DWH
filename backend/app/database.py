@@ -1,8 +1,5 @@
 import os
 import base64
-import psycopg2
-import psycopg2.extras
-from contextlib import contextmanager
 from flask_sqlalchemy import SQLAlchemy
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
