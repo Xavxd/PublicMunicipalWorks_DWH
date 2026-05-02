@@ -128,6 +128,8 @@ function togglePass() {
 
 
 async function handleLogin() {
+  if (document.getElementById('login-submit').classList.contains('loading')) return;
+  
   const user = document.getElementById('modal-login-user').value.trim();
   const pass = document.getElementById('modal-login-pass').value;
   const errEl = document.getElementById('login-error');
