@@ -9,8 +9,8 @@ def login():
     try:
         data = request.get_json()
         user_input = data.get("username")
-        pass_input = data.get("password_hash")
-        role_portal = data.get("rol")
+        pass_input = data.get("password") 
+        role_portal = data.get("role")
 
         if not all([user_input, pass_input, role_portal]):
             return jsonify({"success": False, "message": "Datos incompletos."}), 400
