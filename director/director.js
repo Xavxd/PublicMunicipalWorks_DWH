@@ -11,7 +11,7 @@ if (userBadge && userName) {
 }
 
 function logout() {
-  sessionStorage.removeItem('op_user');
+  sessionStorage.removeItem('user_name');
   window.location.href = '../index.html';
 }
 
