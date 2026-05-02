@@ -3,7 +3,7 @@ from app.database import get_db
 from app.helpers import (
     ok, created, bad_request, not_found, db_error_response, require_fields,
 )
-from .auth import require_auth
+from .decorators import require_auth
 
 secretaria_bp = Blueprint("secretaria", __name__)
 
