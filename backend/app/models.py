@@ -20,5 +20,5 @@ class Personal(db.Model):
             "id": self.codigo_personal,
             "nombre": f"{self.nombre} {self.apellido_paterno}",
             "username": self.username,
-            "role": self.rol
+            "rol": self.rol
         }
