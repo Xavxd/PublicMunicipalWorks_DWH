@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import sys
 from dotenv import load_dotenv
-from database import init_db, db
+from .database import init_db, db
 load_dotenv()
 
 def create_app() -> Flask:
