@@ -7,7 +7,7 @@ if (!userId || userRole !== 'Secretaria') {
 }
 
 document.querySelectorAll('.user-name').forEach(el => {
-  el.textContent = userName || 'Secretaría';
+  el.textContent = userName || 'Secretario';
 });
 
 
