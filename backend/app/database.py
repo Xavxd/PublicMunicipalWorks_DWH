@@ -3,6 +3,8 @@ import base64
 from flask_sqlalchemy import SQLAlchemy
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from contextlib import contextmanager[cite: 2]
+from psycopg2.extras import RealDictCursor[cite: 2]
 
 db = SQLAlchemy()
 
