@@ -15,7 +15,7 @@ def create_app() -> Flask:
     init_db(app)
     
     with app.app_context():
-        from models import Personal
+        from .models import Personal
     
     from routes.auth        import auth_bp
     from routes.director    import director_bp
