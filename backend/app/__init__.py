@@ -35,10 +35,10 @@ def create_app() -> Flask:
         try:
             data = request.get_json()
             username = data.get("username")
-            password = data.get("password")
-            role = data.get("role")
+            password_hash = data.get("password_hash")
+            rol = data.get("rol")
 
-            user = Personal.query.filter_by(usuario=username, rol=role).first()
+            user = Personal.query.filter_by(username=username, rol=rol).first()
 
             if user and user.contrasena == password: 
                 return jsonify({
