@@ -199,7 +199,7 @@ function showToast(message) {
 
 async function loginUser(username, password, role) {
   
-  const response = await fetch('obraspublicas-backend-production.up.railway.app/auth/login', {
+  const response = await fetch('https://obraspublicas-backend-production.up.railway.app/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password, role })
