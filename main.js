@@ -196,3 +196,18 @@ function showToast(message) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3500);
 }
+
+async function loginUser(username, password, role) {
+  const response = await fetch('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, role })
+  });
+  
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.message || 'Error de acceso');
+
+  localStorage.setItem('user_id', result.data.id_personal);
+  localStorage.setItem('user_role', role);
+  return result;
+}
