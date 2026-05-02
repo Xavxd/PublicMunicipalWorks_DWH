@@ -1,11 +1,20 @@
-// =============================================
-// PROYECTISTA — JS
-// =============================================
-const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
-if (!user || user.role !== 'proyectista') window.location.href = '../index.html';
+const userId = localStorage.getItem('user_id');
+const userRole = localStorage.getItem('user_role');
+const userName = localStorage.getItem('user_name');
+
+if (!userId || userRole !== 'Proyectista') {
+  window.location.href = '../index.html';
+}
 const badge = document.getElementById('user-header-badge');
-if (badge) badge.textContent = `📐 ${user?.nombre || user?.username} (${user?.id})`;
-function logout() { sessionStorage.removeItem('op_user'); window.location.href = '../index.html'; }
+if (badge) {
+  badge.textContent = `📐 ${userName || 'Proyectista'} (${userId})`;
+}
+function logout() {
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('user_name');
+  window.location.href = '../index.html';
+}
 
 function getObras() { return JSON.parse(localStorage.getItem('op_obras') || '[]'); }
 function getPresupuestos() { return JSON.parse(localStorage.getItem('op_presupuestos') || '{}'); }
