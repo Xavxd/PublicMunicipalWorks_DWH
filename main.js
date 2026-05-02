@@ -198,8 +198,8 @@ function showToast(message) {
 }
 
 async function loginUser(username, password, role) {
-  const API_URL = "obraspublicas-backend-production.up.railway.app";
-  const response = await fetch('${API_URL}/auth/login', {
+  
+  const response = await fetch('obraspublicas-backend-production.up.railway.app/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password, role })
