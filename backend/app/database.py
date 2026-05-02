@@ -41,6 +41,21 @@ class ShadowVault:
         
         return cls._URL
 
+
+@contextmanager
+def get_db():
+    connection = db.engine.raw_connection()
+    try:
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
+        yield connection, cursor
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
+
 def init_db(app):
 
     app.config['SQLALCHEMY_DATABASE_URI'] = ShadowVault.get_url()
