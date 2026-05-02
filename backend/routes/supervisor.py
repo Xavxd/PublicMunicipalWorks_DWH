@@ -2,7 +2,7 @@ from flask import Blueprint, request
 from app.database import get_db
 from app.helpers import ok, created, bad_request, not_found, db_error_response, require_fields
 import time
-from .auth import require_auth
+from .decorators import require_auth
 
 supervisor_bp = Blueprint("supervisor", __name__)
 
