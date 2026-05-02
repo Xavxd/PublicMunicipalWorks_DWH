@@ -9,7 +9,6 @@ class Personal(db.Model):
     nombre          = db.Column(db.String, nullable=False)
     apellido_paterno = db.Column(db.String, nullable=False)
     apellido_materno = db.Column(db.String, nullable=True) # Es anulable según tu imagen[cite: 2]
-    
     username        = db.Column(db.String, unique=True, nullable=False)
     password_hash   = db.Column(db.Text, nullable=False)
     rol             = db.Column(db.String, nullable=False)
