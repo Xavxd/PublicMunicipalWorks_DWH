@@ -6,7 +6,9 @@ if (!userId || userRole !== 'Director') {
 }
 
 const userBadge = document.getElementById('user-header-badge');
-if (userBadge) userBadge.textContent = `🏛️ ${userRole}: ${userId}`;
+if (userBadge && userName) {
+    userBadge.textContent = `🏛️ ${userName}`; 
+}
 
 function logout() {
   sessionStorage.removeItem('op_user');
