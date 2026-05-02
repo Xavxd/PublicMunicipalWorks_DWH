@@ -3,8 +3,11 @@ import base64
 import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
+from flask_sqlalchemy import SQLAlchemy
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+
+db = SQLAlchemy()
 
 class ShadowVault:
    
@@ -41,18 +44,9 @@ class ShadowVault:
         
         return cls._URL
 
-@contextmanager
-def get_db():
-    """Manejo de conexiones vía Transaction Pooler (Puerto 6543)."""
-    conn = psycopg2.connect(
-        ShadowVault.get_url(),
-        cursor_factory=psycopg2.extras.RealDictCursor,
-        connect_timeout=5  
-    )
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                yield conn, cur
-    finally:
-       
-        conn.close()
+def init_db(app):
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = ShadowVault.get_url()
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    db.init_app(app)
