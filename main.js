@@ -199,7 +199,7 @@ function showToast(message) {
 
 async function loginUser(username, password, role) {
   
-  const response = await fetch('https://obraspublicas-backend-production.up.railway.app/auth/login', {
+  const response = await fetch('https://obraspublicas-backend-production.up.railway.app/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password, role })
@@ -208,7 +208,7 @@ async function loginUser(username, password, role) {
   const result = await response.json();
   if (!response.ok) throw new Error(result.message || 'Error de acceso');
 
-  localStorage.setItem('user_id', result.data.id_personal);
+  localStorage.setItem('user_id', result.data.id); 
   localStorage.setItem('user_role', role);
   return result;
 }
