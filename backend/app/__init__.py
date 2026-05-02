@@ -30,8 +30,9 @@ def create_app() -> Flask:
 
     
 
-    @app.route("/auth/login", methods=["POST"])
-    def login():
+@app.route("/auth/login", methods=["POST"])
+def login():
+    try:
         data = request.get_json()
         username = data.get("username")
         password = data.get("password")
