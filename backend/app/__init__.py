@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sys
 from dotenv import load_dotenv
@@ -26,6 +26,25 @@ def create_app() -> Flask:
     app.register_blueprint(director_bp)
     app.register_blueprint(supervisor_bp)
     app.register_blueprint(secretaria_bp)
+
+@app.route("/auth/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    role = data.get("role")
+
+    if username == "dir001" and password == "abc123":
+        return jsonify({
+            "success": True,
+            "message": "Bienvenido al sistema de Obras",
+            "data": {
+                "id_personal": "123", 
+                "nombre": "Uriel"
+            }
+        }), 200
+    
+    return jsonify({"success": False, "message": "Credenciales incorrectas"}), 401
 
 
     @app.route("/api/health")
