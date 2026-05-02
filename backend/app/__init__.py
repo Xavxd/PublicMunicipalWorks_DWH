@@ -1,9 +1,9 @@
-# Back/app/__init__.py
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 import sys
 from dotenv import load_dotenv
+from database import init_db, db
 load_dotenv()
 
 def create_app() -> Flask:
@@ -12,6 +12,10 @@ def create_app() -> Flask:
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
     CORS(app, origins="*", methods=["GET","POST","PUT","DELETE","OPTIONS"], allow_headers="*")
 
+    init_db(app)
+    
+    with app.app_context():
+        from models import Personal
 
     from routes.director    import director_bp
     from routes.supervisor  import supervisor_bp
