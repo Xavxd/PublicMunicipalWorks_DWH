@@ -2,13 +2,9 @@ const userId = localStorage.getItem('user_id');
 const userRole = localStorage.getItem('user_role');
 const userName = localStorage.getItem('user_name');
 
-if (!userId || userRole !== 'Secretario') {
+if (userRole !== 'Secretario') {
   window.location.href = '../index.html';
 }
-
-document.querySelectorAll('.user-name').forEach(el => {
-  el.textContent = userName || 'Secretario';
-});
 
 
 document.documentElement.style.setProperty('--accent', '#8b5cf6');
