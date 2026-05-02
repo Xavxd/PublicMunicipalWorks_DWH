@@ -1,7 +1,6 @@
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import sys
 from dotenv import load_dotenv
 from .database import init_db, db
 load_dotenv()
@@ -33,7 +32,5 @@ def create_app() -> Flask:
     def health():
         return jsonify({"status": "ok", "service": "API Obras Públicas"}), 200
 
-    @app.errorhandler(404)
-    def h404(e): return jsonify({"success":False,"message":"Ruta no encontrada."}), 404
 
     return app 
