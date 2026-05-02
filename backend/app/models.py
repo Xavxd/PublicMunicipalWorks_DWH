@@ -12,11 +12,13 @@ class Personal(db.Model):
     
     username        = db.Column(db.String, unique=True, nullable=False)
     password_hash   = db.Column(db.Text, nullable=False)
+    rol             = db.Column(db.String, nullable=False)
 
     def to_dict(self):
         """Convierte el objeto a un diccionario para enviarlo como JSON al frontend."""
         return {
             "id": self.codigo_personal,
             "nombre": f"{self.nombre} {self.apellido_paterno}",
-            "username": self.username
+            "username": self.username,
+            "role": self.rol
         }
