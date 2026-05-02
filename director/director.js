@@ -1,8 +1,12 @@
-const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
-if (!user || user.role !== 'director') window.location.href = '../index.html';
+const userId = localStorage.getItem('user_id');
+const userRole = localStorage.getItem('user_role');
+
+if (!userId || userRole !== 'Director') {
+    window.location.href = '../index.html';
+}
 
 const userBadge = document.getElementById('user-header-badge');
-if (userBadge) userBadge.textContent = `🏛️ ${user?.nombre || user?.username}`;
+if (userBadge) userBadge.textContent = `🏛️ ${userRole}: ${userId}`;
 
 function logout() {
   sessionStorage.removeItem('op_user');
