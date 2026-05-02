@@ -1,13 +1,6 @@
-"""
-backend/app/routes/supervisor.py
-Informes mensuales de avance de obra.
-Sin cambios de lógica — rutas de import actualizadas.
-"""
-
 from flask import Blueprint, request
 from app.database import get_db
 from app.helpers import ok, created, bad_request, not_found, db_error_response, require_fields
-from app.middleware.auth import require_auth
 import time
 
 supervisor_bp = Blueprint("supervisor", __name__)
