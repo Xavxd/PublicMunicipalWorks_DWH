@@ -142,29 +142,22 @@ async function handleLogin() {
   btn.classList.add('loading');
   errEl.textContent = '';
 
-  await delay(900);
+  try {
+    const response = await loginUser(user, pass, currentRole);
 
-  const mockUsers = {
-    director: [{ user: 'dir_obras', pass: 'admin123', id: 'D001', nombre: 'Ing. Director' }],
-    supervisor: [{ user: 'sup_001', pass: 'super123', id: 'S001', nombre: 'Uriel González' }],
-    proyectista: [{ user: 'pro_001', pass: 'proy123', id: 'P001', nombre: 'Arq. Proyectista' }],
-    secretaria: [{ user: 'sec_001', pass: 'sec123', id: 'SEC001', nombre: 'Secretaría Admin' }]
-  };
+    btn.classList.remove('loading');
 
-  const validUser = (mockUsers[currentRole] || []).find(u => u.user === user && u.pass === pass);
-
-  btn.classList.remove('loading');
-
-  if (validUser) {
-    sessionStorage.setItem('op_user', JSON.stringify({
-  role: currentRole,
-  id: validUser.id,
-  nombre: validUser.nombre,
-  username: validUser.user
-}));
-window.location.href = roleConfig[currentRole].redirect;
-  } else {
-    errEl.textContent = 'Usuario o contraseña incorrectos.';
+    if (response.success && response.data) {
+      showToast(`Bienvenido, ${response.data.nombre}`);
+      
+      setTimeout(() => {
+        window.location.href = roleConfig[currentRole].redirect;
+      }, 800);
+    } 
+  } catch (err) {
+    btn.classList.remove('loading');
+    
+    errEl.textContent = err.message || 'Error de conexión con el servidor.';
     shake(btn);
   }
 }
