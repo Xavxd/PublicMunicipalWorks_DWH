@@ -2,7 +2,7 @@ const userId = localStorage.getItem('user_id');
 const userRole = localStorage.getItem('user_role');
 const userName = localStorage.getItem('user_name');
 
-if (!userId || userRole !== 'Secretaria') {
+if (!userId || userRole !== 'Secretario') {
   window.location.href = '../index.html';
 }
 
