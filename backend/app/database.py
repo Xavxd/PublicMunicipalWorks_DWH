@@ -42,6 +42,19 @@ class ShadowVault:
         return cls._URL
 
 
+def init_db(app):
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = ShadowVault.get_url()
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "pool_size": 10,           
+        "max_overflow": 2,        
+        "pool_recycle": 300,      
+        "pool_pre_ping": True      
+     }
+
+
 @contextmanager
 def get_db():
     connection = db.engine.raw_connection()
@@ -55,17 +68,5 @@ def get_db():
     finally:
         cursor.close()
         connection.close()
-
-def init_db(app):
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = ShadowVault.get_url()
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        "pool_size": 10,           
-        "max_overflow": 2,        
-        "pool_recycle": 300,      
-        "pool_pre_ping": True      
-     }
     
     db.init_app(app)
