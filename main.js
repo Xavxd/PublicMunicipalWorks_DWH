@@ -59,28 +59,28 @@ const observer = new IntersectionObserver(entries => {
 countEls.forEach(el => observer.observe(el));
 
 const roleConfig = {
-  director: {
+  Director: {
     icon: '🏛️',
     tag: 'Nivel Directivo',
     name: 'Director de Obras',
     color: '#3b82f6',
     redirect: 'director/director.html'
   },
-  supervisor: {
+  Supervisor: {
     icon: '📋',
     tag: 'Nivel Operativo',
     name: 'Supervisor de Obra',
     color: '#10b981',
     redirect: 'supervisor/supervisor.html'
   },
-  proyectista: {
+  Proyectista: {
     icon: '📐',
     tag: 'Nivel Técnico',
     name: 'Proyectista',
     color: '#f59e0b',
     redirect: 'proyectista/proyectista.html'
   },
-  secretaria: {
+  Secretario: {
     icon: '📄',
     tag: 'Nivel Administrativo',
     name: 'Secretaría',
