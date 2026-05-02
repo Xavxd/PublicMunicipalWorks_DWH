@@ -22,30 +22,32 @@ def create_app() -> Flask:
     from routes.supervisor  import supervisor_bp
     from routes.secretaria  import secretaria_bp
 
+    # Registro de Blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(director_bp)
     app.register_blueprint(supervisor_bp)
     app.register_blueprint(secretaria_bp)
 
-@app.route("/auth/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-    role = data.get("role")
-
-    if username == "dir001" and password == "abc123":
-        return jsonify({
-            "success": True,
-            "message": "Bienvenido al sistema de Obras",
-            "data": {
-                "id_personal": "123", 
-                "nombre": "Uriel"
-            }
-        }), 200
     
-    return jsonify({"success": False, "message": "Credenciales incorrectas"}), 401
 
+    @app.route("/auth/login", methods=["POST"])
+    def login():
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+       
+
+        if username == "dir001" and password == "abc123":
+            return jsonify({
+                "success": True,
+                "message": "Bienvenido al sistema de Obras",
+                "data": {
+                    "id_personal": "123", 
+                    "nombre": "Uriel"
+                }
+            }), 200
+        
+        return jsonify({"success": False, "message": "Credenciales incorrectas"}), 401
 
     @app.route("/api/health")
     def health():
@@ -53,9 +55,11 @@ def login():
 
     @app.errorhandler(404)
     def h404(e): return jsonify({"success":False,"message":"Ruta no encontrada."}), 404
+    
     @app.errorhandler(405)
     def h405(e): return jsonify({"success":False,"message":"Método HTTP no permitido."}), 405
+    
     @app.errorhandler(500)
     def h500(e): return jsonify({"success":False,"message":"Error interno del servidor."}), 500
 
-    return app
+    return app 
