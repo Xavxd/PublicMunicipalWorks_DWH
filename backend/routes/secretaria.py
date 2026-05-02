@@ -1,43 +1,8 @@
-# Back/app/routes/secretaria.py
-# ================================================================
-#  MÓDULO: SECRETARÍA
-#
-#  Tablas reales (del dump bd_obras_publicas):
-#
-#  public.permisos
-#    id_oficio         CHAR(20)  PK
-#    nombre_instancia  CHAR(200)
-#    oficio_acreditacion TEXT
-#    id_obra           CHAR(20)  FK → obra
-#
-#  public.acta_entrega
-#    id_acta           CHAR(10)  PK  (también FK → obra.id_obra por rel_obra)
-#    acta_entrega      TEXT
-#    fecha_expedicion  DATE
-#    id_obra           CHAR(20)  UNIQUE (re_1_1: una sola acta por obra)
-#
-#  public.firmantes
-#    id_firmante       CHAR(10)  PK
-#    nombre            CHAR(100)
-#    apellido_paterno  CHAR(200)
-#    apellido_materno  CHAR(200)  nullable
-#    cargo             CHAR(100)
-#    id_acta           CHAR(10)  FK → acta_entrega (CASCADE DELETE)
-#
-#  public.opcion_seleccion
-#    id_participante   CHAR(10)  PK
-#    constructora      CHAR(200)
-#    aprobado          BOOLEAN
-#    razones_decision  TEXT
-#    id_obra           CHAR(20)  FK → obra
-# ================================================================
-
 from flask import Blueprint, request
 from app.database import get_db
 from app.helpers import (
     ok, created, bad_request, not_found, db_error_response, require_fields,
 )
-from app.middleware.auth import require_auth
 
 secretaria_bp = Blueprint("secretaria", __name__)
 
