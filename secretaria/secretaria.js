@@ -1,25 +1,16 @@
-// ================================================================
-//  SECRETARÍA — secretaria.js
-//  Campos alineados con la BD real (bd_obras_publicas):
-//
-//  permisos:         id_oficio, nombre_instancia,
-//                    oficio_acreditacion, id_obra
-//  acta_entrega:     id_acta, acta_entrega,
-//                    fecha_expedicion, id_obra
-//  firmantes:        id_firmante, nombre, apellido_paterno,
-//                    apellido_materno, cargo, id_acta
-//  opcion_seleccion: id_participante, constructora,
-//                    aprobado, razones_decision, id_obra
-//                    (sin rfc, sin monto)
-// ================================================================
+const userId = localStorage.getItem('user_id');
+const userRole = localStorage.getItem('user_role');
+const userName = localStorage.getItem('user_name');
 
-const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
-if (!user || user.role !== 'secretaria') {
+if (!userId || userRole !== 'Secretaria') {
   window.location.href = '../index.html';
 }
-document.querySelectorAll('.user-name').forEach(el =>
-  el.textContent = user?.nombre || user?.username || 'Secretaría'
-);
+
+document.querySelectorAll('.user-name').forEach(el => {
+  el.textContent = userName || 'Secretaría';
+});
+
+
 document.documentElement.style.setProperty('--accent', '#8b5cf6');
 
 // ── Cliente HTTP propio (Railway en producción, localhost en dev) ─
