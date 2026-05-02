@@ -26,12 +26,11 @@ const http = {
     const opts = {
       method,
       headers: {
-        'Content-Type':    'application/json',
-        'X-User-Role':     user?.role     || 'secretaria',
-        'X-User-Id':       user?.id       || 'SEC_DEV',
-        'X-User-Nombre':   user?.nombre   || '',
-        'X-User-Username': user?.username || '',
-      },
+  'Content-Type':    'application/json',
+  'X-User-Role':     userRole || 'Secretario',
+  'X-User-Id':       userId   || 'SEC_DEV',
+  'X-User-Nombre':   userName || '',
+},
     };
     if (body) opts.body = JSON.stringify(body);
     let res;
