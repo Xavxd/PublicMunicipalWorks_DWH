@@ -4,7 +4,7 @@ from app.helpers import (
     ok, created, bad_request, not_found,
     db_error_response, require_fields,
 )
-from .auth import require_auth
+from .decorators import require_auth
 
 director_bp = Blueprint("director", __name__)
 
