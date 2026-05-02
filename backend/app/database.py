@@ -52,8 +52,9 @@ def init_db(app):
         "max_overflow": 2,        
         "pool_recycle": 300,      
         "pool_pre_ping": True      
-     }
-   db.init_app(app)
+    }
+    
+    db.init_app(app)
 
 
 @contextmanager
