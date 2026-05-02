@@ -35,7 +35,7 @@ def create_app() -> Flask:
         data = request.get_json()
         username = data.get("username")
         password = data.get("password")
-       
+        role = data.get("role")
 
         if username == "dir001" and password == "abc123":
             return jsonify({
