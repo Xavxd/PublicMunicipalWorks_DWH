@@ -1,3 +1,4 @@
+
 const userId = localStorage.getItem('user_id');
 const userRole = localStorage.getItem('user_role');
 const userName = localStorage.getItem('user_name');
@@ -10,6 +11,7 @@ if (userRole !== 'Secretario') {
 document.documentElement.style.setProperty('--accent', '#8b5cf6');
 
 // ── Cliente HTTP propio (Railway en producción, localhost en dev) ─
+
 const SEC_API_BASE = (() => {
   const h = window.location.hostname;
   return (h === 'localhost' || h === '127.0.0.1')
@@ -17,16 +19,20 @@ const SEC_API_BASE = (() => {
     : 'https://obraspublicas-backend-production.up.railway.app';
 })();
 
+
+
 const http = {
   async _req(method, path, body = null) {
     const opts = {
       method,
       headers: {
+
   'Content-Type':    'application/json',
   'X-User-Role':     userRole || 'Secretario',
   'X-User-Id':       userId   || 'SEC_DEV',
   'X-User-Nombre':   userName || '',
 },
+
     };
     if (body) opts.body = JSON.stringify(body);
     let res;
@@ -49,6 +55,7 @@ const http = {
   delete: path       => http._req('DELETE', path),
 };
 
+
 // ── ESTADO GLOBAL ────────────────────────────────────────────────
 let OBRAS     = [];
 let PERMISOS  = [];
@@ -60,6 +67,7 @@ let CONCURSOS = [];
 // ════════════════════════════════════════════════════════════════
 async function init() {
   await loadObras();
+
   await Promise.all([
     loadPermisos(),
     loadActas(),
@@ -70,6 +78,7 @@ async function init() {
   buildConcursoFilterSelect();
   updateStats();
 }
+
 
 // ════════════════════════════════════════════════════════════════
 //  OBRAS
@@ -90,22 +99,29 @@ async function loadObras() {
 }
 
 function populateAllObraSelects() {
+
   ['perm-obra', 'acta-obra', 'conc-obra'].forEach(selId => {
     const sel     = document.getElementById(selId);
     const loading = document.getElementById(`${selId}-loading`);
     if (!sel) return;
+
+
     sel.innerHTML = '<option value="">— Seleccionar obra —</option>' +
       OBRAS.map(o =>
         `<option value="${o.id}">${o.id.trim()} · ${o.nombre}</option>`
       ).join('');
+
+
     if (loading) loading.style.display = 'none';
     sel.style.display = 'block';
   });
 }
 
+
 // ════════════════════════════════════════════════════════════════
 //  TABS
 // ════════════════════════════════════════════════════════════════
+
 function switchTab(tabId) {
   document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -116,20 +132,24 @@ document.querySelectorAll('.doc-tab').forEach(btn =>
   btn.addEventListener('click', () => switchTab(btn.dataset.tab))
 );
 
+
 // ════════════════════════════════════════════════════════════════
 //  STATS
 // ════════════════════════════════════════════════════════════════
+
 function updateStats() {
   document.getElementById('stat-permisos').textContent  = PERMISOS.length;
   document.getElementById('stat-actas').textContent     = ACTAS.length;
   document.getElementById('stat-concursos').textContent = CONCURSOS.length;
 }
 
+
 // ════════════════════════════════════════════════════════════════
 //  PERMISOS
 //  POST body → { obraId, instancia, oficio }
 //  GET devuelve → { id, obraId, obraNombre, instancia, oficio }
 // ════════════════════════════════════════════════════════════════
+
 const INSTANCIAS_KNOWN = ['CFE','CONAGUA','SCT','SEMARNAT','INAH','IMSS','Municipio','Otra'];
 const INST_ICONS = {
   CFE:'⚡', CONAGUA:'💧', SCT:'🛤️', SEMARNAT:'🌿',
@@ -167,14 +187,16 @@ async function loadPermisos() {
 }
 
 async function submitPermiso() {
+
   const obraId  = document.getElementById('perm-obra').value;
   const checked = document.querySelector('input[name="instancia_chip"]:checked');
+
   const instancia = checked
     ? (checked.value === 'Otra'
         ? document.getElementById('otra-instancia')?.value?.trim()
         : checked.value)
     : '';
-  // Campo oficio_acreditacion TEXT en BD
+
   const oficio = document.getElementById('perm-oficio').value.trim();
 
   if (!obraId || !instancia || !oficio) {
@@ -182,11 +204,13 @@ async function submitPermiso() {
     return;
   }
 
+
   const btn = document.getElementById('form-permisos').querySelector('.btn-primary');
   setBtnLoading(btn, true);
 
   try {
     // Body alineado con secretaria.py: { obraId, instancia, oficio }
+
     await http.post('/api/permisos', { obraId, instancia, oficio });
     document.getElementById('form-permisos').reset();
     document.querySelectorAll('.instancia-chip input').forEach(r => r.checked = false);
@@ -207,8 +231,10 @@ function renderPermisosList(filter = '') {
   if (!list) return;
   const q = filter.toLowerCase();
   const items = PERMISOS.filter(p =>
+
     !q ||
     p.oficio?.toLowerCase().includes(q)    ||
+
     p.instancia?.toLowerCase().includes(q) ||
     p.obraNombre?.toLowerCase().includes(q)
   );
@@ -232,11 +258,13 @@ function renderPermisosList(filter = '') {
       </div>
       <div class="doc-card-actions">
         <span class="badge-status badge-active">Registrado</span>
+
         <button class="btn-icon-sm" onclick="deletePermisoItem('${p.id}')"
                 title="Eliminar">
           <svg viewBox="0 0 20 20" fill="none">
             <path d="M5 5l10 10M15 5L5 15" stroke="currentColor"
                   stroke-width="1.5" stroke-linecap="round"/>
+
           </svg>
         </button>
       </div>
@@ -259,6 +287,7 @@ document.getElementById('search-permisos')?.addEventListener('input', e =>
   renderPermisosList(e.target.value.trim())
 );
 
+
 // ════════════════════════════════════════════════════════════════
 //  ACTAS DE ENTREGA
 //  POST body → { obraId, fecha, contenido?, firmantes[] }
@@ -269,6 +298,7 @@ document.getElementById('search-permisos')?.addEventListener('input', e =>
 //        porque no existen en la BD real.
 //        Solo quedan: obra + fecha + firmantes.
 // ════════════════════════════════════════════════════════════════
+
 const FIRMANTE_ROLES = [
   { key: 'delegado',     cargo: 'Delegado / Rep. de Beneficiarios' },
   { key: 'constructora', cargo: 'Representante de la Constructora'  },
@@ -305,8 +335,10 @@ async function loadActas() {
 }
 
 async function submitActa() {
+
   const obraId = document.getElementById('acta-obra').value;
   const fecha  = document.getElementById('acta-fecha').value;
+
 
   // Validar solo obra y fecha — son los únicos campos obligatorios en la BD
   if (!obraId || !fecha) {
@@ -331,10 +363,12 @@ async function submitActa() {
   setBtnLoading(btn, true);
 
   try {
+
     // Body alineado con secretaria.py:
     // { obraId, fecha, contenido?, firmantes[] }
     // Sin numeroActa ni obs — no existen en la BD.
     await http.post('/api/actas', { obraId, fecha, firmantes });
+
     document.getElementById('form-acta').reset();
     buildFirmantesForm();
     await loadActas();
@@ -352,8 +386,10 @@ function renderActasList(filter = '') {
   if (!list) return;
   const q = filter.toLowerCase();
   const items = ACTAS.filter(a =>
+
     !q ||
     a.id?.toLowerCase().includes(q) ||
+
     a.obraNombre?.toLowerCase().includes(q)
   );
   if (!items.length) {
@@ -367,10 +403,12 @@ function renderActasList(filter = '') {
     <div class="doc-card" style="animation-delay:${i * 0.04}s">
       <div class="doc-card-icon">📜</div>
       <div class="doc-card-body">
+
         <div class="doc-card-num">${a.id} · ${a.fecha || '—'}</div>
         <div class="doc-card-title">${a.obraNombre || a.obraId}</div>
         <div class="doc-card-meta">
           <span>✍️ ${(a.firmantes || []).filter(f => f.nombre).length} firmantes</span>
+
         </div>
         <div class="acta-preview">
           <div class="acta-preview-title">Firmantes registrados</div>
@@ -387,11 +425,13 @@ function renderActasList(filter = '') {
       </div>
       <div class="doc-card-actions">
         <span class="badge-status badge-closed">Cerrada</span>
+
         <button class="btn-icon-sm" onclick="deleteActaItem('${a.id}')"
                 title="Eliminar">
           <svg viewBox="0 0 20 20" fill="none">
             <path d="M5 5l10 10M15 5L5 15" stroke="currentColor"
                   stroke-width="1.5" stroke-linecap="round"/>
+
           </svg>
         </button>
       </div>
@@ -414,6 +454,7 @@ document.getElementById('search-actas')?.addEventListener('input', e =>
   renderActasList(e.target.value.trim())
 );
 
+
 // ════════════════════════════════════════════════════════════════
 //  CONCURSO DE SELECCIÓN
 //  POST body → { obraId, constructora, razones, aprobado }
@@ -422,6 +463,7 @@ document.getElementById('search-actas')?.addEventListener('input', e =>
 //  (sin rfc, sin monto — no existen en la BD real)
 // ════════════════════════════════════════════════════════════════
 
+
 document.querySelectorAll('input[name="conc_resultado"]').forEach(r =>
   r.addEventListener('change', () => {
     const hint = document.getElementById('conc-aprobada-hint');
@@ -429,10 +471,12 @@ document.querySelectorAll('input[name="conc_resultado"]').forEach(r =>
   })
 );
 
+
 async function onConcursoObraChange() {
   const obraId = document.getElementById('conc-obra')?.value;
   const aviso  = document.getElementById('conc-obra-aviso');
   if (!obraId || !aviso) return;
+
 
   const tieneGanador = CONCURSOS.some(
     c => c.obraId?.trim() === obraId.trim() && c.aprobado === true
@@ -440,6 +484,7 @@ async function onConcursoObraChange() {
   if (tieneGanador) {
     aviso.style.display = 'flex';
     aviso.innerHTML = `
+
       <svg viewBox="0 0 20 20" fill="none"
            style="width:14px;height:14px;flex-shrink:0;color:#f59e0b">
         <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
@@ -450,6 +495,7 @@ async function onConcursoObraChange() {
       Solo puedes registrar participantes no aprobados.`;
     document.querySelectorAll('input[name="conc_resultado"]').forEach(r => {
       if (r.value === 'true')  { r.disabled = true;  r.checked = false; }
+
       if (r.value === 'false') { r.checked = true; }
     });
   } else {
@@ -463,6 +509,7 @@ async function onConcursoObraChange() {
 function buildConcursoFilterSelect() {
   const sel = document.getElementById('conc-filter-obra');
   if (!sel) return;
+
   sel.innerHTML = '<option value="">Todas las obras</option>' +
     OBRAS.map(o =>
       `<option value="${o.id}">${o.id.trim()} · ${o.nombre}</option>`
@@ -477,6 +524,7 @@ async function loadConcursos() {
     CONCURSOS = [];
   }
   renderConcursosList();
+
 }
 
 async function submitConcurso() {
@@ -572,6 +620,7 @@ function renderConcursosList() {
     </div>`).join('');
 }
 
+
 async function deleteConcursoItem(id) {
   if (!confirm('¿Eliminar este registro de participante?')) return;
   try {
@@ -594,6 +643,7 @@ document.getElementById('search-concursos')?.addEventListener('input',
 function setBtnLoading(btn, loading) {
   if (!btn) return;
   if (loading) { btn.classList.add('loading');   btn.disabled = true;  }
+
   else         { btn.classList.remove('loading'); btn.disabled = false; }
 }
 
@@ -605,7 +655,9 @@ function showToast(msg, type = 'success') {
     toast.className = 'success-toast';
     document.body.appendChild(toast);
   }
+
   const isErr = type === 'error';
+
   toast.innerHTML = `
     <span class="toast-icon" style="color:${isErr ? '#ef4444' : '#10b981'}">
       ${isErr ? '✕' : '✓'}
@@ -614,6 +666,7 @@ function showToast(msg, type = 'success') {
   toast.style.borderColor = isErr ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)';
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3800);
+
 }
 
 // Cursor personalizado
@@ -634,4 +687,5 @@ if (cursor && follower) {
 }
 
 // ── ARRANQUE ─────────────────────────────────────────────────────
+
 init();
