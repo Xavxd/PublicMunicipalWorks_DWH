@@ -614,26 +614,34 @@ def delete_obra(obra_id, current_user):
 @director_bp.route("/api/supervisores", methods=["GET"])
 @require_auth("director", "secretaria")
 def get_supervisores(current_user):
-    """
-    Listado de supervisores para poblar el <select> del Paso 3.
-    El JS espera: { id, nombre, apellidoPaterno }
-    Ver director.js línea 213–215.
-    """
     try:
-        rows = Supervisor.query \
-            .join(Personal, Supervisor.codigo_personal == Personal.codigo_personal) \
-            .order_by(Personal.nombre, Personal.apellido_paterno) \
-            .all()
 
-        return ok([
-            {
-                "id":             (s.codigo_personal or "").strip(),
-                "nombre":         (s.personal.nombre or "").strip() if s.personal else "",
-                "apellidoPaterno": (s.personal.apellido_paterno or "").strip() if s.personal else "",
-            }
-            for s in rows
-        ])
+        from app.models import Supervisor, Personal
+        from app.database import db
+        
+        resultados = db.session.query(
+            Supervisor.codigo_personal,
+            Personal.nombre,
+            Personal.apellido_paterno
+        ).join(
+            Personal, Supervisor.codigo_personal == Personal.codigo_personal
+        ).order_by(
+            Personal.nombre, Personal.apellido_paterno
+        ).all()
+        
+        data = []
+        for codigo, nombre, apellido in resultados:
+            data.append({
+                "id": (codigo or "").strip(),
+                "nombre": (nombre or "").strip(),
+                "apellidoPaterno": (apellido or "").strip()
+            })
+        
+        return ok(data)
     except Exception as exc:
+        # Imprimir el error real en los logs de Railway
+        import traceback
+        traceback.print_exc()
         return db_error_response(exc)
 
 
