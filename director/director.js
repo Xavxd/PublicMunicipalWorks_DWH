@@ -234,6 +234,29 @@ async function loadSupervisoresSelect() {
   }
 }
 
+function limpiarCamposPaso3() {
+    // Limpiar campos de texto y número
+    document.getElementById('obra-nombre').value = '';
+    document.getElementById('obra-presupuesto').value = '';
+    document.getElementById('obra-desc').value = '';
+    document.getElementById('obra-beneficiarios').value = '';
+    
+    // Resetear selects a su valor por defecto
+    document.getElementById('obra-etapa').selectedIndex = 0;
+    document.getElementById('obra-supervisor').selectedIndex = 0;
+    
+    // Limpiar fechas
+    document.getElementById('obra-fecha-inicio').value = '';
+    document.getElementById('obra-fecha-fin').value = '';
+    
+    // Limpiar el resumen de pasos anteriores
+    const summaryEl = document.getElementById('obra-prev-summary');
+    if (summaryEl) summaryEl.innerHTML = '';
+    
+    // Limpiar el mensaje de confirmación del paso 3
+    document.getElementById('step3-confirm').innerHTML = '';
+}
+
 // loadFuentesCheckboxes() — ELIMINADA (el HTML ya no tiene #fuentes-grid-step3)
 // initStep3()             — ELIMINADA (absorbida por submitRegion())
 
@@ -310,7 +333,7 @@ async function submitObra(e) {
     showToast(`Obra "${nombre}" registrada · ${expediente}`);
 
     await delay(1200);
-    e.target.reset();
+    limpiarCamposPaso3();
     updateObraCountBadge();
     initWizard();
 
@@ -505,6 +528,8 @@ function showToast(msg, type = 'success') {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 4000);
 }
+
+
 
 // ---- INIT ----
 updateObraCountBadge();
