@@ -1,5 +1,7 @@
 const userId = localStorage.getItem('user_id');
 const userRole = localStorage.getItem('user_role');
+const user = JSON.parse(sessionStorage.getItem("op_user") || "null");
+const userName = user ? user.nombre : '';
 
 if (!userId || userRole !== 'Director') {
     window.location.href = '../index.html';
