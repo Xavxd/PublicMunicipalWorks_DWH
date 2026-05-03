@@ -457,17 +457,21 @@ def create_obra(current_user):
         from datetime import date
         anio = date.today().year
 
-        ultimo_expediente = db.session.query(
-        db.func.max(db.func.substring(Obra.codigo_expediente, -3).cast(db.Integer))
-        ).filter(
-        Obra.codigo_expediente.like(f"EXP-{anio}-%")
-        ).scalar()
+        expedientes = db.session.query(Obra.codigo_expediente).filter(
+            Obra.codigo_expediente.like(f"EXP-{anio}-%")
+        ).all()
 
-        siguiente_num = (ultimo_expediente or 0) + 1
+        max_num = 0
+        for (exp,) in expedientes:
+            try:
+                num = int(exp.split('-')[-1])
+                if num > max_num:
+                    max_num = num
+            except (ValueError, IndexError):
+                continue
+
+        siguiente_num = max_num + 1
         expediente = f"EXP-{anio}-{siguiente_num:03d}"
-        
-        total = Obra.query.count()
-        expediente = f"EXP-{anio}-{total + 1:03d}"
 
         # ── 3. Generar ID de obra ─────────────────────────────
         obra_id = _gen_obra_id()
