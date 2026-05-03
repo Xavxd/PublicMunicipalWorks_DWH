@@ -5,7 +5,8 @@ def require_auth(*allowed_roles):
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            role = request.headers.get('X-User-Role', '')
+            
+            role = request.headers.get('X-User-Role', '').lower()
             user_id = request.headers.get('X-User-Id', '')
             if not role or not user_id:
                 return jsonify({"success": False, "message": "No autenticado."}), 401
