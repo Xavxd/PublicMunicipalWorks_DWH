@@ -694,17 +694,22 @@ async function agregarFuente() {
  * Dibuja los chips de fuentes en #fuentes-lista.
  */
 function renderFuentesLista() {
-  const lista   = document.getElementById('fuentes-lista');
-  const empty   = document.getElementById('fuentes-empty');
+  const lista = document.getElementById('fuentes-lista');
+  if (!lista) return;
 
   if (!fuentesAgregadas.length) {
-    lista.innerHTML = '';
+    // Crear el mensaje vacío de nuevo si no existe o ya fue removido
+    let empty = document.getElementById('fuentes-empty');
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = 'fuentes-empty';
+      empty.className = 'fuentes-empty-note';
+      empty.textContent = 'Aún no se ha agregado ninguna fuente. Usa el formulario de arriba.';
+    }
+    lista.innerHTML = '';  // Limpia todo
     lista.appendChild(empty);
     return;
   }
-
-  // Eliminar el mensaje vacío si existe
-  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
 
   lista.innerHTML = fuentesAgregadas.map((f, idx) => `
     <div class="fuente-chip ${f.reused ? 'reused' : ''}" id="fchip-${idx}">
@@ -720,12 +725,9 @@ function renderFuentesLista() {
       </div>
     </div>
   `).join('');
+  
 }
 
-/**
- * quitarFuente(idx)
- * Elimina la fuente de la lista local (NO la borra de la BD).
- */
 function quitarFuente(idx) {
   fuentesAgregadas.splice(idx, 1);
   renderFuentesLista();
