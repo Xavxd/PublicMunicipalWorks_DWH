@@ -48,17 +48,38 @@ function showPanel(id) {
 // CAMBIO 1 — agrega resetFuentes() al final para limpiar la lista
 // de fuentes cada vez que se inicia un nuevo registro.
 function initWizard() {
+  // 1. Reiniciar estado del wizard
   wizardState.constructoraId     = null;
   wizardState.constructoraNombre = null;
   wizardState.regionId           = null;
   wizardState.regionLabel        = null;
   wizardState.currentStep        = 1;
 
-  renderWizardStep(1);
-  updateStepIndicator(1);
+  // 2. Limpiar campos del PASO 1
+  document.getElementById('c-nombre').value = '';
+  document.getElementById('c-rfc').value = '';
+  document.getElementById('c-tipo').selectedIndex = 0;
+  document.getElementById('step1-confirm').innerHTML = '';  // ← limpiar mensaje
+
+  // 3. Limpiar campos del PASO 2
+  document.getElementById('r-comunidad').selectedIndex = 0;
+  document.getElementById('r-barrio').value = '';
+  document.getElementById('r-colonia').value = '';
+  document.getElementById('step2-confirm').innerHTML = '';  // ← limpiar mensaje
+
+  // 4. Limpiar campos del PASO 3 (usando tu función existente)
+  limpiarCamposPaso3();   // ya definida
+
+  // 5. Limpiar breadcrumb
   clearWizardBreadcrumb();
 
+  // 6. Limpiar lista de fuentes
   if (typeof resetFuentes === 'function') resetFuentes();
+
+  // 7. Renderizar paso 1 como activo
+  renderWizardStep(1);
+  updateStepIndicator(1);
+
 }
 
 function renderWizardStep(step) {
