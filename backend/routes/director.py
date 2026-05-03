@@ -456,6 +456,16 @@ def create_obra(current_user):
         # ── 2. Generar código de expediente ───────────────────
         from datetime import date
         anio = date.today().year
+
+        ultimo_expediente = db.session.query(
+        db.func.max(db.func.substring(Obra.codigo_expediente, -3).cast(db.Integer))
+        ).filter(
+        Obra.codigo_expediente.like(f"EXP-{anio}-%")
+        ).scalar()
+
+        siguiente_num = (ultimo_expediente or 0) + 1
+        expediente = f"EXP-{anio}-{siguiente_num:03d}"
+        
         total = Obra.query.count()
         expediente = f"EXP-{anio}-{total + 1:03d}"
 
