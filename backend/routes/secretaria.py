@@ -9,7 +9,7 @@ from app.models import (
 )
 from .decorators import require_auth
 
-secretaria_bp = Blueprint("secretaria", __name__)
+secretaria_bp = Blueprint("Secretario", __name__)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -189,7 +189,7 @@ def create_permiso(current_user):
 
 
 @secretaria_bp.route("/api/permisos/<oficio_id>", methods=["DELETE"])
-@require_auth("secretaria")
+@require_auth("Secretario")
 def delete_permiso(oficio_id, current_user):
     try:
         perm = Permiso.query.get(oficio_id.strip())
