@@ -208,8 +208,16 @@ async function loginUser(username, password, role) {
   const result = await response.json();
   if (!response.ok) throw new Error(result.message || 'Error de acceso');
 
-  localStorage.setItem('user_id', result.data.id); 
+  sessionStorage.setItem('op_user', JSON.stringify({
+    id: result.data.id,
+    role: role,
+    nombre: result.data.nombre,
+    username: result.data.username
+  }));
+
+  localStorage.setItem('user_id', result.data.id);
   localStorage.setItem('user_role', role);
   localStorage.setItem('user_name', result.data.nombre);
+  
   return result;
 }
