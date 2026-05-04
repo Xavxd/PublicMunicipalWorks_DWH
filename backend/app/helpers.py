@@ -74,3 +74,8 @@ def require_fields(body: dict, *fields):
             f"Campos requeridos faltantes o vacíos: {', '.join(missing)}"
         )
     return True, None
+
+
+def forbidden(message="Acceso denegado."):
+    """Retorna una respuesta 403 Forbidden."""
+    return jsonify({"success": False, "message": message}), 403
