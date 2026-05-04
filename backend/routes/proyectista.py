@@ -187,11 +187,24 @@ def save_budget(obra_id, current_user):
 
         # Bloquear fila del presupuesto (concurrency control)
         pres = PresupuestoObra.query.filter_by(id_obra=obra_id).first()
-
         if not pres:
-            return bad_request(
-                "Esta obra no tiene un presupuesto base registrado por el Director."
-            )
+        # Crear un nuevo presupuesto base para esta obra
+        from app.models import Proyectista
+        proy = Proyectista.query.filter_by(codigo_personal=current_user["id"].strip()).first()
+        if not proy:
+            proy = Proyectista.query.first()  # o cualquier otro fallback
+        if not proy:
+            return bad_request("No hay proyectistas disponibles para asignar el presupuesto base.")
+        
+        new_pres_id = _gen_presupuesto_id()  # necesitas esta función (ya existe en director.py, puedes copiarla)
+        pres = PresupuestoObra(
+            id_presupuesto=new_pres_id,
+            presupuesto_total=0,
+            id_proyectista=proy.codigo_personal,
+            id_obra=obra_id
+        )
+        db.session.add(pres)
+        db.session.flush() 
 
         # Normalizar payload: puede venir como {categories:{...}} o directamente
         categories = body.get("categories") if isinstance(body, dict) else None
