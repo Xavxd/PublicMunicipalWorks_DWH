@@ -28,30 +28,21 @@ def _gen_oficio_id() -> str:
 
 def _gen_acta_id() -> str:
     
-    result = db.session.query(
-        db.func.max(db.func.cast(db.func.substring(ActaEntrega.id_acta, 4), db.Integer))
-    ).scalar()
-    
+    result = db.session.query(db.func.max(db.func.cast(db.func.substring(ActaEntrega.id_acta, 4), db.Integer))).scalar()
     next_num = (result or 0) + 1
-    return f"FRM{next_num:07d}"
+    return f"ACT{next_num:07d}"
 
 
 def _gen_firmante_id() -> str:
    
-    result = db.session.query(
-        db.func.max(db.func.cast(db.func.substring(Firmante.id_firmante, 4), db.Integer))
-    ).scalar()
-
+    result = db.session.query(db.func.max(db.func.cast(db.func.substring(Firmante.id_firmante, 4), db.Integer))).scalar()
     next_num = (result or 0) + 1
-    return f"PART{next_num:06d}"
-
+    return f"FRM{next_num:07d}"
+    
 
 def _gen_participante_id() -> str:
     
-    result = db.session.query(
-        db.func.max(db.func.cast(db.func.substring(OpcionSeleccion.id_participante, 5), db.Integer))
-    ).scalar()
-
+    result = db.session.query(db.func.max(db.func.cast(db.func.substring(OpcionSeleccion.id_participante, 5), db.Integer))).scalar()
     next_num = (result or 0) + 1
     return f"PART{next_num:06d}"
 
