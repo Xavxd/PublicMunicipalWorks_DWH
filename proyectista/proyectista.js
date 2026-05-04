@@ -17,12 +17,12 @@ function logout() {
 
 // ---- API wrappers (global api_client.js) ----
 async function getProjects() {
-  const json = await API.get('/api/projectdesigner/projects');
+  const json = await API.get('/api/proyectista/projects');
   return json.data || [];
 }
 
 async function getBudgets(obraId) {
-  const json = await API.get(`/api/projectdesigner/budget/${encodeURIComponent(obraId)}`);
+  const json = await API.get(`/api/proyectista/budget/${encodeURIComponent(obraId)}`);
   return json.data || {};
 }
 
