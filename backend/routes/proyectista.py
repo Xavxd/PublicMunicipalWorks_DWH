@@ -217,6 +217,8 @@ def save_budget(obra_id, current_user):
             )
             db.session.add(pres)
             db.session.flush() 
+        else:
+            pres.id_proyectista = current_user["id"].strip()
 
         # Normalizar payload: puede venir como {categories:{...}} o directamente
         categories = body.get("categories") if isinstance(body, dict) else None
@@ -261,7 +263,6 @@ def save_budget(obra_id, current_user):
                 db.session.add(nuevo)
                 total += costo_total
 
-        pres.presupuesto_total = total
         db.session.commit()
 
         return ok(
