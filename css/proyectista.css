@@ -113,3 +113,25 @@
 
 @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 1.5rem; } }
 @media (max-width: 640px) { .add-row-inputs { flex-direction: column; } .add-inp { min-width: 100%; } }
+
+/* ============ FORZAR CURSOR VISIBLE EN PROYECTISTA ============ */
+
+.cursor, .cursor-follower {
+  display: none !important;
+}
+
+
+body, body * {
+  cursor: auto !important;
+}
+
+
+button, .btn-primary, .btn-secondary, .nav-item, 
+.obra-select-card, .cat-tab, .btn-logout, 
+.inline-edit, .btn-danger, [onclick] {
+  cursor: pointer !important;
+}
+
+input, textarea, .form-input, .form-textarea, .inline-edit {
+  cursor: text !important;
+}
