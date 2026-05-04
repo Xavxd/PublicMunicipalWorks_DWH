@@ -9,7 +9,7 @@ from app.models import (
 )
 from .decorators import require_auth
 
-secretaria_bp = Blueprint("Secretario", __name__)
+secretaria_bp = Blueprint("secretario", __name__)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -78,7 +78,7 @@ def _gen_personal_id(role: str) -> str:
 # ════════════════════════════════════════════════════════════════
 
 @secretaria_bp.route("/api/permisos", methods=["GET"])
-@require_auth("Secretario", "Director")
+@require_auth("secretario", "director")
 def get_permisos(current_user):
     try:
         rows = (
@@ -105,7 +105,7 @@ def get_permisos(current_user):
 
 
 @secretaria_bp.route("/api/permisos", methods=["POST"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def create_permiso(current_user):
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(body, "obraId", "instancia", "oficio")
@@ -138,7 +138,7 @@ def create_permiso(current_user):
 
 
 @secretaria_bp.route("/api/permisos/<oficio_id>", methods=["DELETE"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def delete_permiso(oficio_id, current_user):
     try:
         perm = Permiso.query.get(oficio_id.strip())
@@ -159,7 +159,7 @@ def delete_permiso(oficio_id, current_user):
 # ════════════════════════════════════════════════════════════════
 
 @secretaria_bp.route("/api/actas", methods=["GET"])
-@require_auth("Secretario", "Director")
+@require_auth("secretario", "director")
 def get_actas(current_user):
     obra_filter = request.args.get("obra")
     try:
@@ -210,7 +210,7 @@ def get_actas(current_user):
 
 
 @secretaria_bp.route("/api/actas", methods=["POST"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def create_acta(current_user):
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(body, "obraId", "fecha")
@@ -280,7 +280,7 @@ def create_acta(current_user):
 
 
 @secretaria_bp.route("/api/actas/<acta_id>", methods=["DELETE"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def delete_acta(acta_id, current_user):
     try:
         acta = ActaEntrega.query.get(acta_id.strip())
@@ -302,7 +302,7 @@ def delete_acta(acta_id, current_user):
 # ════════════════════════════════════════════════════════════════
 
 @secretaria_bp.route("/api/concursos", methods=["GET"])
-@require_auth("Secretario", "Director", "Supervisor")
+@require_auth("secretario", "director", "supervisor")
 def get_concursos(current_user):
     obra_filter = request.args.get("obra")
     try:
@@ -338,7 +338,7 @@ def get_concursos(current_user):
 
 
 @secretaria_bp.route("/api/concursos", methods=["POST"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def create_concurso(current_user):
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(body, "obraId", "constructora", "razones")
@@ -392,7 +392,7 @@ def create_concurso(current_user):
 
 
 @secretaria_bp.route("/api/concursos/<participante_id>", methods=["DELETE"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def delete_concurso(participante_id, current_user):
     try:
         part = OpcionSeleccion.query.get(participante_id.strip())
@@ -414,7 +414,7 @@ def delete_concurso(participante_id, current_user):
 # ════════════════════════════════════════════════════════════════
 
 @secretaria_bp.route("/api/personal", methods=["GET"])
-@require_auth("Secretario", "Director")
+@require_auth("secretario", "director")
 def get_personal(current_user):
     """
     Lista todo el personal con enriquecimiento de subtipos.
@@ -456,29 +456,9 @@ def get_personal(current_user):
 
 
 @secretaria_bp.route("/api/personal", methods=["POST"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def create_personal(current_user):
-    """
-    Body:
-    {
-      "nombre": "Héctor",
-      "apellidoPaterno": "Villagrán",
-      "apellidoMaterno": "Luna",
-      "username": "sup003",
-      "password": "12345",
-      "rol": "Supervisor",
-      "telefono": "5512345678"           ← obligatorio si rol = Supervisor
-      "constructoraId": "CONS000001"    ← obligatorio si rol = Proyectista
-    }
-
-    Reglas:
-      • username único.
-      • código personal auto-generado por rol (SUP-NNN, PROY-NNN, DIR-NNN, SEC-NNN).
-      • Proyectista: se requiere constructoraId; empresa se extrae
-        automáticamente del nombre de la constructora seleccionada.
-      • Supervisor: se requiere teléfono.
-      • Director / Secretario: solo datos de personal.
-    """
+    
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(
         body, "nombre", "apellidoPaterno", "username", "password", "rol"
@@ -566,7 +546,7 @@ def create_personal(current_user):
 
 
 @secretaria_bp.route("/api/personal/<personal_id>", methods=["DELETE"])
-@require_auth("Secretario")
+@require_auth("secretario")
 def delete_personal(personal_id, current_user):
     try:
         p = Personal.query.get(personal_id.strip())
