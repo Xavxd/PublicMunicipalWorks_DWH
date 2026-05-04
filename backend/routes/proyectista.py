@@ -162,6 +162,19 @@ def get_budget(obra_id, current_user):
         return db_error_response(exc)
 
 
+def _gen_presupuesto_id() -> str:
+    last = PresupuestoObra.query.order_by(PresupuestoObra.id_presupuesto.desc()).first()
+    if not last:
+        num = 1
+    else:
+        last_id = (last.id_presupuesto or "PRES000000").strip()
+        try:
+            num = int(last_id[4:]) + 1
+        except ValueError:
+            num = PresupuestoObra.query.count() + 1
+    return f"PRES{num:06d}"
+
+
 # ════════════════════════════════════════════════════════════════
 #  GUARDAR / REEMPLAZAR PRESUPUESTO (transacción atómica)
 # ════════════════════════════════════════════════════════════════
@@ -188,19 +201,18 @@ def save_budget(obra_id, current_user):
         # Bloquear fila del presupuesto (concurrency control)
         pres = PresupuestoObra.query.filter_by(id_obra=obra_id).first()
         if not pres:
-            # Crear un nuevo presupuesto base para esta obra
-            from app.models import Proyectista
-            proy = Proyectista.query.filter_by(codigo_personal=current_user["id"].strip()).first()
-            if not proy:
-                proy = Proyectista.query.first()  # o cualquier otro fallback
-            if not proy:
+            
+            proy_actual = Proyectista.query.filter_by(codigo_personal=current_user["id"].strip()).first()
+            if not proy_actual:
+                proy_actual = Proyectista.query.first()  # o cualquier otro fallback
+            if not proy_actual:
                 return bad_request("No hay proyectistas disponibles para asignar el presupuesto base.")
             
             new_pres_id = _gen_presupuesto_id()  # necesitas esta función (ya existe en director.py, puedes copiarla)
             pres = PresupuestoObra(
                 id_presupuesto=new_pres_id,
                 presupuesto_total=0,
-                id_proyectista=proy.codigo_personal,
+                id_proyectista=proy_actual.codigo_personal,
                 id_obra=obra_id
             )
             db.session.add(pres)
