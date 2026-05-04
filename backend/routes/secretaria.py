@@ -17,110 +17,68 @@ secretaria_bp = Blueprint("Secretario", __name__)
 # ════════════════════════════════════════════════════════════════
 
 def _gen_oficio_id() -> str:
-    """
-    Tabla: public.permisos
-    Columna: id_oficio  CHAR(20)
-    Formato: OFI + 17 dígitos
-    """
-    last = Permiso.query.order_by(Permiso.id_oficio.desc()).first()
-    if not last:
-        num = 1
-    else:
-        last_id = (last.id_oficio or "OFI" + "0" * 17).strip()
-        try:
-            num = int(last_id[3:]) + 1
-        except ValueError:
-            num = Permiso.query.count() + 1
-    return f"OFI{num:017d}"
+    
+    result = db.session.query(
+        db.func.max(db.func.cast(db.func.substring(Permiso.id_oficio, 4), db.Integer))
+    ).scalar()
+
+    next_num = (result or 0) + 1
+    return f"OFI{next_num:017d}"
 
 
 def _gen_acta_id() -> str:
-    """
-    Tabla: public.acta_entrega
-    Columna: id_acta  CHAR(10)
-    Formato: ACT + 7 dígitos
-    """
-    last = ActaEntrega.query.order_by(ActaEntrega.id_acta.desc()).first()
-    if not last:
-        num = 1
-    else:
-        last_id = (last.id_acta or "ACT0000000").strip()
-        try:
-            num = int(last_id[3:]) + 1
-        except ValueError:
-            num = ActaEntrega.query.count() + 1
-    return f"ACT{num:07d}"
+    
+    result = db.session.query(
+        db.func.max(db.func.cast(db.func.substring(ActaEntrega.id_acta, 4), db.Integer))
+    ).scalar()
+    
+    next_num = (result or 0) + 1
+    return f"FRM{next_num:07d}"
 
 
 def _gen_firmante_id() -> str:
-    """
-    Tabla: public.firmantes
-    Columna: id_firmante  CHAR(10)
-    Formato: FRM + 7 dígitos
-    """
-    last = Firmante.query.order_by(Firmante.id_firmante.desc()).first()
-    if not last:
-        num = 1
-    else:
-        last_id = (last.id_firmante or "FRM0000000").strip()
-        try:
-            num = int(last_id[3:]) + 1
-        except ValueError:
-            num = Firmante.query.count() + 1
-    return f"FRM{num:07d}"
+   
+    result = db.session.query(
+        db.func.max(db.func.cast(db.func.substring(Firmante.id_firmante, 4), db.Integer))
+    ).scalar()
+
+    next_num = (result or 0) + 1
+    return f"PART{next_num:06d}"
 
 
 def _gen_participante_id() -> str:
-    """
-    Tabla: public.opcion_seleccion
-    Columna: id_participante  CHAR(10)
-    Formato: PART + 6 dígitos
-    """
-    last = OpcionSeleccion.query.order_by(
-        OpcionSeleccion.id_participante.desc()
-    ).first()
-    if not last:
-        num = 1
-    else:
-        last_id = (last.id_participante or "PART000000").strip()
-        try:
-            num = int(last_id[4:]) + 1
-        except ValueError:
-            num = OpcionSeleccion.query.count() + 1
-    return f"PART{num:06d}"
+    
+    result = db.session.query(
+        db.func.max(db.func.cast(db.func.substring(OpcionSeleccion.id_participante, 5), db.Integer))
+    ).scalar()
+
+    next_num = (result or 0) + 1
+    return f"PART{next_num:06d}"
 
 
 def _gen_personal_id(role: str) -> str:
-    """
-    Tabla: public.personal
-    Columna: codigo_personal TEXT (PK)
-    Formato por rol:
-        Supervisor  → SUP-001
-        Proyectista → PROY-001
-        Director    → DIR-001
-        Secretario  → SEC-001
-    """
+    
     prefix = {
         "Supervisor": "SUP",
         "Proyectista": "PROY",
         "Director": "DIR",
         "Secretario": "SEC",
     }.get(role, "PER")
-
-    last = (
-        Personal.query.filter(Personal.codigo_personal.like(f"{prefix}-%"))
-        .order_by(Personal.codigo_personal.desc())
-        .first()
-    )
-    if not last:
-        num = 1
-    else:
-        last_id = (last.codigo_personal or f"{prefix}-000").strip()
-        try:
-            num = int(last_id.split("-")[1]) + 1
-        except (ValueError, IndexError):
-            num = Personal.query.filter(Personal.rol == role).count() + 1
-    return f"{prefix}-{num:03d}"
+    
+    pattern = f"{prefix}-%"
+    result = db.session.query(
+        db.func.max(
+            db.func.cast(
+                db.func.substring(Personal.codigo_personal, len(prefix) + 2),
+                db.Integer
+            )
+        )
+    ).filter(
+        Personal.codigo_personal.like(pattern)
+    ).scalar()
+    
+    next_num = (result or 0) + 1
+    return f"{prefix}-{next_num:03d}"
 
 
 # ════════════════════════════════════════════════════════════════
