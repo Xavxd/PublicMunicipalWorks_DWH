@@ -89,9 +89,8 @@ async function selectObra(id) {
   if (!obra) return;
   try {
     const budget = await getBudgets(id);
-    presupuestoData = (budget && budget.categories)
-      ? budget.categories
-      : { materiales: [], mano_obra: [], equipo: [], indirectos: [], imprevistos: [] };
+    presupuestoData = (budget && budget.categories) ? budget.categories : {...};
+    window.presupuestoAsignado = (budget && budget.presupuestoAsignado) ? budget.presupuestoAsignado : 0;
   } catch (err) {
     showToast('Error al cargar presupuesto.', 'error');
     presupuestoData = { materiales: [], mano_obra: [], equipo: [], indirectos: [], imprevistos: [] };
@@ -234,7 +233,9 @@ function renderResumen() {
   Object.entries(catNames).forEach(([key, name]) => {
     const rows = data[key] || [];
     const subtotal = rows.reduce((a, r) => a + (r.qty || 0) * (r.price || 0), 0);
-    const pct = grandTotal ? ((subtotal / grandTotal) * 100).toFixed(1) : 0;
+    const asignado = window.presupuestoAsignado || 0;
+    const pct = asignado > 0 ? ((subtotal / asignado) * 100).toFixed(1) : 0;
+    const pctBar = asignado > 0 ? ((subtotal / asignado) * 100) : 0; 
     if (!rows.length) return;
     html += `
     <div class="resumen-cat-card">
