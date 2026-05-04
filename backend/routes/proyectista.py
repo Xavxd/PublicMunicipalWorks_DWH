@@ -34,7 +34,7 @@ def _gen_cost_id() -> str:
 #  OBRAS DEL PROYECTISTA
 # ════════════════════════════════════════════════════════════════
 
-@proyectista_bp.route("/api/projectdesigner/projects", methods=["GET"])
+@proyectista_bp.route("/api/proyectista/projects", methods=["GET"])
 @require_auth("proyectista")
 def get_projects(current_user):
     """
@@ -101,7 +101,7 @@ def get_projects(current_user):
 #  PRESUPUESTO POR OBRA
 # ════════════════════════════════════════════════════════════════
 
-@proyectista_bp.route("/api/projectdesigner/budget/<obra_id>", methods=["GET"])
+@proyectista_bp.route("/api/proyectista/budget/<obra_id>", methods=["GET"])
 @require_auth("proyectista")
 def get_budget(obra_id, current_user):
     """
