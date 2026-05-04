@@ -186,11 +186,7 @@ def save_budget(obra_id, current_user):
             return forbidden("No tienes acceso a esta obra.")
 
         # Bloquear fila del presupuesto (concurrency control)
-        pres = db.session.execute(
-            select(PresupuestoObra)
-            .where(PresupuestoObra.id_obra == obra_id)
-            .with_for_update()
-        ).scalars().first()
+        pres = PresupuestoObra.query.filter_by(id_obra=obra_id).first()
 
         if not pres:
             return bad_request(
