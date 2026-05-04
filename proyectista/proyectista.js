@@ -89,7 +89,13 @@ async function selectObra(id) {
   if (!obra) return;
   try {
     const budget = await getBudgets(id);
-    presupuestoData = (budget && budget.categories) ? budget.categories : {...};
+    presupuestoData = (budget && budget.categories) ? budget.categories : {
+        materiales: [],
+        mano_obra: [],
+        equipo: [],
+        indirectos: [],
+        imprevistos: []
+    };
     window.presupuestoAsignado = (budget && budget.presupuestoAsignado) ? budget.presupuestoAsignado : 0;
   } catch (err) {
     showToast('Error al cargar presupuesto.', 'error');
