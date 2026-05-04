@@ -156,6 +156,7 @@ def get_budget(obra_id, current_user):
         return ok({
             "budgetId": pres.id_presupuesto.strip(),
             "total": total,
+            "presupuestoAsignado": float(pres.presupuesto_total),  # ← NUEVO
             "categories": categories,
         })
     except Exception as exc:
