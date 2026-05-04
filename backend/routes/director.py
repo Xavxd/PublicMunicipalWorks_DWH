@@ -108,7 +108,7 @@ def _gen_fuente_id(nivel: str, programa: str) -> str:
 # ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/constructoras", methods=["GET"])
-@require_auth("director", "supervisor", "proyectista", "secretaria")
+@require_auth("director", "supervisor", "proyectista", "secretario")
 def get_constructoras(current_user):
     """
     Catálogo completo de constructoras.
@@ -215,7 +215,7 @@ def create_constructora(current_user):
 # ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/regiones", methods=["GET"])
-@require_auth("director", "supervisor", "proyectista", "secretaria")
+@require_auth("director", "supervisor", "proyectista", "secretario")
 def get_regiones(current_user):
     """
     Lista todas las regiones.  Útil para búsquedas o autocompletado.
@@ -313,7 +313,7 @@ def create_region(current_user):
 # ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/obras", methods=["GET"])
-@require_auth("director", "supervisor", "proyectista", "secretaria")
+@require_auth("director", "supervisor", "proyectista", "secretario")
 def get_obras(current_user):
     """
     Lista obras con joins a constructora y región.
@@ -538,7 +538,7 @@ def create_obra(current_user):
 
 
 @director_bp.route("/api/obras/<obra_id>", methods=["GET"])
-@require_auth("director", "supervisor", "proyectista", "secretaria")
+@require_auth("director", "supervisor", "proyectista", "secretario")
 def get_obra(obra_id, current_user):
     """Detalle completo de una obra con sus fuentes."""
     try:
@@ -626,7 +626,7 @@ def delete_obra(obra_id, current_user):
 # ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/supervisores", methods=["GET"])
-@require_auth("director", "secretaria")
+@require_auth("director", "secretario")
 def get_supervisores(current_user):
     try:
 
@@ -664,7 +664,7 @@ def get_supervisores(current_user):
 # ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/fuentes", methods=["GET"])
-@require_auth("director", "supervisor", "proyectista", "secretaria")
+@require_auth("director", "supervisor", "proyectista", "secretario")
 def get_fuentes(current_user):
     """
     Catálogo de fuentes presupuestarias.
@@ -782,7 +782,7 @@ def create_fuente(current_user):
 # ════════════════════════════════════════════════════════════════
 
 @director_bp.route("/api/concursos", methods=["GET"])
-@require_auth("director", "supervisor", "secretaria")
+@require_auth("director", "supervisor", "secretario")
 def get_concursos(current_user):
     """Lista concursos, opcionalmente filtrados por ?obra=<id_obra>."""
     obra_filter = request.args.get("obra")
