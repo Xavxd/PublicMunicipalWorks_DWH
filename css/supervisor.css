@@ -103,6 +103,7 @@
   display: flex; gap: 2rem; flex-wrap: wrap;
 }
 .obra-info-strip strong { color: var(--text-primary); }
+.obra-info-strip span { color: var(--text-muted); font-size: 0.72rem; }
 
 /* Slider */
 .slider-wrap { margin-top: 0.5rem; }
@@ -132,33 +133,13 @@
 .fisico-fill { background: var(--accent-supervisor); }
 .financiero-fill { background: var(--accent-director); }
 
-/* Upload zone */
-.upload-zone {
-  border: 1.5px dashed var(--border-medium);
-  border-radius: var(--radius-md);
-  padding: 2.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
+/* Documento del Informe (URL) — reemplaza upload zone */
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.4;
 }
-.upload-zone:hover { border-color: var(--accent-supervisor); background: rgba(16,185,129,0.04); }
-.upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-.upload-text { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 4px; }
-.upload-sub { font-size: 0.75rem; color: var(--text-muted); }
-.file-list { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 8px; }
-.file-chip {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border-subtle);
-  border-radius: 100px;
-  padding: 4px 12px;
-  font-size: 0.78rem; color: var(--text-secondary);
-}
-.file-chip button {
-  background: none; border: none; color: var(--text-muted);
-  cursor: pointer; font-size: 0.8rem; padding: 0; line-height: 1;
-}
-.file-chip button:hover { color: #ef4444; }
 
 /* Libro de informes */
 .libro-container { display: flex; flex-direction: column; gap: 1.25rem; }
@@ -197,6 +178,26 @@
   display: flex; flex-wrap: wrap; gap: 6px;
 }
 
+/* File chip como enlace al documento */
+.informe-files .file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: 100px;
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  color: var(--accent-supervisor);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.informe-files .file-chip:hover {
+  background: rgba(16,185,129,0.15);
+  border-color: rgba(16,185,129,0.35);
+}
+
+/* Layout base */
 .back-home {
   color: var(--text-muted); display: flex; align-items: center; margin-right: 6px;
 }
