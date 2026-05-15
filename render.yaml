@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: obras-publicas-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: GHOST_KEY
+        sync: false
+      - key: FLASK_ENV
+        value: production
