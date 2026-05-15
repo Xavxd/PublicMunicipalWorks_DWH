@@ -59,7 +59,7 @@
       <div class="panel-header">
         <div>
           <h1 class="page-title">Obras Asignadas</h1>
-          <p class="page-subtitle">Estas son las obras bajo tu supervisión.</p>
+          <p class="page-subtitle">Estas son las obras bajo tu supervisi&oacute;n.</p>
         </div>
       </div>
       <div class="obras-asignadas-grid" id="obras-asignadas-grid"></div>
@@ -70,28 +70,28 @@
       <div class="panel-header">
         <div>
           <h1 class="page-title">Registrar Informe Mensual</h1>
-          <p class="page-subtitle">Documentación del avance físico y financiero de la obra.</p>
+          <p class="page-subtitle">Documentaci&oacute;n del avance f&iacute;sico y financiero de la obra.</p>
         </div>
       </div>
 
       <form id="form-informe" onsubmit="submitInforme(event)">
         <div class="card">
-          <div class="card-title">Identificación del Informe</div>
+          <div class="card-title">Identificaci&oacute;n del Informe</div>
           <div class="form-grid form-grid-3">
             <div class="form-group">
               <label class="form-label">Obra *</label>
               <select class="form-select" id="inf-obra" required onchange="onObraChange()">
-                <option value="">Seleccionar obra…</option>
+                <option value="">Seleccionar obra&hellip;</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Año *</label>
+              <label class="form-label">A&ntilde;o *</label>
               <input type="number" class="form-input" id="inf-anio" min="2020" max="2030" placeholder="2026" required/>
             </div>
             <div class="form-group">
               <label class="form-label">Mes *</label>
               <select class="form-select" id="inf-mes" required>
-                <option value="">Seleccionar mes…</option>
+                <option value="">Seleccionar mes&hellip;</option>
                 <option value="1">Enero</option><option value="2">Febrero</option>
                 <option value="3">Marzo</option><option value="4">Abril</option>
                 <option value="5">Mayo</option><option value="6">Junio</option>
@@ -108,7 +108,7 @@
           <div class="card-title">Avances de la Obra</div>
           <div class="form-grid form-grid-2">
             <div class="form-group">
-              <label class="form-label">% Avance Físico *</label>
+              <label class="form-label">% Avance F&iacute;sico *</label>
               <div class="slider-wrap">
                 <input type="range" id="inf-avance-fisico" min="0" max="100" value="0" oninput="updateSlider('fisico')" class="slider" required/>
                 <div class="slider-display">
@@ -134,24 +134,19 @@
           <div class="card-title">Contenido del Informe</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Descripción del Avance *</label>
-              <textarea class="form-textarea" id="inf-desc" rows="5" placeholder="Describe los trabajos realizados durante el mes, condiciones de la obra, incidencias, personal trabajando, materiales empleados…" required style="min-height:130px"></textarea>
+              <label class="form-label">Descripci&oacute;n del Avance *</label>
+              <textarea class="form-textarea" id="inf-desc" rows="5" placeholder="Describe los trabajos realizados durante el mes, condiciones de la obra, incidencias, personal trabajando, materiales empleados&hellip;" required style="min-height:130px"></textarea>
             </div>
             <div class="form-group">
-              <label class="form-label">Evidencia Visual</label>
-              <div class="upload-zone" id="upload-zone" onclick="document.getElementById('inf-evidencia').click()">
-                <div class="upload-icon">📷</div>
-                <p class="upload-text">Clic para adjuntar fotografías o documentos</p>
-                <p class="upload-sub">JPG, PNG, PDF — Máx. 10MB por archivo</p>
-                <input type="file" id="inf-evidencia" multiple accept="image/*,.pdf" style="display:none" onchange="handleFiles(this.files)"/>
-              </div>
-              <div id="file-list" class="file-list"></div>
+              <label class="form-label">Documento del Informe (URL)</label>
+              <input type="url" class="form-input" id="inf-doc" placeholder="https://drive.google.com/... o URL del documento"/>
+              <p class="form-hint">Enlace al documento del informe (PDF, DOC, etc.). Dejar vac&iacute;o si no aplica.</p>
             </div>
           </div>
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-secondary" onclick="document.getElementById('form-informe').reset(); clearFiles()">Limpiar</button>
+          <button type="button" class="btn-secondary" onclick="resetForm()">Limpiar</button>
           <button type="submit" class="btn-primary" style="background:var(--accent-supervisor)">
             <svg viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Registrar Informe
@@ -180,6 +175,7 @@
 </div>
 
 <script src="../main.js"></script>
+<script src="../js/api_client.js"></script>
 <script src="supervisor.js"></script>
 </body>
 </html>

@@ -1,58 +1,108 @@
+/* ================================================================
+   SUPERVISOR — Informes de Obra
+   Integración completa con backend ORM (Flask + SQLAlchemy)
+   ================================================================ */
 
-const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
-document.getElementById('user-header-badge').textContent = `📋 ${user.nombre || 'Supervisor'}`;
-if (!user || user.role.toLowerCase()  !== 'supervisor') window.location.href = '../index.html';
+// ── Autenticación ──────────────────────────────────────────────
+const currentUser = getCurrentUser();
 
-const badge = document.getElementById('user-header-badge');
-if (badge) badge.textContent = `📋 ${user?.nombre || user?.username} (${user?.id})`;
-
-function logout() { sessionStorage.removeItem('op_user'); window.location.href = '../index.html'; }
-
-function getObras() { return JSON.parse(localStorage.getItem('op_obras') || '[]'); }
-function getInformes() { return JSON.parse(localStorage.getItem('op_informes') || '[]'); }
-function saveInformes(d) { localStorage.setItem('op_informes', JSON.stringify(d)); }
-
-const regionMap = { 'REG001': 'Comunidad', 'REG002': 'Albarranes', 'REG003': 'San Francisco', 'REG004': 'Telpintla' };
-const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-// Get obras assigned to this supervisor
-function getObrasAsignadas() {
-  return getObras().filter(o => o.supervisor === user.id);
+// Validación de sesión y rol (NO TOCAR — función crítica)
+if (!currentUser || currentUser.role.toLowerCase() !== 'supervisor') {
+  window.location.href = '../index.html';
 }
 
-// ---- PANEL NAV ----
+const badge = document.getElementById('user-header-badge');
+if (badge) {
+  badge.textContent = `📋 ${currentUser?.nombre || currentUser?.username} (${currentUser?.id})`;
+}
+
+function logout() {
+  sessionStorage.removeItem('op_user');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('user_name');
+  window.location.href = '../index.html';
+}
+
+// ── Constantes ─────────────────────────────────────────────────
+const meses = [
+  '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+// Cache de datos
+let obrasAsignadas = [];
+let informesCache = [];
+
+
+// ════════════════════════════════════════════════════════════════
+//  API HELPERS ESPECÍFICOS DEL SUPERVISOR
+// ════════════════════════════════════════════════════════════════
+
+async function fetchSupervisorObras() {
+  const json = await API.get('/api/supervisor/obras');
+  return json.data || [];
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  NAVEGACIÓN DE PANELES
+// ════════════════════════════════════════════════════════════════
+
 function showPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`panel-${id}`)?.classList.add('active');
   document.querySelector(`[data-panel="${id}"]`)?.classList.add('active');
-  if (id === 'mis-obras') renderObrasAsignadas();
-  if (id === 'nuevo-informe') populateObraSelect();
+
+  if (id === 'mis-obras')      renderObrasAsignadas();
+  if (id === 'nuevo-informe')  populateObraSelect();
   if (id === 'libro-informes') { populateFiltroObra(); renderLibro(); }
 }
 
-// ---- OBRAS ASIGNADAS ----
-function renderObrasAsignadas() {
+
+// ════════════════════════════════════════════════════════════════
+//  PANEL: OBRAS ASIGNADAS
+// ════════════════════════════════════════════════════════════════
+
+async function renderObrasAsignadas() {
   const grid = document.getElementById('obras-asignadas-grid');
   if (!grid) return;
-  const obras = getObrasAsignadas();
-  if (!obras.length) {
+
+  // Cargar desde el backend ORM
+  try {
+    obrasAsignadas = await fetchSupervisorObras();
+  } catch (err) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⚠</div><p>Error al cargar obras.</p><p style="font-size:0.8rem;margin-top:0.5rem;color:var(--text-muted)">${err.message || 'Verifica tu conexión.'}</p></div>`;
+    return;
+  }
+
+  if (!obrasAsignadas.length) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📋</div><p>No tienes obras asignadas aún.</p><p style="font-size:0.8rem;margin-top:0.5rem;color:var(--text-muted)">El director de obras debe asignarte a una obra primero.</p></div>`;
     return;
   }
-  grid.innerHTML = obras.map(o => {
-    const informes = getInformes().filter(i => i.obraId === o.id);
-    const lastInforme = informes[informes.length - 1];
+
+  // Precargar informes para calcular avance físico
+  let informes = [];
+  try {
+    informes = await fetchInformes();
+  } catch (e) {
+    informes = [];
+  }
+
+  grid.innerHTML = obrasAsignadas.map(o => {
+    const obrasInformes = informes.filter(i => i.obraId === o.id);
+    const lastInforme = obrasInformes[obrasInformes.length - 1];
     const fisico = lastInforme ? lastInforme.avanceFisico : 0;
     return `
     <div class="obra-asignada-card" onclick="goToInforme('${o.id}')">
       <div class="oa-expediente">${o.expediente}</div>
       <div class="oa-nombre">${o.nombre}</div>
-      <div class="oa-region">📍 ${regionMap[o.region] || o.region}${o.barrio ? ` · ${o.barrio}` : ''}</div>
+      <div class="oa-region">📍 ${o.regionComunidad || o.region || '—'}${o.regionBarrio ? ` · ${o.regionBarrio}` : ''}</div>
       <div class="oa-meta">
-        <div class="oa-meta-item">Etapa <strong>${o.etapa}</strong></div>
+        <div class="oa-meta-item">Etapa <strong>${o.etapa || 1}</strong></div>
         <div class="oa-meta-item">Inicio <strong>${formatDate(o.fechaInicio)}</strong></div>
-        <div class="oa-meta-item"><strong>${informes.length}</strong> informes</div>
+        <div class="oa-meta-item"><strong>${obrasInformes.length}</strong> informes</div>
       </div>
       <div class="oa-progress">
         <div class="progress-label"><span>Avance físico</span><span>${fisico}%</span></div>
@@ -70,16 +120,29 @@ function goToInforme(obraId) {
   }, 100);
 }
 
-// ---- POPULATE OBRA SELECT ----
-function populateObraSelect() {
+
+// ════════════════════════════════════════════════════════════════
+//  PANEL: NUEVO INFORME
+// ════════════════════════════════════════════════════════════════
+
+async function populateObraSelect() {
   const sel = document.getElementById('inf-obra');
   if (!sel) return;
-  const obras = getObrasAsignadas();
-  sel.innerHTML = obras.length
-    ? `<option value="">Seleccionar obra…</option>` + obras.map(o => `<option value="${o.id}">${o.expediente} — ${o.nombre}</option>`).join('')
+
+  try {
+    obrasAsignadas = await fetchSupervisorObras();
+  } catch (err) {
+    sel.innerHTML = `<option value="">Error al cargar obras</option>`;
+    return;
+  }
+
+  sel.innerHTML = obrasAsignadas.length
+    ? `<option value="">Seleccionar obra…</option>` + obrasAsignadas.map(
+        o => `<option value="${o.id}">${o.expediente} — ${o.nombre}</option>`
+      ).join('')
     : `<option value="">Sin obras asignadas</option>`;
 
-  // Set current year
+  // Año actual por defecto
   const yr = document.getElementById('inf-anio');
   if (yr) yr.value = new Date().getFullYear();
 }
@@ -88,111 +151,142 @@ function onObraChange() {
   const obraId = document.getElementById('inf-obra').value;
   const strip = document.getElementById('obra-info-card');
   if (!obraId || !strip) { strip && (strip.style.display = 'none'); return; }
-  const obra = getObras().find(o => o.id === obraId);
+
+  const obra = obrasAsignadas.find(o => o.id === obraId);
   if (!obra) return;
+
   strip.style.display = 'flex';
   strip.innerHTML = `
     <div><span>Obra</span><br/><strong>${obra.nombre}</strong></div>
-    <div><span>Región</span><br/><strong>${regionMap[obra.region] || obra.region}</strong></div>
+    <div><span>Región</span><br/><strong>${obra.regionComunidad || obra.region || '—'}</strong></div>
     <div><span>Período</span><br/><strong>${formatDate(obra.fechaInicio)} — ${formatDate(obra.fechaFin)}</strong></div>
-    <div><span>Presupuesto</span><br/><strong>$${Number(obra.presupuesto || 0).toLocaleString('es-MX')}</strong></div>
+    <div><span>Expediente</span><br/><strong>${obra.expediente}</strong></div>
   `;
 }
 
-// ---- SLIDERS ----
+// ── Sliders ────────────────────────────────────────────────────
 function updateSlider(type) {
   const val = document.getElementById(`inf-avance-${type}`).value;
   document.getElementById(`${type}-val`).textContent = val + '%';
   document.getElementById(`${type}-bar`).style.width = val + '%';
 }
 
-// ---- FILE HANDLING ----
-let attachedFiles = [];
-function handleFiles(files) {
-  attachedFiles = [...attachedFiles, ...Array.from(files)];
-  renderFileList();
-}
-function renderFileList() {
-  const container = document.getElementById('file-list');
-  if (!container) return;
-  container.innerHTML = attachedFiles.map((f, i) => `
-    <div class="file-chip">
-      <span>${f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name}</span>
-      <button onclick="removeFile(${i})">✕</button>
-    </div>
-  `).join('');
-}
-function removeFile(i) { attachedFiles.splice(i, 1); renderFileList(); }
-function clearFiles() { attachedFiles = []; renderFileList(); }
-
-// ---- SUBMIT INFORME ----
-function submitInforme(e) {
+// ── Envío del formulario ───────────────────────────────────────
+async function submitInforme(e) {
   e.preventDefault();
-  const obraId = document.getElementById('inf-obra').value;
-  const anio = document.getElementById('inf-anio').value;
-  const mes = document.getElementById('inf-mes').value;
-  const avanceFisico = parseInt(document.getElementById('inf-avance-fisico').value);
-  const avanceFinanciero = parseInt(document.getElementById('inf-avance-financiero').value);
-  const desc = document.getElementById('inf-desc').value.trim();
 
-  const informe = {
-    id: 'INF' + Date.now(),
-    obraId,
-    supervisorId: user.id,
-    supervisorNombre: user.nombre,
+  const obraId       = document.getElementById('inf-obra').value;
+  const anio         = document.getElementById('inf-anio').value;
+  const mes          = document.getElementById('inf-mes').value;
+  const avanceFisico = parseInt(document.getElementById('inf-avance-fisico').value);
+  const avanceFin    = parseInt(document.getElementById('inf-avance-financiero').value);
+  const desc         = document.getElementById('inf-desc').value.trim();
+  const documento    = document.getElementById('inf-doc').value.trim();
+
+  if (!obraId) { showToast('Selecciona una obra.'); return; }
+
+  // El supervisorId NO va en el body — el backend lo toma del token de auth
+  const payload = {
+    obraId: obraId,
     anio: parseInt(anio),
     mes: parseInt(mes),
-    avanceFisico,
-    avanceFinanciero,
+    avanceFisico: avanceFisico,
+    avanceFinanciero: avanceFin,
     descripcion: desc,
-    archivos: attachedFiles.map(f => f.name),
-    fechaRegistro: new Date().toISOString()
+    documento: documento
   };
 
-  const informes = getInformes();
-  informes.push(informe);
-  saveInformes(informes);
+  try {
+    await createInforme(payload);
+    showToast(`Informe de ${meses[parseInt(mes)]} ${anio} registrado exitosamente.`);
+    resetForm();
+  } catch (err) {
+    showToast(err.message || 'Error al registrar el informe.', 'error');
+  }
+}
 
-  showToast(`Informe ${meses[parseInt(mes)]} ${anio} registrado exitosamente.`);
-  e.target.reset();
-  clearFiles();
+function resetForm() {
+  document.getElementById('form-informe').reset();
   document.getElementById('fisico-val').textContent = '0%';
   document.getElementById('financiero-val').textContent = '0%';
   document.getElementById('fisico-bar').style.width = '0%';
   document.getElementById('financiero-bar').style.width = '0%';
   document.getElementById('obra-info-card').style.display = 'none';
+
+  // Restaurar año actual
+  const yr = document.getElementById('inf-anio');
+  if (yr) yr.value = new Date().getFullYear();
 }
 
-// ---- LIBRO DE INFORMES ----
-function populateFiltroObra() {
+
+// ════════════════════════════════════════════════════════════════
+//  PANEL: LIBRO DE INFORMES
+// ════════════════════════════════════════════════════════════════
+
+async function populateFiltroObra() {
   const sel = document.getElementById('filtro-obra-libro');
   if (!sel) return;
-  const obras = getObrasAsignadas();
-  sel.innerHTML = `<option value="">Todas las obras</option>` + obras.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
+
+  try {
+    if (!obrasAsignadas.length) {
+      obrasAsignadas = await fetchSupervisorObras();
+    }
+  } catch (e) {
+    // silent fail
+  }
+
+  sel.innerHTML = `<option value="">Todas las obras</option>` + obrasAsignadas.map(
+    o => `<option value="${o.id}">${o.nombre}</option>`
+  ).join('');
 }
 
-function renderLibro() {
+async function renderLibro() {
   const container = document.getElementById('libro-container');
   if (!container) return;
-  const filtro = document.getElementById('filtro-obra-libro')?.value || '';
-  let informes = getInformes().filter(i => i.supervisorId === user.id);
-  if (filtro) informes = informes.filter(i => i.obraId === filtro);
-  informes.sort((a, b) => b.fechaRegistro.localeCompare(a.fechaRegistro));
 
-  if (!informes.length) {
+  const filtro = document.getElementById('filtro-obra-libro')?.value || '';
+
+  try {
+    // Precargar obras para mostrar nombres
+    if (!obrasAsignadas.length) {
+      obrasAsignadas = await fetchSupervisorObras();
+    }
+
+    // Cargar informes del supervisor desde el backend ORM
+    const params = {};
+    if (filtro) params.obra = filtro;
+
+    informesCache = await fetchInformes(params);
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><p>Error al cargar informes.</p><p style="font-size:0.8rem;color:var(--text-muted)">${err.message || 'Intenta de nuevo.'}</p></div>`;
+    return;
+  }
+
+  // Ordenar: más recientes primero (por año desc, mes desc)
+  informesCache.sort((a, b) => {
+    if (b.anio !== a.anio) return b.anio - a.anio;
+    return parseInt(b.mes) - parseInt(a.mes);
+  });
+
+  if (!informesCache.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><p>No hay informes registrados aún.</p></div>`;
     return;
   }
 
-  container.innerHTML = informes.map(inf => {
-    const obra = getObras().find(o => o.id === inf.obraId);
+  container.innerHTML = informesCache.map(inf => {
+    const obra = obrasAsignadas.find(o => o.id === inf.obraId);
+    const mesNombre = meses[parseInt(inf.mes)] || inf.mes;
+    const fechaReg = inf.fechaRegistro
+      ? new Date(inf.fechaRegistro).toLocaleDateString('es-MX')
+      : '—';
+
     return `
     <div class="informe-card">
       <div class="informe-header">
         <div>
           <div class="informe-meta" style="margin-bottom:4px">${obra ? obra.expediente : '—'} · ${obra ? obra.nombre : 'Obra desconocida'}</div>
-          <div class="informe-title">Informe de ${meses[inf.mes]} ${inf.anio}</div>
-          <div class="informe-meta">Registrado el ${new Date(inf.fechaRegistro).toLocaleDateString('es-MX')} · ${inf.supervisorNombre}</div>
+          <div class="informe-title">Informe de ${mesNombre} ${inf.anio}</div>
+          <div class="informe-meta">Supervisor: ${inf.supervisorNombre || currentUser?.nombre || '—'}</div>
         </div>
         <div class="informe-stats">
           <div class="informe-stat">
@@ -206,29 +300,44 @@ function renderLibro() {
         </div>
       </div>
       <div class="informe-body">${inf.descripcion}</div>
-      ${inf.archivos?.length ? `<div class="informe-files">${inf.archivos.map(f => `<div class="file-chip">📎 ${f}</div>`).join('')}</div>` : ''}
+      ${inf.documento ? `<div class="informe-files"><a href="${inf.documento}" target="_blank" class="file-chip" style="text-decoration:none;color:inherit">📎 Ver documento del informe</a></div>` : ''}
     </div>`;
   }).join('');
 }
 
-// ---- UTILS ----
+
+// ════════════════════════════════════════════════════════════════
+//  UTILIDADES
+// ════════════════════════════════════════════════════════════════
+
 function formatDate(d) {
   if (!d) return '—';
-  const [y, m, day] = d.split('-');
-  return `${day}/${m}/${y}`;
+  // Soporta ISO (2026-03-15) y formatos locales
+  const parts = d.split('T')[0].split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return d;
 }
-function showToast(msg) {
+
+function showToast(msg, type = 'success') {
   let toast = document.querySelector('.success-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.className = 'success-toast';
-    toast.innerHTML = `<span class="toast-icon">✓</span><span class="toast-msg"></span>`;
+    toast.innerHTML = `<span class="toast-icon"></span><span class="toast-msg"></span>`;
     document.body.appendChild(toast);
   }
+  toast.querySelector('.toast-icon').textContent = type === 'error' ? '⚠' : '✓';
   toast.querySelector('.toast-msg').textContent = msg;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
-// Init
+
+// ════════════════════════════════════════════════════════════════
+//  INICIALIZACIÓN
+// ════════════════════════════════════════════════════════════════
+
+// Cargar panel inicial
 showPanel('mis-obras');
