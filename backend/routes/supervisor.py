@@ -1,56 +1,219 @@
 from flask import Blueprint, request
-from app.database import get_db
-from app.helpers import ok, created, bad_request, not_found, db_error_response, require_fields
-import time
+from sqlalchemy import and_
+from app.database import db
+from app.helpers import (
+    ok, created, bad_request, not_found,
+    db_error_response, require_fields,
+)
+from app.models import (
+    Informe, Obra, Supervisor, Personal
+)
 from .decorators import require_auth
 
 supervisor_bp = Blueprint("supervisor", __name__)
 
 
-@supervisor_bp.route("/api/informes", methods=["GET"])
-@require_auth("director", "supervisor")
-def get_informes(current_user):
-    obra_filter = request.args.get("obra")
-    anio_filter = request.args.get("anio")
-    supervisor_id = current_user["id"] if current_user["role"] == "supervisor" else None
+# ════════════════════════════════════════════════════════════════
+#  UTILIDADES DE GENERACIÓN DE IDs
+# ════════════════════════════════════════════════════════════════
 
+def _gen_informe_id() -> str:
+    """
+    Tabla: public.informes
+    Columna: id_informe  TEXT
+    Formato: INF0000001 … INF9999999 (7 dígitos secuenciales)
+    """
+    last = Informe.query.order_by(Informe.id_informe.desc()).first()
+    if not last:
+        num = 1
+    else:
+        last_id = (last.id_informe or "INF0000000").strip()
+        try:
+            # Extraer la parte numérica después de "INF"
+            num = int(last_id[3:]) + 1
+        except ValueError:
+            num = Informe.query.count() + 1
+    return f"INF{num:07d}"
+
+
+# ════════════════════════════════════════════════════════════════
+#  OBRAS ASIGNADAS AL SUPERVISOR
+# ════════════════════════════════════════════════════════════════
+
+@supervisor_bp.route("/api/supervisor/obras", methods=["GET"])
+@require_auth("supervisor")
+def get_supervisor_obras(current_user):
+    """
+    Lista las obras asignadas al supervisor autenticado.
+    Incluye joins a región para datos enriquecidos del frontend.
+
+    Respuesta item:
+      {
+        "id": "OBRA000...",
+        "expediente": "EXP-2026-001",
+        "nombre": "Pavimento Hidráulico...",
+        "region": "REG001",
+        "regionComunidad": "Albarranes",
+        "regionBarrio": "Barrio Temeroso",
+        "etapa": 1,
+        "fechaInicio": "2026-03-01",
+        "fechaFin": "2026-09-30"
+      }
+    """
     try:
-        with get_db() as (_, cur):
-            cur.execute("""
-                SELECT
-                    TRIM(i.id_informe)                          AS "id",
-                    TRIM(i.id_obra)                             AS "obraId",
-                    TRIM(o.codigo_expediente)                   AS "obraExpediente",
-                    TRIM(o.nombre_obra)                         AS "obraNombre",
-                    TRIM(i.codigo_supervisor)                   AS "supervisorId",
-                    TRIM(p.nombre || ' ' || p.apellido_paterno) AS "supervisorNombre",
-                    i.ano_infor                                 AS "anio",
-                    TRIM(i.mes)                                 AS "mes",
-                    i.porcentaje_avance_fisico                  AS "avanceFisico",
-                    i.porcentaje_avance_presupuestario          AS "avanceFinanciero",
-                    i.descripcion,
-                    i.doc_infome                               AS "documento"
-                FROM public.informes i
-                JOIN public.obra o     ON TRIM(o.id_obra)        = TRIM(i.id_obra)
-                JOIN public.personal p ON TRIM(p.codigo_personal) = TRIM(i.codigo_supervisor)
-                WHERE (%s IS NULL OR TRIM(i.codigo_supervisor) = %s)
-                  AND (%s IS NULL OR TRIM(i.id_obra)           = %s)
-                  AND (%s IS NULL OR i.ano_infor               = %s::int)
-                ORDER BY i.ano_infor DESC, i.mes ASC
-            """, (
-                supervisor_id, supervisor_id,
-                obra_filter,   obra_filter,
-                anio_filter,   anio_filter,
-            ))
-            rows = [dict(r) for r in cur.fetchall()]
-        return ok(rows)
+        obras = (
+            Obra.query
+            .filter_by(codigo_supervisor=current_user["id"].strip())
+            .order_by(Obra.fecha_inicio.desc())
+            .all()
+        )
+
+        result = []
+        for o in obras:
+            result.append({
+                "id":              (o.id_obra or "").strip(),
+                "expediente":      (o.codigo_expediente or "").strip(),
+                "nombre":          (o.nombre_obra or "").strip(),
+                "region":          (o.id_region or "").strip(),
+                "regionComunidad": (o.region.comunidad or "").strip() if o.region else "",
+                "regionBarrio":    (o.region.barrio or "").strip() if o.region else "",
+                "etapa":           o.etapa,
+                "fechaInicio":     o.fecha_inicio.isoformat() if o.fecha_inicio else None,
+                "fechaFin":        o.fecha_final.isoformat() if o.fecha_final else None,
+            })
+
+        return ok(result)
     except Exception as exc:
         return db_error_response(exc)
 
 
+# ════════════════════════════════════════════════════════════════
+#  INFORMES — LISTADO (con filtros)
+# ════════════════════════════════════════════════════════════════
+
+@supervisor_bp.route("/api/informes", methods=["GET"])
+@require_auth("director", "supervisor")
+def get_informes(current_user):
+    """
+    Lista informes con filtros opcionales.
+
+    Query params:
+      ?obra=<id_obra>    — filtrar por obra
+      ?anio=<año>        — filtrar por año
+
+    Un supervisor solo ve sus propios informes.
+    Un director ve todos los informes (puede filtrar por supervisor).
+
+    Respuesta item:
+      {
+        "id": "INF0000001",
+        "obraId": "OBRA000...",
+        "obraExpediente": "EXP-2026-001",
+        "obraNombre": "Pavimento...",
+        "supervisorId": "SUP...",
+        "supervisorNombre": "Juan Pérez",
+        "anio": 2026,
+        "mes": "5",
+        "avanceFisico": 45,
+        "avanceFinanciero": 38,
+        "descripcion": "...",
+        "documento": "https://..."
+      }
+    """
+    obra_filter = request.args.get("obra")
+    anio_filter = request.args.get("anio")
+
+    # Un supervisor solo ve sus propios informes
+    supervisor_id = current_user["id"].strip() \
+        if current_user["role"] == "supervisor" else None
+
+    try:
+        query = (
+            Informe.query
+            .join(Obra, Informe.id_obra == Obra.id_obra)
+            .join(Supervisor, Informe.codigo_supervisor == Supervisor.codigo_personal)
+            .join(Personal, Supervisor.codigo_personal == Personal.codigo_personal)
+        )
+
+        # Filtro por supervisor (si es supervisor autenticado)
+        if supervisor_id:
+            query = query.filter(
+                db.func.trim(Informe.codigo_supervisor) == supervisor_id
+            )
+
+        # Filtro por obra
+        if obra_filter:
+            query = query.filter(
+                db.func.trim(Informe.id_obra) == obra_filter.strip()
+            )
+
+        # Filtro por año
+        if anio_filter:
+            query = query.filter(Informe.ano_infor == int(anio_filter))
+
+        informes = query.order_by(
+            Informe.ano_infor.desc(),
+            Informe.mes.asc()
+        ).all()
+
+        result = []
+        for inf in informes:
+            obra = inf.obra
+            supervisor_personal = inf.supervisor.personal if inf.supervisor else None
+
+            result.append({
+                "id":                 (inf.id_informe or "").strip(),
+                "obraId":             (inf.id_obra or "").strip(),
+                "obraExpediente":     (obra.codigo_expediente or "").strip() if obra else "",
+                "obraNombre":         (obra.nombre_obra or "").strip() if obra else "",
+                "supervisorId":       (inf.codigo_supervisor or "").strip(),
+                "supervisorNombre":   (
+                    f"{supervisor_personal.nombre or ''} "
+                    f"{supervisor_personal.apellido_paterno or ''}"
+                ).strip() if supervisor_personal else "",
+                "anio":               inf.ano_infor,
+                "mes":                (inf.mes or "").strip(),
+                "avanceFisico":       inf.porcentaje_avance_fisico,
+                "avanceFinanciero":   inf.porcentaje_avance_presupuestario,
+                "descripcion":        (inf.descripcion or "").strip(),
+                "documento":          (inf.doc_infome or "").strip(),
+            })
+
+        return ok(result)
+    except Exception as exc:
+        return db_error_response(exc)
+
+
+# ════════════════════════════════════════════════════════════════
+#  INFORMES — CREAR
+# ════════════════════════════════════════════════════════════════
+
 @supervisor_bp.route("/api/informes", methods=["POST"])
 @require_auth("supervisor")
 def create_informe(current_user):
+    """
+    Registra un nuevo informe mensual de obra.
+
+    Body esperado (coincide con supervisor.js):
+    {
+      "obraId":            "OBRA000...",
+      "anio":              2026,
+      "mes":               5,
+      "avanceFisico":      45,
+      "avanceFinanciero":  38,
+      "descripcion":       "Trabajos realizados...",
+      "documento":         "https://drive.google.com/..."   ← URL doc_infome
+    }
+
+    Reglas:
+      - El ID se genera automáticamente (INF0000001, INF0000002, ...).
+      - El supervisorId se toma del token de autenticación (NO del body).
+      - Se valida que el supervisor tenga la obra asignada.
+      - Los porcentajes se validan en rango 0-100.
+
+    Respuesta exitosa:
+      { "success": true, "data": { "id": "INF0000001" }, "message": "..." }
+    """
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(
         body, "obraId", "anio", "mes", "avanceFisico", "avanceFinanciero"
@@ -58,95 +221,148 @@ def create_informe(current_user):
     if not valid:
         return err
 
-    informe_id = f"INF-{int(time.time()) % 10_000_000:07d}"
+    obra_id       = body["obraId"].strip()
+    anio          = int(body["anio"])
+    mes           = str(body["mes"]).strip()
+    avance_fisico = int(body["avanceFisico"])
+    avance_fin    = int(body["avanceFinanciero"])
+    descripcion   = (body.get("descripcion") or "").strip()
+    documento     = (body.get("documento") or "").strip()
+
+    # Validar rangos de porcentajes
+    if not (0 <= avance_fisico <= 100):
+        return bad_request("El avance físico debe estar entre 0 y 100.")
+    if not (0 <= avance_fin <= 100):
+        return bad_request("El avance financiero debe estar entre 0 y 100.")
 
     try:
-        with get_db() as (_, cur):
-            cur.execute(
-                "SELECT 1 FROM public.obra WHERE TRIM(id_obra) = %s AND TRIM(codigo_supervisor) = %s",
-                (body["obraId"], current_user["id"])
+        # ── 1. Verificar que el supervisor tiene la obra asignada ──
+        obra = Obra.query.get(obra_id)
+        if not obra:
+            return bad_request(f"La obra '{obra_id}' no existe.")
+
+        if obra.codigo_supervisor.strip() != current_user["id"].strip():
+            return bad_request(
+                "No tienes permiso para reportar en esta obra. "
+                "El director debe asignártela primero."
             )
-            if not cur.fetchone():
-                return bad_request("No tienes permiso para reportar en esta obra.")
 
-            cur.execute("""
-                INSERT INTO public.informes (
-                    id_informe, ano_infor, mes,
-                    porcentaje_avance_fisico,
-                    porcentaje_avance_presupuestario,
-                    doc_infome, descripcion,
-                    id_obra, codigo_supervisor
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING TRIM(id_informe) AS id
-            """, (
-                informe_id.ljust(20),
-                int(body["anio"]),
-                str(body["mes"]).ljust(30),
-                int(body["avanceFisico"]),
-                int(body["avanceFinanciero"]),
-                body.get("documento", ""),
-                body.get("descripcion", ""),
-                body["obraId"],
-                current_user["id"],
-            ))
+        # ── 2. Generar ID de informe automáticamente ──
+        informe_id = _gen_informe_id()
 
-        return created({"id": informe_id}, "Informe mensual guardado.")
+        # ── 3. INSERT con ORM ──
+        nuevo_informe = Informe(
+            id_informe=informe_id,
+            ano_infor=anio,
+            mes=mes.ljust(30),           # CHAR(30) en la BD
+            porcentaje_avance_fisico=avance_fisico,
+            porcentaje_avance_presupuestario=avance_fin,
+            doc_infome=documento,
+            descripcion=descripcion,
+            id_obra=obra_id,
+            codigo_supervisor=current_user["id"].strip(),
+        )
+        db.session.add(nuevo_informe)
+        db.session.commit()
+
+        return created(
+            {"id": informe_id},
+            f"Informe de {mes.strip()} {anio} registrado exitosamente."
+        )
+
     except Exception as exc:
+        db.session.rollback()
         return db_error_response(exc)
 
+
+# ════════════════════════════════════════════════════════════════
+#  INFORMES — DETALLE POR ID
+# ════════════════════════════════════════════════════════════════
 
 @supervisor_bp.route("/api/informes/<informe_id>", methods=["GET"])
 @require_auth("director", "supervisor")
 def get_informe(informe_id, current_user):
-    try:
-        with get_db() as (_, cur):
-            cur.execute("""
-                SELECT
-                    TRIM(i.id_informe)                          AS "id",
-                    TRIM(i.id_obra)                             AS "obraId",
-                    TRIM(o.nombre_obra)                         AS "obraNombre",
-                    TRIM(i.codigo_supervisor)                   AS "supervisorId",
-                    TRIM(p.nombre || ' ' || p.apellido_paterno) AS "supervisorNombre",
-                    i.ano_infor                                 AS "anio",
-                    TRIM(i.mes)                                 AS "mes",
-                    i.porcentaje_avance_fisico                  AS "avanceFisico",
-                    i.porcentaje_avance_presupuestario          AS "avanceFinanciero",
-                    i.descripcion,
-                    i.doc_infome                               AS "documento"
-                FROM public.informes i
-                JOIN public.obra o     ON TRIM(o.id_obra)        = TRIM(i.id_obra)
-                JOIN public.personal p ON TRIM(p.codigo_personal) = TRIM(i.codigo_supervisor)
-                WHERE TRIM(i.id_informe) = %s
-            """, (informe_id.strip(),))
-            row = cur.fetchone()
+    """
+    Devuelve el detalle completo de un informe por su ID.
 
-        if not row:
+    Un supervisor solo puede ver sus propios informes.
+    """
+    try:
+        informe = (
+            Informe.query
+            .join(Obra, Informe.id_obra == Obra.id_obra)
+            .join(Supervisor, Informe.codigo_supervisor == Supervisor.codigo_personal)
+            .join(Personal, Supervisor.codigo_personal == Personal.codigo_personal)
+            .filter(db.func.trim(Informe.id_informe) == informe_id.strip())
+            .first()
+        )
+
+        if not informe:
             return not_found(f"Informe '{informe_id}' no encontrado.")
-        return ok(dict(row))
+
+        # Si es supervisor, verificar que el informe sea suyo
+        if current_user["role"] == "supervisor":
+            if informe.codigo_supervisor.strip() != current_user["id"].strip():
+                return bad_request("Acceso denegado a este informe.")
+
+        obra = informe.obra
+        supervisor_personal = informe.supervisor.personal if informe.supervisor else None
+
+        result = {
+            "id":                 (informe.id_informe or "").strip(),
+            "obraId":             (informe.id_obra or "").strip(),
+            "obraNombre":         (obra.nombre_obra or "").strip() if obra else "",
+            "supervisorId":       (informe.codigo_supervisor or "").strip(),
+            "supervisorNombre":   (
+                f"{supervisor_personal.nombre or ''} "
+                f"{supervisor_personal.apellido_paterno or ''}"
+            ).strip() if supervisor_personal else "",
+            "anio":               informe.ano_infor,
+            "mes":                (informe.mes or "").strip(),
+            "avanceFisico":       informe.porcentaje_avance_fisico,
+            "avanceFinanciero":   informe.porcentaje_avance_presupuestario,
+            "descripcion":        (informe.descripcion or "").strip(),
+            "documento":          (informe.doc_infome or "").strip(),
+        }
+
+        return ok(result)
+
     except Exception as exc:
         return db_error_response(exc)
 
 
+# ════════════════════════════════════════════════════════════════
+#  INFORMES — ELIMINAR
+# ════════════════════════════════════════════════════════════════
+
 @supervisor_bp.route("/api/informes/<informe_id>", methods=["DELETE"])
 @require_auth("supervisor", "director")
 def delete_informe(informe_id, current_user):
-    try:
-        with get_db() as (_, cur):
-            if current_user["role"] == "supervisor":
-                cur.execute(
-                    "SELECT 1 FROM public.informes WHERE TRIM(id_informe) = %s AND TRIM(codigo_supervisor) = %s",
-                    (informe_id, current_user["id"])
-                )
-                if not cur.fetchone():
-                    return bad_request("Acceso denegado a este informe.")
+    """
+    Elimina un informe.
 
-            cur.execute(
-                "DELETE FROM public.informes WHERE TRIM(id_informe) = %s RETURNING id_informe",
-                (informe_id,)
-            )
-            if not cur.fetchone():
-                return not_found("El informe no existe.")
+    Un supervisor solo puede eliminar sus propios informes.
+    Un director puede eliminar cualquier informe.
+    """
+    try:
+        # Buscar el informe por ID (trim por compatibilidad con CHAR)
+        informe = Informe.query.filter(
+            db.func.trim(Informe.id_informe) == informe_id.strip()
+        ).first()
+
+        if not informe:
+            return not_found(f"Informe '{informe_id}' no encontrado.")
+
+        # Si es supervisor, verificar propiedad
+        if current_user["role"] == "supervisor":
+            if informe.codigo_supervisor.strip() != current_user["id"].strip():
+                return bad_request("Acceso denegado a este informe.")
+
+        db.session.delete(informe)
+        db.session.commit()
 
         return ok(message="Informe eliminado.")
+
     except Exception as exc:
+        db.session.rollback()
         return db_error_response(exc)
