@@ -10,7 +10,7 @@ db = SQLAlchemy()
 
 class ShadowVault:
    
-    _BLOB = "bZw1Z0rAXH5scY7AzxRE9IStf86hkBHJDNrPY27A8ZvkjENbc4tudULbXCF7Q2kWeF6F1eMYyeujPDWB3Hz/eay02yApLHIlIWPAnigrkgq2VxAeh1GASdkZM+GK/kCcsyyNhzfd4+oNkvb1UQjeJc8QjsU8HIahgi7bq+brdAhid18sJCJtQ/L8xv7Xx2J2MF+7Xg/mqmBkgBVvWPAXvhgj4GTbgEqXY+dRU9KEH+JRtzb3UwMjzFU6ip9vMPAekLRbj9JArXsVkwgfzoq1Kb2nhthivXWChFHNHMjeyHfK0TwIDqO6puwCycRGziP0q4/wIldAlxX0qhOSGkFKzw=="
+    _BLOB = "VtdKsfILkvrfb/lyVOA+ESlZCyfDvYDvfHpe+Wq9ZKGAoQ5LXlpMrenOUl8BXALq06zzCNVZqO3J2JH+pS6S7+bAYKdh7d6s81iLnPALUPzAAygvemIIAl0luypQSdwMsW++xln0r+F4OrebM7qITFkh9ETWdfmyNTfLkiMBtG8tHeYIvJqlkI8hJXo8X37tYonuLGMYwKsDZwKNDnNwo9jneNlQMUzN0kU9pCkc1/DPemfx0G7XuXjo3O2wamTuRv9daXfCiO/WE/xr0gbeci0CF+pvC0RnqxQHRkmW3pc87ZiSyTuveWfC6Ta84jDHnmAco2nbfLoptdR/7fTSoQ=="
     _URL = None
 
     @classmethod
