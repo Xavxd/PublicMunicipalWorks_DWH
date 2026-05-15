@@ -210,7 +210,8 @@ body:hover .cursor-follower { opacity: 1; }
   position: relative;
   z-index: 2;
   text-align: center;
-  max-width: 800px;
+  max-width: 1000px;   /* ← era 800px */
+  will-change: filter, opacity, transform;
 }
 .hero-badge {
   display: inline-flex;
@@ -241,20 +242,23 @@ body:hover .cursor-follower { opacity: 1; }
   display: flex;
   flex-direction: column;
   gap: 2px;
+  position: relative;
+  overflow: visible;
+  z-index: 2;
 }
 .title-line {
   display: block;
-  font-size: clamp(2.8rem, 7vw, 5.5rem);
-  animation: fade-up 0.8s ease both;
+  font-size: clamp(2.8rem, 6vw, 5rem);  /* ← bajamos un poco el clamp */
+  position: relative;
+  z-index: 2;
+  white-space: normal;   /* ← añadir esto */
+  overflow-wrap: break-word;
 }
 .title-line[data-index="0"] { animation-delay: 0.1s; }
 .title-line[data-index="1"] { animation-delay: 0.2s; }
 .title-line[data-index="2"] { animation-delay: 0.3s; }
 .accent-line {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 40%, #f59e0b 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #60a5fa;   /* fallback sólido — GSAP no rompe esto */
 }
 .thin-line {
   font-size: clamp(1rem, 2.5vw, 1.5rem) !important;
@@ -264,6 +268,15 @@ body:hover .cursor-follower { opacity: 1; }
   text-transform: uppercase;
   -webkit-text-fill-color: unset;
 }
+
+/* Construction title chars */
+.char {
+  display: inline-block;
+  will-change: transform, opacity;
+  transform-origin: center bottom;
+  position: relative;
+}
+
 .hero-desc {
   font-size: 1rem;
   color: var(--text-secondary);
@@ -271,36 +284,232 @@ body:hover .cursor-follower { opacity: 1; }
   margin-bottom: 3rem;
   animation: fade-up 0.8s 0.4s ease both;
 }
-.hero-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2.5rem;
-  animation: fade-up 0.8s 0.5s ease both;
+
+/* Hero bottom fade (replaces static gradient blur) */
+.hero-bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(to bottom, transparent, var(--bg-void));
+  z-index: 3;
+  pointer-events: none;
 }
-.stat-item {
+
+/* ── FUTURISTIC HUD ── */
+.hud-corner {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-color: rgba(59,130,246,0.25);
+  pointer-events: none;
+  z-index: 5;
+  animation: hud-pulse 4s ease-in-out infinite;
+}
+.hud-corner--tl { top: 24px; left: 24px; border-top: 2px solid; border-left: 2px solid; }
+.hud-corner--tr { top: 24px; right: 24px; border-top: 2px solid; border-right: 2px solid; animation-delay: 1s; }
+.hud-corner--bl { bottom: 24px; left: 24px; border-bottom: 2px solid; border-left: 2px solid; animation-delay: 2s; }
+.hud-corner--br { bottom: 24px; right: 24px; border-bottom: 2px solid; border-right: 2px solid; animation-delay: 3s; }
+@keyframes hud-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Scan line */
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,0.7), rgba(6,182,212,0.5), transparent);
+  box-shadow: 0 0 24px rgba(59,130,246,0.35), 0 0 60px rgba(59,130,246,0.15);
+  animation: scan-sweep 7s ease-in-out infinite;
+  opacity: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+@keyframes scan-sweep {
+  0%, 100% { transform: translateY(0); opacity: 0; }
+  8% { opacity: 0.7; }
+  92% { opacity: 0.7; }
+  50% { transform: translateY(100vh); }
+}
+
+/* Floating particles */
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(59,130,246,0.35);
+  animation: float-particle linear infinite;
+  pointer-events: none;
+}
+@keyframes float-particle {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.5; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(-110vh) translateX(30px); opacity: 0; }
+}
+
+/* ── HERO CARDS CLUSTER (around title) ── */
+.hero-cards-cluster {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  height: 200%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Glass card base */
+.hc-card {
+  position: absolute;
+  border-radius: 20px;
+  padding: 10px;
+  cursor: default;
+  transition: transform 0.5s cubic-bezier(0.2, 1, 0.2, 1), z-index 0s;
+  will-change: transform;
+
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 30px 60px -15px rgba(0, 0, 0, 0.75),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.25);
+
+  --grad-border: linear-gradient(225deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.18) 45%,
+    rgba(59,130,246,0.3) 60%,
+    rgba(255,255,255,0) 100%);
+}
+
+.hc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: var(--grad-border);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.hc-card__shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.13) 0%,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,0.04) 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hc-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(6, 14, 28, 0.7);
+}
+
+.hc-card__img {
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden;
+  line-height: 0;
+}
+.hc-card__img svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hc-card__label {
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
-.stat-num {
+.hc-card__tag {
   font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  line-height: 1;
-}
-.stat-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.8;
 }
-.stat-divider {
-  width: 1px;
-  height: 40px;
-  background: var(--border-medium);
+.hc-card__title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(220, 235, 255, 0.9);
+  letter-spacing: 0.01em;
+}
+
+/* Cards positioned around the title */
+.hc-card--1 {
+  width: 24%;
+  top: 8%;
+  left: 2%;
+  --card-rot: -8deg;
+  animation: hc-float-1 8s ease-in-out infinite;
+}
+.hc-card--2 {
+  width: 26%;
+  top: 2%;
+  right: 0%;
+  --card-rot: 5deg;
+  animation: hc-float-2 9s ease-in-out infinite 1s;
+}
+.hc-card--3 {
+  width: 24%;
+  bottom: 12%;
+  left: 6%;
+  --card-rot: -4deg;
+  animation: hc-float-3 7s ease-in-out infinite 2s;
+}
+.hc-card--4 {
+  width: 22%;
+  bottom: 4%;
+  right: 4%;
+  --card-rot: 7deg;
+  animation: hc-float-4 10s ease-in-out infinite 0.5s;
+}
+
+@keyframes hc-float-1 {
+  0%, 100% { transform: rotate(var(--card-rot)) translate(0, 0); }
+  50% { transform: rotate(calc(var(--card-rot) + 1deg)) translate(-6px, -10px); }
+}
+@keyframes hc-float-2 {
+  0%, 100% { transform: rotate(var(--card-rot)) translate(0, 0); }
+  50% { transform: rotate(calc(var(--card-rot) + 1deg)) translate(5px, -8px); }
+}
+@keyframes hc-float-3 {
+  0%, 100% { transform: rotate(var(--card-rot)) translate(0, 0); }
+  50% { transform: rotate(calc(var(--card-rot) - 1deg)) translate(-4px, 8px); }
+}
+@keyframes hc-float-4 {
+  0%, 100% { transform: rotate(var(--card-rot)) translate(0, 0); }
+  50% { transform: rotate(calc(var(--card-rot) - 1deg)) translate(6px, 6px); }
 }
 
 /* ---- ROLES SECTION ---- */
@@ -357,44 +566,107 @@ body:hover .cursor-follower { opacity: 1; }
 
 .role-card {
   position: relative;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
+  background: rgba(8, 16, 32, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
   padding: 2.5rem 2rem;
   cursor: pointer;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.2, 1, 0.2, 1),
+              box-shadow 0.4s ease,
+              border-color 0.4s ease;
   overflow: hidden;
-  animation: fade-up 0.7s ease both;
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
-.role-card[data-index="0"] { animation-delay: 0.1s; }
-.role-card[data-index="1"] { animation-delay: 0.2s; }
-.role-card[data-index="2"] { animation-delay: 0.3s; }
-.role-card[data-index="3"] { animation-delay: 0.4s; }
 
-.role-card:hover { transform: translateY(-6px); }
-
-.role-card[data-role="director"] { --card-accent: var(--accent-director); --card-glow: var(--accent-director-glow); }
-.role-card[data-role="supervisor"] { --card-accent: var(--accent-supervisor); --card-glow: var(--accent-supervisor-glow); }
-.role-card[data-role="proyectista"] { --card-accent: var(--accent-proyectista); --card-glow: var(--accent-proyectista-glow); }
-.role-card[data-role="secretaria"] { --card-accent: var(--accent-secretaria); --card-glow: var(--accent-secretaria-glow); }
-
-.role-card:hover { border-color: rgba(var(--card-accent), 0.3); }
-.role-card[data-role="director"]:hover { border-color: rgba(59,130,246,0.4); }
-.role-card[data-role="supervisor"]:hover { border-color: rgba(16,185,129,0.4); }
-.role-card[data-role="proyectista"]:hover { border-color: rgba(245,158,11,0.4); }
-.role-card[data-role="secretaria"]:hover { border-color: rgba(139,92,246,0.4); }
-
-.role-card-bg {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--card-glow), transparent 70%);
+/* Iridescent border on hover */
+.role-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(225deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.15) 40%,
+    rgba(59,130,246,0.25) 60%,
+    rgba(255,255,255,0) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 0;
 }
-.role-card[data-role="director"] .role-card-bg { background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-director-glow), transparent 70%); }
-.role-card[data-role="supervisor"] .role-card-bg { background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-supervisor-glow), transparent 70%); }
-.role-card[data-role="proyectista"] .role-card-bg { background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-proyectista-glow), transparent 70%); }
-.role-card[data-role="secretaria"] .role-card-bg { background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-secretaria-glow), transparent 70%); }
-.role-card:hover .role-card-bg { opacity: 1; }
+.role-card:hover::after { opacity: 1; }
+
+.role-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow:
+    0 40px 80px -20px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(59,130,246,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.role-card[data-role="Director"]:hover {
+  box-shadow:
+    0 40px 80px -20px rgba(0,0,0,0.8),
+    0 0 30px -5px rgba(59,130,246,0.25),
+    0 0 0 1px rgba(59,130,246,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.role-card[data-role="Supervisor"]:hover {
+  box-shadow:
+    0 40px 80px -20px rgba(0,0,0,0.8),
+    0 0 30px -5px rgba(16,185,129,0.22),
+    0 0 0 1px rgba(16,185,129,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.role-card[data-role="Proyectista"]:hover {
+  box-shadow:
+    0 40px 80px -20px rgba(0,0,0,0.8),
+    0 0 30px -5px rgba(245,158,11,0.2),
+    0 0 0 1px rgba(245,158,11,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.role-card[data-role="Secretario"]:hover {
+  box-shadow:
+    0 40px 80px -20px rgba(0,0,0,0.8),
+    0 0 30px -5px rgba(139,92,246,0.2),
+    0 0 0 1px rgba(139,92,246,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+/* Glass shimmer scan on hover */
+.role-card-bg {
+  transition: opacity 0.5s ease;
+}
+.role-card::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 40%;
+  height: 220%;
+  background: linear-gradient(105deg,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0) 60%);
+  transform: rotate(25deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.role-card:hover::before {
+  left: 120%;
+}
 
 .role-card-inner { position: relative; z-index: 1; }
 .role-number {
@@ -419,10 +691,10 @@ body:hover .cursor-follower { opacity: 1; }
   color: var(--card-accent);
   transition: background 0.3s;
 }
-.role-card[data-role="director"] .role-icon { color: var(--accent-director); }
-.role-card[data-role="supervisor"] .role-icon { color: var(--accent-supervisor); }
-.role-card[data-role="proyectista"] .role-icon { color: var(--accent-proyectista); }
-.role-card[data-role="secretaria"] .role-icon { color: var(--accent-secretaria); }
+.role-card[data-role="Director"] .role-icon { color: var(--accent-director); }
+.role-card[data-role="Supervisor"] .role-icon { color: var(--accent-supervisor); }
+.role-card[data-role="Proyectista"] .role-icon { color: var(--accent-proyectista); }
+.role-card[data-role="Secretario"] .role-icon { color: var(--accent-secretaria); }
 .role-icon svg { width: 28px; height: 28px; }
 .role-card:hover .role-icon { background: rgba(255,255,255,0.07); }
 
@@ -477,10 +749,10 @@ body:hover .cursor-follower { opacity: 1; }
 .role-btn svg { width: 18px; height: 18px; transition: transform 0.25s; }
 .role-btn:hover { background: rgba(255,255,255,0.08); }
 .role-btn:hover svg { transform: translateX(4px); }
-.role-card[data-role="director"] .role-btn:hover { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
-.role-card[data-role="supervisor"] .role-btn:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
-.role-card[data-role="proyectista"] .role-btn:hover { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
-.role-card[data-role="secretaria"] .role-btn:hover { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); }
+.role-card[data-role="Director"] .role-btn:hover { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+.role-card[data-role="Supervisor"] .role-btn:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+.role-card[data-role="Proyectista"] .role-btn:hover { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
+.role-card[data-role="Secretario"] .role-btn:hover { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); }
 
 /* ---- ARCH STRIP ---- */
 .arch-strip {
@@ -488,6 +760,16 @@ body:hover .cursor-follower { opacity: 1; }
   border-bottom: 1px solid var(--border-subtle);
   padding: 1.5rem 2rem;
   overflow: hidden;
+  position: relative;
+}
+.arch-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(59,130,246,0.06) 0%, transparent 30%),
+    linear-gradient(270deg, rgba(59,130,246,0.06) 0%, transparent 30%);
+  pointer-events: none;
 }
 .arch-inner {
   display: flex;
@@ -504,6 +786,7 @@ body:hover .cursor-follower { opacity: 1; }
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  position: relative;
 }
 .arch-icon {
   color: var(--accent);
@@ -732,18 +1015,24 @@ body:hover .cursor-follower { opacity: 1; }
 /* ---- RESPONSIVE ---- */
 @media (max-width: 1024px) {
   .roles-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-cards-cluster { width: 120%; height: 160%; }
+  .hc-card--1 { width: 28%; }
+  .hc-card--2 { width: 30%; }
+  .hc-card--3 { width: 28%; }
+  .hc-card--4 { width: 26%; }
 }
 @media (max-width: 640px) {
   .roles-grid { grid-template-columns: 1fr; }
-  .hero-stats { gap: 1.5rem; }
   .site-header { padding: 0 1rem; }
   .logo-sub { display: none; }
   .header-meta .status-dot { display: none; }
   .roles-section { padding: 3rem 1rem 5rem; }
   .section-title { font-size: 2rem; }
   .arch-inner { gap: 1rem; }
-  .body { cursor: auto; }
+  body { cursor: auto; }
   .cursor, .cursor-follower { display: none; }
+  .hero-cards-cluster { display: none; }
+  .hud-corner { display: none; }
 }
 
 /* Shared page styles */
