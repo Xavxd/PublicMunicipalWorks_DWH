@@ -1,7 +1,7 @@
 
 const user = JSON.parse(sessionStorage.getItem('op_user') || 'null');
 document.getElementById('user-header-badge').textContent = `📋 ${user.nombre || 'Supervisor'}`;
-if (!user || user.role !== 'supervisor') window.location.href = '../index.html';
+if (!user || user.role.toLowerCase()  !== 'supervisor') window.location.href = '../index.html';
 
 const badge = document.getElementById('user-header-badge');
 if (badge) badge.textContent = `📋 ${user?.nombre || user?.username} (${user?.id})`;
