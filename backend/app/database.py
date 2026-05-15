@@ -4,7 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from contextlib import contextmanager
-from psycopg2.extras import RealDictCursor
+from psycopg.rows import dict_row
+from contextlib import contextmanagerfrom psycopg2.extras import RealDictCursor
 
 db = SQLAlchemy()
 
