@@ -49,9 +49,10 @@ async function fetchSupervisorObras() {
  * Endpoint: GET /api/informes/por-obra
  */
 async function fetchInformesPorObra() {
-  const json = await API.get('/api/informes?grouped=true');
+  const json = await API.get('/api/informes/por-obra');
   return json.data || [];
 }
+
 
 // ════════════════════════════════════════════════════════════════
 //  NAVEGACIÓN DE PANELES
