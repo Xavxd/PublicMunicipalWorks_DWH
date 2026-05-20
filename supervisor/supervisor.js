@@ -44,6 +44,15 @@ async function fetchSupervisorObras() {
   return json.data || [];
 }
 
+/**
+ * Obtiene los informes agrupados por obra del supervisor autenticado.
+ * Endpoint: GET /api/informes/por-obra
+ */
+async function fetchInformesPorObra() {
+  const json = await API.get('/api/informes/por-obra');
+  return json.data || [];
+}
+
 
 // ════════════════════════════════════════════════════════════════
 //  NAVEGACIÓN DE PANELES
@@ -252,28 +261,114 @@ async function renderLibro() {
       obrasAsignadas = await fetchSupervisorObras();
     }
 
-    // Cargar informes del supervisor desde el backend ORM
-    const params = {};
-    if (filtro) params.obra = filtro;
-
-    informesCache = await fetchInformes(params);
+    // Si hay filtro de obra específica: usar endpoint tradicional con filtro
+    // Si no hay filtro ("Todas las obras"): usar endpoint agrupado por obra
+    if (filtro) {
+      const params = { obra: filtro };
+      informesCache = await fetchInformes(params);
+      _renderLibroListaPlana(container, informesCache);
+    } else {
+      const informesPorObra = await fetchInformesPorObra();
+      _renderLibroAgrupado(container, informesPorObra);
+    }
   } catch (err) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><p>Error al cargar informes.</p><p style="font-size:0.8rem;color:var(--text-muted)">${err.message || 'Intenta de nuevo.'}</p></div>`;
-    return;
   }
+}
 
-  // Ordenar: más recientes primero (por año desc, mes desc)
+/**
+ * Renderiza el libro de informes en modo agrupado por obra.
+ * Se usa cuando NO hay filtro de obra seleccionado ("Todas las obras").
+ */
+function _renderLibroAgrupado(container, obrasConInformes) {
+  // Aplanar todos los informes para el cache (compatibilidad con funciones existentes)
+  informesCache = [];
+  obrasConInformes.forEach(obra => {
+    obra.informes.forEach(inf => {
+      informesCache.push({
+        ...inf,
+        obraId: obra.obraId,
+        obraNombre: obra.obraNombre,
+        obraExpediente: obra.expediente,
+      });
+    });
+  });
+
+  // Ordenar globalmente: más recientes primero
   informesCache.sort((a, b) => {
     if (b.anio !== a.anio) return b.anio - a.anio;
     return parseInt(b.mes) - parseInt(a.mes);
   });
 
-  if (!informesCache.length) {
+  const obrasConDatos = obrasConInformes.filter(o => o.informes.length > 0);
+
+  if (!obrasConDatos.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><p>No hay informes registrados aún.</p></div>`;
     return;
   }
 
-  container.innerHTML = informesCache.map(inf => {
+  container.innerHTML = obrasConDatos.map(obra => {
+    const informesHtml = obra.informes.map(inf => {
+      const mesNombre = meses[parseInt(inf.mes)] || inf.mes;
+      return `
+      <div class="informe-card">
+        <div class="informe-header">
+          <div>
+            <div class="informe-title">Informe de ${mesNombre} ${inf.anio}</div>
+            <div class="informe-meta">ID: ${inf.id}</div>
+          </div>
+          <div class="informe-stats">
+            <div class="informe-stat">
+              <div class="informe-stat-val fisico">${inf.avanceFisico}%</div>
+              <div class="informe-stat-label">Físico</div>
+            </div>
+            <div class="informe-stat">
+              <div class="informe-stat-val financiero">${inf.avanceFinanciero}%</div>
+              <div class="informe-stat-label">Financiero</div>
+            </div>
+          </div>
+        </div>
+        <div class="informe-body">${inf.descripcion}</div>
+        ${inf.documento ? `<div class="informe-files"><a href="${inf.documento}" target="_blank" class="file-chip" style="text-decoration:none;color:inherit">📎 Ver documento del informe</a></div>` : ''}
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="libro-obra-grupo">
+      <div class="libro-obra-header">
+        <div class="libro-obra-title">${obra.obraNombre}</div>
+        <div class="libro-obra-meta">
+          <span class="libro-obra-exp">${obra.expediente}</span>
+          <span class="libro-obra-region">📍 ${obra.regionComunidad || '—'}${obra.regionBarrio ? ` · ${obra.regionBarrio}` : ''}</span>
+          <span class="libro-obra-periodo">${formatDate(obra.fechaInicio)} — ${formatDate(obra.fechaFin)}</span>
+          <span class="libro-obra-count"><strong>${obra.totalInformes}</strong> informe${obra.totalInformes !== 1 ? 's' : ''}</span>
+          <span class="libro-obra-avance">Último avance: <strong class="fisico">${obra.ultimoAvanceFisico}%</strong> físico / <strong class="financiero">${obra.ultimoAvanceFinanciero}%</strong> financiero</span>
+        </div>
+      </div>
+      <div class="libro-obra-informes">
+        ${informesHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/**
+ * Renderiza el libro de informes en modo lista plana (filtrado por obra).
+ * Se usa cuando hay un filtro de obra específico seleccionado.
+ */
+function _renderLibroListaPlana(container, informes) {
+  // Ordenar: más recientes primero (por año desc, mes desc)
+  informes.sort((a, b) => {
+    if (b.anio !== a.anio) return b.anio - a.anio;
+    return parseInt(b.mes) - parseInt(a.mes);
+  });
+
+  if (!informes.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><p>No hay informes registrados aún.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = informes.map(inf => {
     const obra = obrasAsignadas.find(o => o.id === inf.obraId);
     const mesNombre = meses[parseInt(inf.mes)] || inf.mes;
     const fechaReg = inf.fechaRegistro
@@ -284,7 +379,7 @@ async function renderLibro() {
     <div class="informe-card">
       <div class="informe-header">
         <div>
-          <div class="informe-meta" style="margin-bottom:4px">${obra ? obra.expediente : '—'} · ${obra ? obra.nombre : 'Obra desconocida'}</div>
+          <div class="informe-meta" style="margin-bottom:4px">${obra ? obra.expediente : (inf.obraExpediente || '—')} · ${obra ? obra.nombre : (inf.obraNombre || 'Obra desconocida')}</div>
           <div class="informe-title">Informe de ${mesNombre} ${inf.anio}</div>
           <div class="informe-meta">Supervisor: ${inf.supervisorNombre || currentUser?.nombre || '—'}</div>
         </div>
