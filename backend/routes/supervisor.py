@@ -419,7 +419,7 @@ def create_informe(current_user):
 #  INFORMES — DETALLE POR ID
 # ════════════════════════════════════════════════════════════════
 
-@supervisor_bp.route("/api/informes/<informe_id>", methods=["GET"])
+@supervisor_bp.route("/api/informes/por-obra", methods=["GET"])
 @require_auth("director", "supervisor")
 def get_informe(informe_id, current_user):
     """
@@ -475,7 +475,7 @@ def get_informe(informe_id, current_user):
 #  INFORMES — ELIMINAR
 # ════════════════════════════════════════════════════════════════
 
-@supervisor_bp.route("/api/informes/<informe_id>", methods=["DELETE"])
+@supervisor_bp.route("/api/informes/por-obra", methods=["GET"])
 @require_auth("supervisor", "director")
 def delete_informe(informe_id, current_user):
     """
