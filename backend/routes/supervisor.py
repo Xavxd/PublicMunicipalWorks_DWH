@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from sqlalchemy import and_
+from datetime import datetime, timedelta
 from app.database import db
 from app.helpers import (
     ok, created, bad_request, not_found,
@@ -34,6 +34,19 @@ def _gen_informe_id() -> str:
         except ValueError:
             num = Informe.query.count() + 1
     return f"INF{num:07d}"
+
+
+def _obtener_ultimo_informe(obra_id: str):
+    """
+    Obtiene el informe más reciente de una obra específica,
+    ordenado por año y mes descendentes.
+    """
+    return (
+        Informe.query
+        .filter(db.func.trim(Informe.id_obra) == obra_id.strip())
+        .order_by(Informe.ano_infor.desc(), Informe.mes.desc())
+        .first()
+    )
 
 
 # ════════════════════════════════════════════════════════════════
@@ -185,6 +198,106 @@ def get_informes(current_user):
 
 
 # ════════════════════════════════════════════════════════════════
+#  INFORMES — LISTADO AGRUPADO POR OBRA
+# ════════════════════════════════════════════════════════════════
+
+@supervisor_bp.route("/api/informes/por-obra", methods=["GET"])
+@require_auth("supervisor")
+def get_informes_por_obra(current_user):
+    """
+    Devuelve todos los informes del supervisor autenticado,
+    agrupados por obra.
+
+    Respuesta:
+      {
+        "success": true,
+        "data": [
+          {
+            "obraId": "OBRA000...",
+            "obraNombre": "Pavimento Hidráulico...",
+            "expediente": "EXP-2026-001",
+            "fechaInicio": "2026-03-01",
+            "fechaFin": "2026-09-30",
+            "regionComunidad": "Albarranes",
+            "regionBarrio": "Barrio Temeroso",
+            "totalInformes": 3,
+            "ultimoAvanceFisico": 45,
+            "ultimoAvanceFinanciero": 38,
+            "informes": [
+              {
+                "id": "INF0000001",
+                "anio": 2026,
+                "mes": "5",
+                "avanceFisico": 45,
+                "avanceFinanciero": 38,
+                "descripcion": "...",
+                "documento": "https://..."
+              }
+            ]
+          }
+        ]
+      }
+    """
+    try:
+        supervisor_id = current_user["id"].strip()
+
+        # Obtener obras asignadas al supervisor
+        obras = (
+            Obra.query
+            .filter_by(codigo_supervisor=supervisor_id)
+            .order_by(Obra.fecha_inicio.desc())
+            .all()
+        )
+
+        result = []
+        for obra in obras:
+            # Obtener informes de esta obra para este supervisor
+            informes = (
+                Informe.query
+                .filter(
+                    db.func.trim(Informe.id_obra) == obra.id_obra.strip(),
+                    db.func.trim(Informe.codigo_supervisor) == supervisor_id
+                )
+                .order_by(Informe.ano_infor.desc(), Informe.mes.desc())
+                .all()
+            )
+
+            informes_list = []
+            for inf in informes:
+                informes_list.append({
+                    "id":               (inf.id_informe or "").strip(),
+                    "anio":             inf.ano_infor,
+                    "mes":              (inf.mes or "").strip(),
+                    "avanceFisico":     inf.porcentaje_avance_fisico,
+                    "avanceFinanciero": inf.porcentaje_avance_presupuestario,
+                    "descripcion":      (inf.descripcion or "").strip(),
+                    "documento":        (inf.doc_infome or "").strip(),
+                })
+
+            # Calcular últimos avances (del informe más reciente)
+            ultimo_avance_fisico = informes_list[0]["avanceFisico"] if informes_list else 0
+            ultimo_avance_fin = informes_list[0]["avanceFinanciero"] if informes_list else 0
+
+            result.append({
+                "obraId":                 (obra.id_obra or "").strip(),
+                "obraNombre":             (obra.nombre_obra or "").strip(),
+                "expediente":             (obra.codigo_expediente or "").strip(),
+                "fechaInicio":            obra.fecha_inicio.isoformat() if obra.fecha_inicio else None,
+                "fechaFin":               obra.fecha_final.isoformat() if obra.fecha_final else None,
+                "regionComunidad":        (obra.region.comunidad or "").strip() if obra.region else "",
+                "regionBarrio":           (obra.region.barrio or "").strip() if obra.region else "",
+                "totalInformes":          len(informes_list),
+                "ultimoAvanceFisico":     ultimo_avance_fisico,
+                "ultimoAvanceFinanciero": ultimo_avance_fin,
+                "informes":               informes_list,
+            })
+
+        return ok(result)
+    except Exception as exc:
+        return db_error_response(exc)
+
+
+# ════════════════════════════════════════════════════════════════
 #  INFORMES — CREAR
 # ════════════════════════════════════════════════════════════════
 
@@ -202,7 +315,7 @@ def create_informe(current_user):
       "avanceFisico":      45,
       "avanceFinanciero":  38,
       "descripcion":       "Trabajos realizados...",
-      "documento":         "https://drive.google.com/..."   ← URL doc_infome
+      "documento":         "https://drive.google.com/..."
     }
 
     Reglas:
@@ -210,6 +323,8 @@ def create_informe(current_user):
       - El supervisorId se toma del token de autenticación (NO del body).
       - Se valida que el supervisor tenga la obra asignada.
       - Los porcentajes se validan en rango 0-100.
+      - No se permite publicar más de 10 días después de la fecha de entrega.
+      - Los porcentajes no pueden ser inferiores al informe anterior.
 
     Respuesta exitosa:
       { "success": true, "data": { "id": "INF0000001" }, "message": "..." }
@@ -247,10 +362,35 @@ def create_informe(current_user):
                 "El director debe asignártela primero."
             )
 
-        # ── 2. Generar ID de informe automáticamente ──
+        # ── 2. Validación: no más de 10 días después de fecha de entrega ──
+        if obra.fecha_final:
+            fecha_limite = obra.fecha_final + timedelta(days=10)
+            hoy = datetime.now().date()
+            if hoy > fecha_limite:
+                return bad_request(
+                    "No se puede publicar un informe más de 10 días después "
+                    f"de la fecha de entrega de la obra ({obra.fecha_final.isoformat()}). "
+                    f"Límite: {fecha_limite.isoformat()}."
+                )
+
+        # ── 3. Validación: porcentajes no pueden ser menores al informe anterior ──
+        ultimo_informe = _obtener_ultimo_informe(obra_id)
+        if ultimo_informe:
+            if avance_fisico < ultimo_informe.porcentaje_avance_fisico:
+                return bad_request(
+                    f"El avance físico ({avance_fisico}%) no puede ser menor al "
+                    f"del informe anterior ({ultimo_informe.porcentaje_avance_fisico}%)."
+                )
+            if avance_fin < ultimo_informe.porcentaje_avance_presupuestario:
+                return bad_request(
+                    f"El avance financiero ({avance_fin}%) no puede ser menor al "
+                    f"del informe anterior ({ultimo_informe.porcentaje_avance_presupuestario}%)."
+                )
+
+        # ── 4. Generar ID de informe automáticamente ──
         informe_id = _gen_informe_id()
 
-        # ── 3. INSERT con ORM ──
+        # ── 5. INSERT con ORM ──
         nuevo_informe = Informe(
             id_informe=informe_id,
             ano_infor=anio,
