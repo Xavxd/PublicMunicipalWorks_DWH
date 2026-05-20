@@ -68,4 +68,16 @@ EJEMPLOS DEL DESGLOSE DE LA SESION:
 <img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/ff2e23f9-02bd-4a0c-a113-d38aa02e6304" />
 <img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/0446ed60-43ba-403d-b29e-efa5553e7199" />
 
-[![Documentacion - Mintifly](https://ipn-683d754b.mintlify.app/)](TU_URL_AQUI)
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <a href="https://ipn-683d754b.mintlify.app/" target="_blank">
+          <img src="https://img.shields.io/badge/ACCEDER_A_LA-DOCUMENTACIÓN-green?style=for-the-badge&logo=render&logoColor=white" />
+          <br>
+          <sub>Clic aquí para abrir la aplicación en una pestaña nueva</sub>
+        </a>
+      </td>
+    </tr>
+  </table>
+</div>
