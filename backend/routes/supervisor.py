@@ -419,54 +419,88 @@ def create_informe(current_user):
 #  INFORMES — DETALLE POR ID
 # ════════════════════════════════════════════════════════════════
 
-@supervisor_bp.route("/api/informes/grouped", methods=["GET"])
+@supervisor_bp.route("/api/informes", methods=["GET"])
 @require_auth("director", "supervisor")
-def get_informe(informe_id, current_user):
+def get_informes(current_user):
     """
-    Devuelve el detalle completo de un informe por su ID.
+    Lista informes con filtros opcionales.
+    Si se pasa ?grouped=true, devuelve los informes agrupados por obra.
+    """
+    obra_filter = request.args.get("obra")
+    anio_filter = request.args.get("anio")
+    grouped = request.args.get("grouped") == "true"
 
-    Un supervisor solo puede ver sus propios informes.
-    """
+    supervisor_id = current_user["id"].strip() if current_user["role"] == "supervisor" else None
+
     try:
-        informe = (
-            Informe.query
-            .join(Obra, Informe.id_obra == Obra.id_obra)
-            .join(Supervisor, Informe.codigo_supervisor == Supervisor.codigo_personal)
-            .join(Personal, Supervisor.codigo_personal == Personal.codigo_personal)
-            .filter(db.func.trim(Informe.id_informe) == informe_id.strip())
-            .first()
-        )
+        # Si es grouped, devolver agrupado
+        if grouped and current_user["role"] == "supervisor":
+            # Obtener obras asignadas al supervisor
+            obras = Obra.query.filter_by(codigo_supervisor=supervisor_id).order_by(Obra.fecha_inicio.desc()).all()
+            result = []
+            for obra in obras:
+                informes = Informe.query.filter(
+                    db.func.trim(Informe.id_obra) == obra.id_obra.strip(),
+                    db.func.trim(Informe.codigo_supervisor) == supervisor_id
+                ).order_by(Informe.ano_infor.desc(), Informe.mes.desc()).all()
 
-        if not informe:
-            return not_found(f"Informe '{informe_id}' no encontrado.")
+                informes_list = []
+                for inf in informes:
+                    informes_list.append({
+                        "id": (inf.id_informe or "").strip(),
+                        "anio": inf.ano_infor,
+                        "mes": (inf.mes or "").strip(),
+                        "avanceFisico": inf.porcentaje_avance_fisico,
+                        "avanceFinanciero": inf.porcentaje_avance_presupuestario,
+                        "descripcion": (inf.descripcion or "").strip(),
+                        "documento": (inf.doc_infome or "").strip(),
+                    })
+                ultimo_avance_fisico = informes_list[0]["avanceFisico"] if informes_list else 0
+                ultimo_avance_fin = informes_list[0]["avanceFinanciero"] if informes_list else 0
+                result.append({
+                    "obraId": (obra.id_obra or "").strip(),
+                    "obraNombre": (obra.nombre_obra or "").strip(),
+                    "expediente": (obra.codigo_expediente or "").strip(),
+                    "fechaInicio": obra.fecha_inicio.isoformat() if obra.fecha_inicio else None,
+                    "fechaFin": obra.fecha_final.isoformat() if obra.fecha_final else None,
+                    "regionComunidad": (obra.region.comunidad or "").strip() if obra.region else "",
+                    "regionBarrio": (obra.region.barrio or "").strip() if obra.region else "",
+                    "totalInformes": len(informes_list),
+                    "ultimoAvanceFisico": ultimo_avance_fisico,
+                    "ultimoAvanceFinanciero": ultimo_avance_fin,
+                    "informes": informes_list,
+                })
+            return ok(result)
 
-        # Si es supervisor, verificar que el informe sea suyo
-        if current_user["role"] == "supervisor":
-            if informe.codigo_supervisor.strip() != current_user["id"].strip():
-                return bad_request("Acceso denegado a este informe.")
+        # Si no es grouped, comportamiento normal de listado
+        query = Informe.query.join(Obra, Informe.id_obra == Obra.id_obra).join(Supervisor, Informe.codigo_supervisor == Supervisor.codigo_personal).join(Personal, Supervisor.codigo_personal == Personal.codigo_personal)
+        if supervisor_id:
+            query = query.filter(db.func.trim(Informe.codigo_supervisor) == supervisor_id)
+        if obra_filter:
+            query = query.filter(db.func.trim(Informe.id_obra) == obra_filter.strip())
+        if anio_filter:
+            query = query.filter(Informe.ano_infor == int(anio_filter))
+        informes = query.order_by(Informe.ano_infor.desc(), Informe.mes.asc()).all()
 
-        obra = informe.obra
-        supervisor_personal = informe.supervisor.personal if informe.supervisor else None
-
-        result = {
-            "id":                 (informe.id_informe or "").strip(),
-            "obraId":             (informe.id_obra or "").strip(),
-            "obraNombre":         (obra.nombre_obra or "").strip() if obra else "",
-            "supervisorId":       (informe.codigo_supervisor or "").strip(),
-            "supervisorNombre":   (
-                f"{supervisor_personal.nombre or ''} "
-                f"{supervisor_personal.apellido_paterno or ''}"
-            ).strip() if supervisor_personal else "",
-            "anio":               informe.ano_infor,
-            "mes":                (informe.mes or "").strip(),
-            "avanceFisico":       informe.porcentaje_avance_fisico,
-            "avanceFinanciero":   informe.porcentaje_avance_presupuestario,
-            "descripcion":        (informe.descripcion or "").strip(),
-            "documento":          (informe.doc_infome or "").strip(),
-        }
-
+        result = []
+        for inf in informes:
+            obra = inf.obra
+            supervisor_personal = inf.supervisor.personal if inf.supervisor else None
+            result.append({
+                "id": (inf.id_informe or "").strip(),
+                "obraId": (inf.id_obra or "").strip(),
+                "obraExpediente": (obra.codigo_expediente or "").strip() if obra else "",
+                "obraNombre": (obra.nombre_obra or "").strip() if obra else "",
+                "supervisorId": (inf.codigo_supervisor or "").strip(),
+                "supervisorNombre": (f"{supervisor_personal.nombre or ''} {supervisor_personal.apellido_paterno or ''}").strip() if supervisor_personal else "",
+                "anio": inf.ano_infor,
+                "mes": (inf.mes or "").strip(),
+                "avanceFisico": inf.porcentaje_avance_fisico,
+                "avanceFinanciero": inf.porcentaje_avance_presupuestario,
+                "descripcion": (inf.descripcion or "").strip(),
+                "documento": (inf.doc_infome or "").strip(),
+            })
         return ok(result)
-
     except Exception as exc:
         return db_error_response(exc)
 
