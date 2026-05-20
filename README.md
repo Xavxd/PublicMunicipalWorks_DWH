@@ -68,4 +68,4 @@ EJEMPLOS DEL DESGLOSE DE LA SESION:
 <img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/ff2e23f9-02bd-4a0c-a113-d38aa02e6304" />
 <img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/0446ed60-43ba-403d-b29e-efa5553e7199" />
 
-[![Ver Demo](https://img.shields.io/badge/Live_Demo-Abrir_Proyecto-blue?style=for-the-badge&logo=vercel)](TU_URL_AQUI)
+[![Documentacion - Mintifly](https://ipn-683d754b.mintlify.app/)](TU_URL_AQUI)
