@@ -49,7 +49,7 @@ async function fetchSupervisorObras() {
  * Endpoint: GET /api/informes/por-obra
  */
 async function fetchInformesPorObra() {
-  const json = await API.get('/api/informes/por-obra');
+  const json = await API.get('/api/informes/grouped');
   return json.data || [];
 }
 
