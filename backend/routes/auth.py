@@ -1,6 +1,7 @@
 # routes/auth.py
 from flask import Blueprint, request, jsonify
 from app.models import Personal
+from app.password_security import verify_password
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -20,8 +21,9 @@ def login():
             rol=role_portal
         ).first()
 
-        # 1. Si no existe la combinación Usuario + Rol
-        if not usuario or usuario.password_hash != pass_input:
+        # 1. Si no existe la combinacion Usuario + Rol
+        #    o la contrasena no verifica contra el hash almacenado
+        if not usuario or not verify_password(pass_input, usuario.password_hash):
             return jsonify({
                 "success": False, 
                 "message": "Credenciales o rol incorrectos."
