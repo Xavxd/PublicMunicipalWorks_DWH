@@ -7,14 +7,15 @@ from app.models import (
     Personal, Proyectista, Supervisor, Constructora,
     Obra, Permiso, ActaEntrega, Firmante, OpcionSeleccion
 )
+from app.password_security import hash_password
 from .decorators import require_auth
 
 secretaria_bp = Blueprint("secretario", __name__)
 
 
-# ════════════════════════════════════════════════════════════════
-#  UTILIDADES DE GENERACIÓN DE IDs
-# ════════════════════════════════════════════════════════════════
+# =================================================================
+#  UTILIDADES DE GENERACION DE IDs
+# =================================================================
 
 def _gen_oficio_id() -> str:
     
@@ -72,10 +73,10 @@ def _gen_personal_id(role: str) -> str:
     return f"{prefix}-{next_num:03d}"
 
 
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 #  PERMISOS  (ORM)
 #  Tabla: public.permisos
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 
 @secretaria_bp.route("/api/permisos", methods=["GET"])
 @require_auth("secretario", "director")
@@ -153,10 +154,10 @@ def delete_permiso(oficio_id, current_user):
         return db_error_response(exc)
 
 
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 #  ACTAS DE ENTREGA  (ORM)
 #  Tabla: public.acta_entrega  +  hija public.firmantes
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 
 @secretaria_bp.route("/api/actas", methods=["GET"])
 @require_auth("secretario", "director")
@@ -296,10 +297,10 @@ def delete_acta(acta_id, current_user):
         return db_error_response(exc)
 
 
-# ════════════════════════════════════════════════════════════════
-#  CONCURSO DE SELECCIÓN  (ORM)
+# =================================================================
+#  CONCURSO DE SELECCION  (ORM)
 #  Tabla: public.opcion_seleccion
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 
 @secretaria_bp.route("/api/concursos", methods=["GET"])
 @require_auth("secretario", "director", "supervisor")
@@ -354,7 +355,7 @@ def create_concurso(current_user):
         obra = Obra.query.get(obra_id)
         if not obra:
             return bad_request(
-                f"La obra '{obra_id}' no existe. Regístrala primero."
+                f"La obra '{obra_id}' no existe. Registrala primero."
             )
 
         if aprobado:
@@ -408,10 +409,10 @@ def delete_concurso(participante_id, current_user):
         return db_error_response(exc)
 
 
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 #  PERSONAL  (nuevo — registro de staff)
 #  Tabla: public.personal  +  subtipos proyectista / supervisor
-# ════════════════════════════════════════════════════════════════
+# =================================================================
 
 @secretaria_bp.route("/api/personal", methods=["GET"])
 @require_auth("secretario", "director")
@@ -476,7 +477,7 @@ def create_personal(current_user):
     ROLES_VALIDOS = {"Supervisor", "Director", "Secretario", "Proyectista"}
     if rol not in ROLES_VALIDOS:
         return bad_request(
-            f"Rol inválido: '{rol}'. "
+            f"Rol invalido: '{rol}'. "
             f"Valores permitidos: {', '.join(sorted(ROLES_VALIDOS))}"
         )
 
@@ -489,35 +490,36 @@ def create_personal(current_user):
         )
     if rol == "Supervisor" and not telefono:
         return bad_request(
-            "El campo 'teléfono' es obligatorio para el rol Supervisor."
+            "El campo 'telefono' es obligatorio para el rol Supervisor."
         )
 
     try:
-        # ── Validar duplicados ───────────────────────────────
+        # -- Validar duplicados ------------------------------
         existing_user = Personal.query.filter(
             db.func.trim(Personal.username) == username
         ).first()
         if existing_user:
             return bad_request(
-                f"El nombre de usuario '{username}' ya está registrado."
+                f"El nombre de usuario '{username}' ya esta registrado."
             )
 
-        # ── Generar ID ───────────────────────────────────────
+        # -- Generar ID --------------------------------------
         new_id = _gen_personal_id(rol)
 
-        # ── INSERT personal ──────────────────────────────────
+        # -- INSERT personal ---------------------------------
+        #  Ahora la contrasena se hashea antes de guardar
         nuevo = Personal(
             codigo_personal=new_id,
             nombre=nombre[:100],
             apellido_paterno=apellido_p[:200],
             apellido_materno=apellido_m[:200] if apellido_m else None,
             username=username,
-            password_hash=password,
+            password_hash=hash_password(password),
             rol=rol,
         )
         db.session.add(nuevo)
 
-        # ── INSERT subtipo ─────────────────────────────────
+        # -- INSERT subtipo ----------------------------------
         if rol == "Proyectista":
             constructora = Constructora.query.get(constructora_id)
             if not constructora:
