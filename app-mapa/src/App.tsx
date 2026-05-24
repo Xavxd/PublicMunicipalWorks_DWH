@@ -9,10 +9,18 @@ import SmartMap from '@/components/map/SmartMap';
 import ScanLine from '@/components/ScanLine';
 import HudCorners from '@/components/HudCorners';
 
+// Componente intermedio que consume useData()
 function AppContent() {
   const { obras, loading, error } = useData();
-  if (loading) return <div className="text-white p-4">Cargando mapa...</div>;
-  if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+
+  if (loading) {
+    return <div className="text-white p-4">Cargando mapa...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">Error: {error}</div>;
+  }
+
   return (
     <MapProvider obras={obras}>
       <div className="relative w-screen h-screen overflow-hidden" style={{ background: 'var(--bg-void)' }}>
