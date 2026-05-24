@@ -1223,3 +1223,27 @@ body:hover .cursor-follower { opacity: 1; }
   .form-grid-3 { grid-template-columns: 1fr; }
   .page-main { padding: 2rem 1rem; }
 }
+
+.mapa-btn {
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.4);
+  border-radius: 40px;
+  padding: 0.4rem 1.2rem;
+  margin-left: 1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: white;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mapa-btn:hover {
+  background: rgba(59,130,246,0.3);
+  border-color: #3b82f6;
+  box-shadow: 0 0 12px rgba(59,130,246,0.3);
+}
