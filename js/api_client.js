@@ -72,7 +72,7 @@ async function loginUser(username, password, role) {
 
 /**
  * Lista obras con filtros opcionales.
- * @param {object} params - { supervisor, status, q }
+ * @param {object} params - { supervisor, status, q, fechaDesde, fechaHasta }
  * @returns {Array}
  */
 async function fetchObras(params = {}) {
@@ -80,6 +80,8 @@ async function fetchObras(params = {}) {
   if (params.supervisor) query.append("supervisor", params.supervisor);
   if (params.status)     query.append("status",     params.status);
   if (params.q)          query.append("q",          params.q);
+  if (params.fechaDesde) query.append("fechaDesde", params.fechaDesde);
+  if (params.fechaHasta) query.append("fechaHasta", params.fechaHasta);
   const qs = query.toString() ? "?" + query.toString() : "";
   const json = await API.get(`/api/obras${qs}`);
   return json.data || [];
