@@ -1,0 +1,329 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   MAPA INTELIGENTE — OBRAS PÚBLICAS
+   H. Ayuntamiento de Temascaltepec
+   Design System (inherited from main platform)
+   ========================================= */
+
+@layer base {
+  :root {
+    /* Core Backgrounds */
+    --bg-void: #080c0f;
+    --bg-surface: #0e1419;
+    --bg-card: #111820;
+    --bg-card-hover: #162030;
+    --bg-glass: rgba(14, 20, 26, 0.7);
+
+    /* Text */
+    --text-primary: #eef2f7;
+    --text-secondary: #8b9cb5;
+    --text-muted: #445566;
+
+    /* Borders */
+    --border-subtle: rgba(255,255,255,0.05);
+    --border-medium: rgba(255,255,255,0.10);
+
+    /* Status Colors */
+    --status-completed: #10b981;
+    --status-completed-glow: rgba(16,185,129,0.25);
+    --status-progress: #f59e0b;
+    --status-progress-glow: rgba(245,158,11,0.25);
+    --status-delayed: #ef4444;
+    --status-delayed-glow: rgba(239,68,68,0.25);
+
+    /* Accents */
+    --accent-blue: #3b82f6;
+    --accent-blue-glow: rgba(59,130,246,0.20);
+    --accent-warm: #f59e0b;
+    --accent-purple: #8b5cf6;
+
+    /* Typography */
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+
+    /* Radii */
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+
+    /* Shadows */
+    --shadow-card: 0 20px 60px rgba(0,0,0,0.4);
+    --shadow-glow-blue: 0 0 60px rgba(59,130,246,0.15);
+
+    /* Leaflet overrides */
+    --leaflet-tile-filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  }
+
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* =========================================
+   LEAFLET DARK THEME OVERRIDES
+   ========================================= */
+@layer components {
+  .leaflet-container {
+    background: var(--bg-void) !important;
+    font-family: var(--font-body) !important;
+  }
+
+  .leaflet-control-zoom {
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  }
+
+  .leaflet-control-zoom a {
+    background: var(--bg-card) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-subtle) !important;
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 18px !important;
+    transition: all 0.2s ease;
+  }
+
+  .leaflet-control-zoom a:hover {
+    background: var(--bg-card-hover) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(8, 12, 15, 0.7) !important;
+    color: var(--text-muted) !important;
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+    border-radius: 4px 0 0 0 !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .leaflet-control-attribution a {
+    color: var(--text-muted) !important;
+  }
+
+  .leaflet-popup-content-wrapper {
+    background: rgba(14, 20, 26, 0.92) !important;
+    backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.6) !important;
+    color: var(--text-primary) !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .leaflet-popup-tip {
+    background: rgba(14, 20, 26, 0.92) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    box-shadow: none !important;
+  }
+
+  .leaflet-popup-close-button {
+    color: var(--text-muted) !important;
+    top: 12px !important;
+    right: 12px !important;
+    font-size: 18px !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    z-index: 10;
+  }
+
+  .leaflet-popup-close-button:hover {
+    color: var(--text-primary) !important;
+  }
+
+  .leaflet-popup-content {
+    margin: 0 !important;
+    width: 320px !important;
+  }
+
+  /* Marker clusters */
+  .marker-cluster-small,
+  .marker-cluster-medium,
+  .marker-cluster-large {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border: 2px solid rgba(59, 130, 246, 0.4) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.2) !important;
+  }
+
+  .marker-cluster-small div,
+  .marker-cluster-medium div,
+  .marker-cluster-large div {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    font-family: var(--font-display) !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+  }
+}
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+@layer utilities {
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  @keyframes marker-pulse {
+    0%, 100% { box-shadow: 0 0 6px currentColor; }
+    50% { box-shadow: 0 0 16px currentColor, 0 0 24px currentColor; }
+  }
+
+  @keyframes scan-sweep {
+    0%, 100% { transform: translateY(0); opacity: 0; }
+    8% { opacity: 0.6; }
+    92% { opacity: 0.6; }
+    50% { transform: translateY(100vh); }
+  }
+
+  @keyframes hud-pulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.03; }
+    50% { opacity: 0.08; }
+  }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes float-gentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .animate-pulse-dot {
+    animation: pulse-dot 2s infinite;
+  }
+
+  .animate-marker-pulse {
+    animation: marker-pulse 2s infinite;
+  }
+
+  .animate-scan-sweep {
+    animation: scan-sweep 7s ease-in-out infinite;
+  }
+
+  .animate-hud-pulse {
+    animation: hud-pulse 4s ease-in-out infinite;
+  }
+
+  .animate-skeleton {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease forwards;
+  }
+
+  /* Glass card base */
+  .glass-card {
+    background: rgba(14, 20, 26, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-panel {
+    background: rgba(14, 20, 26, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .glass-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.05);
+  }
+
+  .glass-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Status colors utility */
+  .status-completed { color: var(--status-completed); }
+  .status-progress { color: var(--status-progress); }
+  .status-delayed { color: var(--status-delayed); }
+}
+
+/* Scrollbar for the whole app */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
