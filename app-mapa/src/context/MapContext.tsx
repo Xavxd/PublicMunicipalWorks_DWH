@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
 import type { PublicObra, Filters } from '@/types';
-import { useData } from './DataContext';
 
 interface MapContextValue {
   filters: Filters;
@@ -13,8 +12,7 @@ interface MapContextValue {
 
 const MapContext = createContext<MapContextValue | null>(null);
 
-export function MapProvider({ children }: { children: ReactNode }) {
-  const { obras } = useData();
+export function MapProvider({ children, obras }: { children: ReactNode; obras: PublicObra[] }) {
   const [filters, setFilters] = useState<Filters>({ status: 'todas', region: 'todas', search: '' });
   const [selectedObra, setSelectedObra] = useState<PublicObra | null>(null);
 
