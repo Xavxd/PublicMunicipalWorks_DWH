@@ -1,4 +1,3 @@
-// src/api/publicClient.ts
 import type { PublicObra, Region, ResumenData } from '@/types';
 
 const API_BASE = 'https://backend-obraspublicas.onrender.com';
