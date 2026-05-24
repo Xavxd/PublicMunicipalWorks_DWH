@@ -160,8 +160,185 @@
 
     @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
+    /* ── FILTROS DE FECHA EN OBRAS ─────────────────────────── */
+    .obras-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+    .obras-filters .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .obras-filters .filter-group label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .obras-filters .filter-group input[type="date"] {
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color-scheme: dark;
+    }
+    .obras-filters .filter-group input[type="date"]:focus {
+      outline: none;
+      border-color: var(--accent-director);
+    }
+    .obras-filters .filter-actions {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+    }
+    .obras-filters .btn-filter {
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-body);
+    }
+    .obras-filters .btn-filter-primary {
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.4);
+      color: var(--accent-director);
+    }
+    .obras-filters .btn-filter-primary:hover {
+      background: rgba(59,130,246,0.25);
+    }
+    .obras-filters .btn-filter-secondary {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .obras-filters .btn-filter-secondary:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
     @media (max-width: 640px) {
       .fuente-input-row { grid-template-columns: 1fr; }
+      .obras-filters { flex-direction: column; align-items: stretch; }
+    }
+
+    /* ── DROPDOWN BUSCABLE DE COMUNIDAD ────────────────────── */
+    .comunidad-dropdown-wrap {
+      position: relative;
+    }
+    .comunidad-search-input {
+      width: 100%;
+      padding: 10px 14px;
+      padding-right: 32px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .comunidad-search-input:focus {
+      outline: none;
+      border-color: var(--accent-director);
+    }
+    .comunidad-search-input::placeholder {
+      color: var(--text-muted);
+    }
+    .comunidad-dropdown-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: transform 0.2s;
+    }
+    .comunidad-dropdown-wrap.open .comunidad-dropdown-icon {
+      transform: translateY(-50%) rotate(180deg);
+    }
+    .comunidad-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: 240px;
+      overflow-y: auto;
+      background: var(--bg-card, #1a1a24);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .comunidad-dropdown-wrap.open .comunidad-dropdown-menu {
+      display: block;
+    }
+    .comunidad-dropdown-menu .dropdown-search {
+      position: sticky;
+      top: 0;
+      padding: 8px 10px;
+      background: var(--bg-card, #1a1a24);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 2;
+    }
+    .comunidad-dropdown-menu .dropdown-search input {
+      width: 100%;
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+    }
+    .comunidad-dropdown-menu .dropdown-search input:focus {
+      outline: none;
+      border-color: var(--accent-director);
+    }
+    .comunidad-dropdown-menu .dropdown-search input::placeholder {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+    .comunidad-dropdown-menu .dropdown-item {
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+    .comunidad-dropdown-menu .dropdown-item:hover,
+    .comunidad-dropdown-menu .dropdown-item.active {
+      background: rgba(59,130,246,0.12);
+    }
+    .comunidad-dropdown-menu .dropdown-item.no-results {
+      color: var(--text-muted);
+      cursor: default;
+      text-align: center;
+      font-style: italic;
+    }
+    .comunidad-dropdown-menu .dropdown-item.no-results:hover {
+      background: transparent;
+    }
+    .comunidad-dropdown-menu::-webkit-scrollbar {
+      width: 6px;
+    }
+    .comunidad-dropdown-menu::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .comunidad-dropdown-menu::-webkit-scrollbar-thumb {
+      background: var(--border-medium);
+      border-radius: 3px;
     }
   </style>
 </head>
@@ -326,16 +503,40 @@
           <div class="form-grid form-grid-2">
             <div class="form-group">
               <label class="form-label">Comunidad / Localidad *</label>
-              <select class="form-select" id="r-comunidad">
-                <option value="">Seleccionar comunidad…</option>
-                <option value="Cabecera Municipal">Cabecera Municipal</option>
-                <option value="Albarranes">Albarranes</option>
-                <option value="Luvianos">Luvianos</option>
-                <option value="San Jerónimo">San Jerónimo</option>
-                <option value="San Francisco">San Francisco</option>
-                <option value="Telpintla">Telpintla</option>
-                <option value="Otra">Otra (especificar abajo)</option>
-              </select>
+              <!-- Dropdown buscable con scroll de comunidades -->
+              <div class="comunidad-dropdown-wrap" id="comunidad-dropdown-wrap">
+                <input
+                  type="text"
+                  class="comunidad-search-input"
+                  id="r-comunidad"
+                  placeholder="Buscar y seleccionar comunidad…"
+                  readonly
+                  onclick="toggleComunidadDropdown()"
+                  oninput="filterComunidadList(this.value)"
+                  autocomplete="off"
+                />
+                <span class="comunidad-dropdown-icon">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <div class="comunidad-dropdown-menu" id="comunidad-dropdown-menu">
+                  <div class="dropdown-search">
+                    <input
+                      type="text"
+                      id="comunidad-search-box"
+                      placeholder="Escribe para buscar…"
+                      oninput="filterComunidadList(this.value)"
+                      onclick="event.stopPropagation()"
+                    />
+                  </div>
+                  <div id="comunidad-list-container">
+                    <!-- Se llena dinámicamente via JS -->
+                  </div>
+                </div>
+              </div>
+              <!-- Input oculto para almacenar el valor real seleccionado -->
+              <input type="hidden" id="r-comunidad-value" />
             </div>
             <div class="form-group">
               <label class="form-label">Barrio / Sección *</label>
@@ -531,7 +732,7 @@
     </div>
 
     <!-- ============================================================
-         PANEL: OBRAS REGISTRADAS
+         PANEL: OBRAS REGISTRADAS (con filtros de fecha)
          ============================================================ -->
     <div class="panel" id="panel-obras-list">
       <div class="panel-header">
@@ -545,6 +746,30 @@
                  oninput="filterObras(this.value)"/>
         </div>
       </div>
+
+      <!-- Filtros de rango de fechas -->
+      <div class="obras-filters">
+        <div class="filter-group">
+          <label>Fecha Inicio</label>
+          <input type="date" id="filter-fecha-desde" />
+        </div>
+        <div class="filter-group">
+          <label>Fecha Fin</label>
+          <input type="date" id="filter-fecha-hasta" />
+        </div>
+        <div class="filter-actions">
+          <button class="btn-filter btn-filter-primary" onclick="applyDateFilter()">
+            <svg viewBox="0 0 20 20" fill="none" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px">
+              <path d="M2 5h16M5 5V3M15 5V3M4 9h12M4 13h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Filtrar
+          </button>
+          <button class="btn-filter btn-filter-secondary" onclick="clearDateFilter()">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
       <div class="obras-table-wrap">
         <table class="obras-table">
           <thead>
@@ -753,6 +978,106 @@ function resetFuentes() {
   document.getElementById('fuente-nivel').value    = '';
   document.getElementById('fuente-programa').value = '';
 }
+
+/* ── COMUNIDAD DROPDOWN BUSCABLE ───────────────────────────── */
+
+const COMUNIDADES = [
+  'Cabecera Municipal',
+  'San Pedro Tenayac',
+  'San Mateo Almomoloa',
+  'San Sebastián Carboneras',
+  'San Lucas del Pulque',
+  'San Francisco Oxtotilpan',
+  'San Andrés de los Gama',
+  'San Miguel Oxtotilpan',
+  'San Martín Tequesquipan',
+  'La Albarrada',
+  'Cajones',
+  'La Comunidad',
+  'El Cerro Pelón',
+  'Cieneguillas de González',
+  'Cieneguillas de Labra',
+  'La Estancia de Tequesquipan',
+  'La Finca',
+  'Jesús del Monte',
+  'Labor las Cabras',
+  'Lampazos',
+  'Mesón Viejo',
+  'Potrero de Tenayac',
+  'Real de Arriba',
+  'Rincón de Tequesquipan',
+  'El Salitre'
+];
+
+function initComunidadDropdown() {
+  const container = document.getElementById('comunidad-list-container');
+  if (!container) return;
+  renderComunidadItems(COMUNIDADES);
+}
+
+function renderComunidadItems(items) {
+  const container = document.getElementById('comunidad-list-container');
+  if (!container) return;
+
+  if (!items.length) {
+    container.innerHTML = '<div class="dropdown-item no-results">No se encontraron comunidades</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(c =>
+    `<div class="dropdown-item" onclick="selectComunidad('${c.replace(/'/g, "\\'")}')">${c}</div>`
+  ).join('');
+}
+
+function toggleComunidadDropdown() {
+  const wrap = document.getElementById('comunidad-dropdown-wrap');
+  const isOpen = wrap.classList.contains('open');
+
+  // Cerrar si está abierto, abrir si está cerrado
+  if (isOpen) {
+    wrap.classList.remove('open');
+  } else {
+    wrap.classList.add('open');
+    // Enfocar el campo de búsqueda al abrir
+    setTimeout(() => {
+      const searchBox = document.getElementById('comunidad-search-box');
+      if (searchBox) {
+        searchBox.value = '';
+        searchBox.focus();
+        renderComunidadItems(COMUNIDADES);
+      }
+    }, 10);
+  }
+}
+
+function filterComunidadList(query) {
+  const q = (query || '').toLowerCase().trim();
+  const filtered = q
+    ? COMUNIDADES.filter(c => c.toLowerCase().includes(q))
+    : COMUNIDADES;
+  renderComunidadItems(filtered);
+}
+
+function selectComunidad(comunidad) {
+  const input = document.getElementById('r-comunidad');
+  const hidden = document.getElementById('r-comunidad-value');
+  const wrap = document.getElementById('comunidad-dropdown-wrap');
+
+  if (input) input.value = comunidad;
+  if (hidden) hidden.value = comunidad;
+  if (wrap) wrap.classList.remove('open');
+}
+
+// Cerrar el dropdown al hacer clic fuera
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('comunidad-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    wrap.classList.remove('open');
+  }
+});
+
+// Inicializar el dropdown al cargar la página
+document.addEventListener('DOMContentLoaded', initComunidadDropdown);
 </script>
 
 </body>

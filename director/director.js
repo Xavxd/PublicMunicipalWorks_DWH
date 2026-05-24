@@ -62,7 +62,8 @@ function initWizard() {
   document.getElementById('step1-confirm').innerHTML = '';  // ← limpiar mensaje
 
   // 3. Limpiar campos del PASO 2
-  document.getElementById('r-comunidad').selectedIndex = 0;
+  document.getElementById('r-comunidad').value = '';
+  document.getElementById('r-comunidad-value').value = '';
   document.getElementById('r-barrio').value = '';
   document.getElementById('r-colonia').value = '';
   document.getElementById('step2-confirm').innerHTML = '';  // ← limpiar mensaje
@@ -367,19 +368,26 @@ async function submitObra(e) {
 }
 
 // ================================================================
-//  OBRAS LIST
+//  OBRAS LIST (con filtros de fecha)
 // ================================================================
 
-async function renderObrasTable(filter = '') {
+let currentTextFilter = '';
+
+async function renderObrasTable(params = {}) {
   const tbody = document.getElementById('obras-tbody');
   if (!tbody) return;
   tbody.innerHTML = `<tr><td colspan="8" class="loading-row">
     <div class="loading-spinner"></div> Cargando obras…
   </td></tr>`;
 
+  // Construir parámetros combinando búsqueda de texto y filtros de fecha
+  const fetchParams = {};
+  if (currentTextFilter) fetchParams.q = currentTextFilter;
+  if (params.fechaDesde) fetchParams.fechaDesde = params.fechaDesde;
+  if (params.fechaHasta) fetchParams.fechaHasta = params.fechaHasta;
+
   try {
-    const params = filter ? { q: filter } : {};
-    const obras  = await fetchObras(params);
+    const obras  = await fetchObras(fetchParams);
 
     updateObraCountBadge(obras.length);
 
@@ -410,7 +418,7 @@ async function renderObrasTable(filter = '') {
         </td>
         <td>${formatDate(o.fechaInicio)}</td>
         <td>${formatDate(o.fechaFin)}</td>
-        <td><span class="status-badge status-${o.status || 'activa'}">${o.status || 'activa'}</span></td>
+        <td><span class="status-badge status-${o.status || 'activa'}">${o.status === 'activa' ? 'Activa' : 'Inactiva'}</span></td>
         <td>
           <div class="table-actions">
             <button class="btn-danger" onclick="deleteObraConfirm('${o.id}', '${escHtml(o.nombre)}')">✕</button>
@@ -440,7 +448,39 @@ async function deleteObraConfirm(id, nombre) {
   }
 }
 
-function filterObras(val) { renderObrasTable(val); }
+// Filtro por texto (nombre o expediente)
+function filterObras(val) {
+  currentTextFilter = val;
+  const fechaDesde = document.getElementById('filter-fecha-desde')?.value;
+  const fechaHasta = document.getElementById('filter-fecha-hasta')?.value;
+  renderObrasTable({
+    fechaDesde: fechaDesde || undefined,
+    fechaHasta: fechaHasta || undefined
+  });
+}
+
+// Aplicar filtro de rango de fechas
+function applyDateFilter() {
+  const fechaDesde = document.getElementById('filter-fecha-desde').value;
+  const fechaHasta = document.getElementById('filter-fecha-hasta').value;
+
+  if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
+    showToast('La fecha de inicio debe ser anterior o igual a la fecha de fin.', 'error');
+    return;
+  }
+
+  renderObrasTable({
+    fechaDesde: fechaDesde || undefined,
+    fechaHasta: fechaHasta || undefined
+  });
+}
+
+// Limpiar filtros de fecha
+function clearDateFilter() {
+  document.getElementById('filter-fecha-desde').value = '';
+  document.getElementById('filter-fecha-hasta').value = '';
+  renderObrasTable({});
+}
 
 // ================================================================
 //  CONSTRUCTORAS LIST
