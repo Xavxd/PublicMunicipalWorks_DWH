@@ -3,20 +3,6 @@ backend/routes/public.py
 ═══════════════════════════════════════════════════════════════
 PUBLIC API ENDPOINTS — Smart City Map Module
 ═══════════════════════════════════════════════════════════════
-
-These are READ-ONLY, UNAUTHENTICATED endpoints designed for the
-public-facing Smart City map. They aggregate data from existing
-models without requiring any database schema changes.
-
-To integrate:
-  1. Copy this file to backend/routes/public.py
-  2. Register the blueprint in backend/app/__init__.py
-
-Registration (in app/__init__.py):
-     from routes.public import public_bp
-     app.register_blueprint(public_bp)
-
-No other changes needed to existing code.
 """
 
 from flask import Blueprint, make_response, jsonify, request
@@ -33,7 +19,13 @@ public_bp = Blueprint("public", __name__)
 # ═══════════════════════════════════════════════════════════════
 
 def _add_cors_headers(response):
-    """Add CORS headers to a response."""
+    """Add CORS headers to a Flask response object."""
+    # Ensure response is a Response object (convert tuple if needed)
+    if isinstance(response, tuple):
+        response = make_response(response[0], response[1] if len(response) > 1 else 200)
+    elif not isinstance(response, make_response.__self__):  # not a Response instance
+        response = make_response(response)
+
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
     response.headers.add("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -51,16 +43,6 @@ def _cors_preflight_response():
 # ═══════════════════════════════════════════════════════════════
 
 def _derive_obra_status(obra: Obra, latest_avance_fisico: int) -> str:
-    """
-    Derive obra status from available data.
-
-    The obra table has no explicit status field. We determine status by
-    comparing the latest physical progress against the deadline:
-
-    - COMPLETADA: avance_fisico >= 95% OR (fecha_final passed AND avance >= 90%)
-    - RETRASADA:  fecha_final has passed AND avance_fisico < 90%
-    - EN_PROGRESO: Everything else (within timeline or reasonable progress)
-    """
     today = date.today()
     fecha_fin = obra.fecha_final
 
@@ -68,7 +50,6 @@ def _derive_obra_status(obra: Obra, latest_avance_fisico: int) -> str:
         return "completada"
 
     if fecha_fin and fecha_fin < today:
-        # Deadline has passed
         if latest_avance_fisico >= 90:
             return "completada"
         else:
@@ -78,11 +59,11 @@ def _derive_obra_status(obra: Obra, latest_avance_fisico: int) -> str:
 
 
 def _get_latest_informe_data(obra_id: str) -> dict:
-    """Get the latest informe for an obra, returning avance data."""
     try:
+        clean_id = obra_id.strip()
         latest = (
             Informe.query
-            .filter(db.func.trim(Informe.id_obra) == obra_id.strip())
+            .filter(Informe.id_obra == clean_id)
             .order_by(Informe.ano_infor.desc(), Informe.mes.desc())
             .first()
         )
@@ -90,13 +71,10 @@ def _get_latest_informe_data(obra_id: str) -> dict:
             return {
                 "avance_fisico": latest.porcentaje_avance_fisico or 0,
                 "avance_financiero": latest.porcentaje_avance_presupuestario or 0,
-                "total_informes": Informe.query.filter(
-                    db.func.trim(Informe.id_obra) == obra_id.strip()
-                ).count(),
+                "total_informes": Informe.query.filter(Informe.id_obra == clean_id).count(),
             }
     except Exception:
         pass
-
     return {"avance_fisico": 0, "avance_financiero": 0, "total_informes": 0}
 
 
@@ -106,10 +84,6 @@ def _get_latest_informe_data(obra_id: str) -> dict:
 
 @public_bp.route("/api/public/obras", methods=["GET", "OPTIONS"])
 def get_public_obras():
-    """
-    Public endpoint: returns all obras with enriched data.
-    No authentication required.
-    """
     if request.method == "OPTIONS":
         return _cors_preflight_response()
 
@@ -118,20 +92,15 @@ def get_public_obras():
         result = []
 
         for obra in obras:
-            # Get related data
             informe_data = _get_latest_informe_data(obra.id_obra)
-
-            # Get presupuesto
             presupuesto = PresupuestoObra.query.filter_by(id_obra=obra.id_obra).first()
             presupuesto_total = float(presupuesto.presupuesto_total) if presupuesto else 0
 
-            # Get supervisor name
             supervisor_nombre = ""
             if obra.supervisor and obra.supervisor.personal:
                 s = obra.supervisor.personal
                 supervisor_nombre = f"{(s.nombre or '').strip()} {(s.apellido_paterno or '').strip()}".strip()
 
-            # Derive status
             status = _derive_obra_status(obra, informe_data["avance_fisico"])
 
             result.append({
@@ -162,10 +131,6 @@ def get_public_obras():
 
 @public_bp.route("/api/public/regiones", methods=["GET", "OPTIONS"])
 def get_public_regiones():
-    """
-    Public endpoint: returns all regions.
-    No authentication required.
-    """
     if request.method == "OPTIONS":
         return _cors_preflight_response()
 
@@ -186,17 +151,12 @@ def get_public_regiones():
 
 @public_bp.route("/api/public/resumen", methods=["GET", "OPTIONS"])
 def get_public_resumen():
-    """
-    Public endpoint: returns aggregated KPI data.
-    No authentication required.
-    """
     if request.method == "OPTIONS":
         return _cors_preflight_response()
 
     try:
         obras = Obra.query.all()
 
-        # Collect obra data
         obra_data_list = []
         region_budget_map = {}
         status_counts = {"completada": 0, "en_progreso": 0, "retrasada": 0}
@@ -227,7 +187,6 @@ def get_public_resumen():
             total_budget += presupuesto_total
             total_avance += informe_data["avance_fisico"]
 
-            # Region budget
             if comunidad:
                 region_id = (obra.id_region or comunidad).strip()
                 if region_id in region_budget_map:
@@ -239,18 +198,15 @@ def get_public_resumen():
                         "total": presupuesto_total,
                     }
 
-            # Constructora count
             const_name = (obra.constructora.nombre_const or "").strip() if obra.constructora else ""
             if const_name:
                 const_counts[const_name] = const_counts.get(const_name, 0) + 1
 
-            # Duration
             if obra.fecha_inicio and obra.fecha_final:
                 dias = (obra.fecha_final - obra.fecha_inicio).days
                 if dias > 0:
                     total_duracion += dias
 
-        # Recent obras
         recent = sorted(
             obra_data_list,
             key=lambda x: x["obra"].fecha_inicio or date.min,
