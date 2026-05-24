@@ -19,13 +19,31 @@ Registration (in app/__init__.py):
 No other changes needed to existing code.
 """
 
-from flask import Blueprint
+from flask import Blueprint, make_response, jsonify, request
 from datetime import datetime, date
 from app.database import db
 from app.helpers import ok, db_error_response
 from app.models import Obra, Region, Constructora, PresupuestoObra, Informe, Supervisor, Personal
 
 public_bp = Blueprint("public", __name__)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  CORS HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════
+
+def _add_cors_headers(response):
+    """Add CORS headers to a response."""
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET, OPTIONS")
+    return response
+
+
+def _cors_preflight_response():
+    """Return an empty response with CORS headers for OPTIONS requests."""
+    response = make_response()
+    return _add_cors_headers(response)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -86,14 +104,15 @@ def _get_latest_informe_data(obra_id: str) -> dict:
 #  PUBLIC ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
 
-@public_bp.route("/api/public/obras", methods=["GET"])
+@public_bp.route("/api/public/obras", methods=["GET", "OPTIONS"])
 def get_public_obras():
     """
     Public endpoint: returns all obras with enriched data.
     No authentication required.
-
-    Response: { success: true, data: [ { id, nombre, status, avanceFisico, ... } ] }
     """
+    if request.method == "OPTIONS":
+        return _cors_preflight_response()
+
     try:
         obras = Obra.query.all()
         result = []
@@ -136,20 +155,23 @@ def get_public_obras():
                 "totalInformes": informe_data["total_informes"],
             })
 
-        return ok(result)
+        return _add_cors_headers(ok(result))
     except Exception as exc:
-        return db_error_response(exc)
+        return _add_cors_headers(db_error_response(exc))
 
 
-@public_bp.route("/api/public/regiones", methods=["GET"])
+@public_bp.route("/api/public/regiones", methods=["GET", "OPTIONS"])
 def get_public_regiones():
     """
     Public endpoint: returns all regions.
     No authentication required.
     """
+    if request.method == "OPTIONS":
+        return _cors_preflight_response()
+
     try:
         rows = Region.query.order_by(Region.comunidad, Region.barrio).all()
-        return ok([
+        return _add_cors_headers(ok([
             {
                 "id": (r.id_region or "").strip(),
                 "comunidad": (r.comunidad or "").strip(),
@@ -157,17 +179,20 @@ def get_public_regiones():
                 "colonia": (r.colonia or "").strip() if r.colonia else None,
             }
             for r in rows
-        ])
+        ]))
     except Exception as exc:
-        return db_error_response(exc)
+        return _add_cors_headers(db_error_response(exc))
 
 
-@public_bp.route("/api/public/resumen", methods=["GET"])
+@public_bp.route("/api/public/resumen", methods=["GET", "OPTIONS"])
 def get_public_resumen():
     """
     Public endpoint: returns aggregated KPI data.
     No authentication required.
     """
+    if request.method == "OPTIONS":
+        return _cors_preflight_response()
+
     try:
         obras = Obra.query.all()
 
@@ -261,6 +286,6 @@ def get_public_resumen():
             )[:5],
         }
 
-        return ok(result)
+        return _add_cors_headers(ok(result))
     except Exception as exc:
-        return db_error_response(exc)
+        return _add_cors_headers(db_error_response(exc))
