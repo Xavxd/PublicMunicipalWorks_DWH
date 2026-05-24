@@ -21,6 +21,9 @@ def create_app() -> Flask:
     from routes.supervisor  import supervisor_bp
     from routes.secretaria  import secretaria_bp
     from routes.proyectista import proyectista_bp
+
+    from routes.public import public_bp
+    app.register_blueprint(public_bp)
     
 
     # Registro de Blueprints
