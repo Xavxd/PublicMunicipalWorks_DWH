@@ -317,7 +317,13 @@ def create_region(current_user):
 def get_obras(current_user):
     """
     Lista obras con joins a constructora y región.
-    Acepta ?q=<texto> para filtrar por nombre o expediente.
+    Acepta filtros:
+      ?q=<texto>        → filtrar por nombre o expediente
+      ?fechaDesde=<iso> → fecha inicio del rango
+      ?fechaHasta=<iso> → fecha fin del rango
+
+    El filtro de fechas muestra obras cuya fecha_inicio O fecha_final
+    caiga dentro del rango especificado.
 
     Respuesta item (usada por renderObrasTable en director.js):
     {
@@ -330,21 +336,40 @@ def get_obras(current_user):
       "constructoraTipo":  "Empresa Externa",
       "fechaInicio":       "2026-03-01",
       "fechaFin":          "2026-09-30",
-      "status":            "activa"
+      "status":            "activa" | "inactiva"
     }
     """
     q = request.args.get("q", "").strip()
+    fecha_desde = request.args.get("fechaDesde", "").strip()
+    fecha_hasta = request.args.get("fechaHasta", "").strip()
 
     try:
         query = Obra.query \
             .outerjoin(Constructora, Obra.id_constructora == Constructora.id_constructora) \
             .outerjoin(Region, Obra.id_region == Region.id_region)
 
+        # ── Filtro de búsqueda por texto ──────────────────────
         if q:
             query = query.filter(
                 db.or_(
                     db.func.trim(Obra.nombre_obra).ilike(f"%{q}%"),
                     db.func.trim(Obra.codigo_expediente).ilike(f"%{q}%")
+                )
+            )
+
+        # ── Filtro de rango de fechas ─────────────────────────
+        # Muestra obras donde fecha_inicio O fecha_final caigan en el rango
+        if fecha_desde and fecha_hasta:
+            query = query.filter(
+                db.or_(
+                    db.and_(
+                        Obra.fecha_inicio >= fecha_desde,
+                        Obra.fecha_inicio <= fecha_hasta
+                    ),
+                    db.and_(
+                        Obra.fecha_final >= fecha_desde,
+                        Obra.fecha_final <= fecha_hasta
+                    )
                 )
             )
 
@@ -362,7 +387,7 @@ def get_obras(current_user):
                 "constructoraTipo":   (o.constructora.tipo_ejecutor or "").strip() if o.constructora else "",
                 "fechaInicio":        o.fecha_inicio.isoformat() if o.fecha_inicio else None,
                 "fechaFin":           o.fecha_final.isoformat() if o.fecha_final else None,
-                "status":             "activa"
+                "status":             "activa" if o.estado else "inactiva"
             })
 
         return ok(rows)
@@ -576,7 +601,7 @@ def get_obra(obra_id, current_user):
             "regionBarrio":       (obra.region.barrio or "").strip() if obra.region else "",
             "supervisorId":       (obra.codigo_supervisor or "").strip(),
             "presupuesto":        float(presupuesto.presupuesto_total) if presupuesto else 0,
-            "status":             "activa",
+            "status":             "activa" if obra.estado else "inactiva",
             "fuentes": [
                 {
                     "id":      (f.fuente.id_fuente or "").strip() if f.fuente else (f.id_fuente or "").strip(),
