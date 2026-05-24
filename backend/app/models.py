@@ -67,6 +67,7 @@ class Obra(db.Model):
     fecha_final       = db.Column('fecha_final', db.Date, nullable=False)
     descripcion       = db.Column('descripcion', db.Text, nullable=False)
     beneficiarios     = db.Column('beneficiarios', db.String(500), nullable=False)
+    estado            = db.Column('estado', db.Boolean, default=True, nullable=False)
 
     id_constructora   = db.Column('id_constructora', db.String(10),
                                   db.ForeignKey('public.constructora.id_constructora'),
