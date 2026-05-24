@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import '@changey/react-leaflet-markercluster/dist/styles.min.css';
 import { getObraCoordinates } from '@/utils/coordinates';
-import L from 'leaflet';
+import { divIcon } from 'leaflet';
+
+// Definición local del tipo (para no depender de types)
+interface Obra {
+  id: string;
+  nombre: string;
+  regionComunidad: string;
+  avanceFisico: number;
+  status: string;
+  [key: string]: any;
+}
 
 export default function App() {
-  const [obras, setObras] = useState([]);
+  const [obras, setObras] = useState<Obra[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,25 +53,21 @@ export default function App() {
         {obras.map((obra) => {
           const [lat, lng] = getObraCoordinates(obra.id, obra.regionComunidad);
           const color = obra.status === 'completada' ? '#10b981' : obra.status === 'en_progreso' ? '#3b82f6' : '#f59e0b';
+          const customIcon = divIcon({
+            html: `<div style="background: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px ${color};"></div>`,
+            className: '',
+            iconSize: [12, 12]
+          });
           return (
-            <MarkerClusterGroup key={obra.id}>
-              <L.Marker
-                position={[lat, lng]}
-                icon={L.divIcon({
-                  html: `<div style="background: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px ${color};"></div>`,
-                  className: '',
-                  iconSize: [12, 12]
-                })}
-              >
-                <L.Popup>
-                  <div style={{ color: 'white', background: '#0a1628', padding: '8px', borderRadius: '8px' }}>
-                    <strong>{obra.nombre}</strong><br />
-                    {obra.regionComunidad}<br />
-                    Avance: {obra.avanceFisico}%
-                  </div>
-                </L.Popup>
-              </L.Marker>
-            </MarkerClusterGroup>
+            <Marker key={obra.id} position={[lat, lng]} icon={customIcon}>
+              <Popup>
+                <div style={{ color: 'white', background: '#0a1628', padding: '8px', borderRadius: '8px' }}>
+                  <strong>{obra.nombre}</strong><br />
+                  {obra.regionComunidad}<br />
+                  Avance: {obra.avanceFisico}%
+                </div>
+              </Popup>
+            </Marker>
           );
         })}
       </MarkerClusterGroup>
