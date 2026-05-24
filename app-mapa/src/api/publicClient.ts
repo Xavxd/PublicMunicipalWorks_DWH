@@ -1,30 +1,28 @@
+// src/api/publicClient.ts
 import type { PublicObra, Region, ResumenData } from '@/types';
 
-const API_BASE = 'https://backend-obraspublicas.onrender.com'; // URL fija, sin variable de entorno
+const API_BASE = 'https://backend-obraspublicas.onrender.com';
 
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
+export async function fetchObrasPublic(): Promise<PublicObra[]> {
+  const res = await fetch(`${API_BASE}/api/public/obras`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
-  if (!json.success) {
-    throw new Error(json.message || 'API error');
-  }
+  if (!json.success) throw new Error(json.message || 'API error');
   return json.data;
 }
 
-export async function fetchObrasPublic(): Promise<PublicObra[]> {
-  return apiFetch<PublicObra[]>('/api/public/obras');
-}
-
 export async function fetchResumenPublic(): Promise<ResumenData> {
-  return apiFetch<ResumenData>('/api/public/resumen');
+  const res = await fetch(`${API_BASE}/api/public/resumen`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.message || 'API error');
+  return json.data;
 }
 
 export async function fetchRegionesPublic(): Promise<Region[]> {
-  return apiFetch<Region[]>('/api/public/regiones');
+  const res = await fetch(`${API_BASE}/api/public/regiones`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.message || 'API error');
+  return json.data;
 }
-
-// Elimina todas las funciones de demo (getDemoObras, etc.) o déjalas comentadas.
-// No las uses en estas funciones.
