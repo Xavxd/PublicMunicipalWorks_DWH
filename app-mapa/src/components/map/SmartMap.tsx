@@ -1,20 +1,26 @@
 import { useCallback } from 'react';
 import { MapContainer, TileLayer, Popup, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
+import MarkerClusterGroup from 'react-leaflet-cluster';
+import L from 'leaflet';
 import { useMapState } from '@/context/MapContext';
 import { TEMASCALTEPEC_CENTER, DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM } from '@/utils/coordinates';
 import ProjectMarker from './ProjectMarker';
-import { getObraCoordinates } from '@/utils/coordinates';
-import { getStatusColor, getStatusLabel, formatCurrency, formatDate } from '@/utils/coordinates';
+import {
+  getObraCoordinates,
+  getStatusColor,
+  getStatusLabel,
+  formatCurrency,
+  formatDate,
+} from '@/utils/coordinates';
 import { X, FileText, DollarSign, TrendingUp, Building2, Calendar, Users } from 'lucide-react';
-import * as L from 'leaflet';
+
+// ─── Map click handler ────────────────────────────────────────────────────────
 
 function MapEventHandler() {
   const { setSelectedObra } = useMapState();
 
   useMapEvents({
     click(e) {
-      // Check if the click target is a marker
       const target = e.originalEvent.target as HTMLElement;
       if (!target.closest('.leaflet-marker-icon') && !target.closest('.leaflet-popup')) {
         setSelectedObra(null);
@@ -24,6 +30,8 @@ function MapEventHandler() {
 
   return null;
 }
+
+// ─── Popup content ────────────────────────────────────────────────────────────
 
 function PopupContent({ obra }: { obra: import('@/types').PublicObra }) {
   const { setSelectedObra } = useMapState();
@@ -52,8 +60,6 @@ function PopupContent({ obra }: { obra: import('@/types').PublicObra }) {
             onClick={() => setSelectedObra(null)}
             className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-colors"
             style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
             <X size={12} />
           </button>
@@ -68,11 +74,11 @@ function PopupContent({ obra }: { obra: import('@/types').PublicObra }) {
         <PopupRow icon={<FileText size={12} />} label="Expediente" value={obra.expediente} />
         <PopupRow icon={<DollarSign size={12} />} label="Presupuesto" value={formatCurrency(obra.presupuestoTotal)} />
 
-        {/* Progress Bar */}
+        {/* Progress bar */}
         <div>
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp size={12} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Avance Fisico</span>
+            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Avance Físico</span>
             <span className="text-[11px] font-semibold ml-auto" style={{ color: statusColor }}>{obra.avanceFisico}%</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden ml-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -92,10 +98,7 @@ function PopupContent({ obra }: { obra: import('@/types').PublicObra }) {
       </div>
 
       {/* Footer */}
-      <div
-        className="pt-2 flex items-center justify-between"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-      >
+      <div className="pt-2 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>
           {obra.totalInformes} informe{obra.totalInformes !== 1 ? 's' : ''}
         </span>
@@ -119,10 +122,12 @@ function PopupRow({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
+// ─── Main map component ───────────────────────────────────────────────────────
+
 export default function SmartMap() {
   const { filteredObras, selectedObra, setSelectedObra } = useMapState();
 
-  const createClusterCustomIcon = useCallback((cluster: any) => {
+  const createClusterCustomIcon = useCallback((cluster: L.MarkerCluster) => {
     const count = cluster.getChildCount();
     const size = Math.min(Math.max(30, count * 4), 56);
     return L.divIcon({
@@ -170,11 +175,11 @@ export default function SmartMap() {
         <MapEventHandler />
 
         <MarkerClusterGroup
-          showCoverageOnHover={false}
-          spiderLegPolylineOptions={{ opacity: 0 }}
+          chunkedLoading
           iconCreateFunction={createClusterCustomIcon}
           maxClusterRadius={60}
-          animate={true}
+          showCoverageOnHover={false}
+          spiderLegPolylineOptions={{ opacity: 0 }}
         >
           {filteredObras.map((obra) => {
             const position = getObraCoordinates(obra.id, obra.regionComunidad);
