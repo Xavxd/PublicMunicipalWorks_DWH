@@ -12,7 +12,10 @@ interface MapContextValue {
 
 const MapContext = createContext<MapContextValue | null>(null);
 
-// ✅ CAMBIO IMPORTANTE: MapProvider ahora recibe obras como prop, NO usa useData()
+/**
+ * MapProvider receives obras as a prop from the parent that owns the data.
+ * This keeps DataContext and MapContext decoupled.
+ */
 export function MapProvider({ children, obras }: { children: ReactNode; obras: PublicObra[] }) {
   const [filters, setFilters] = useState<Filters>({ status: 'todas', region: 'todas', search: '' });
   const [selectedObra, setSelectedObra] = useState<PublicObra | null>(null);
