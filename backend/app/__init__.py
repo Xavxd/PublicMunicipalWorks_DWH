@@ -9,7 +9,7 @@ def create_app() -> Flask:
     
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
-    CORS(app, resources={r"/api/public/*": {"origins": "*"}})
+    CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": "*"}})
 
     init_db(app)
     
