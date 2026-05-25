@@ -1,4 +1,5 @@
 [build]
+  base = "app-map"
   command = "npm install --legacy-peer-deps && npm run build"
   publish = "dist"
 
