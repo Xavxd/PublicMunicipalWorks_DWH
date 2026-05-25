@@ -2,7 +2,7 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
-from .database import init_db, db
+from .extensions import db, jwt, bcrypt
 load_dotenv()
 
 def create_app() -> Flask:
