@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Popup, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
+import { MapContainer, TileLayer, Popup, useMapEvents, Marker } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapProvider } from '@/context/MapContext';
 import type { PublicObra } from '@/types';
@@ -29,10 +29,9 @@ import {
 } from 'lucide-react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import '@changey/react-leaflet-markercluster/dist/styles.min.css';
 
 // ===================================================================
-// API CLIENT (usa variable de entorno si esta disponible)
+// API CLIENT
 // ===================================================================
 const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://backend-obraspublicas.onrender.com';
 
@@ -57,7 +56,6 @@ async function fetchResumenPublic() {
 // ===================================================================
 function ProjectMarker({
   obra,
-  isSelected,
   onSelect,
   children,
 }: {
@@ -89,15 +87,13 @@ function ProjectMarker({
   });
 
   return (
-    <>{/* @ts-ignore - react-leaflet marker typing */}
-      <L.Marker
-        position={position}
-        icon={customIcon}
-        eventHandlers={{ click: onSelect }}
-      >
-        {children}
-      </L.Marker>
-    </>
+    <Marker
+      position={position}
+      icon={customIcon}
+      eventHandlers={{ click: onSelect }}
+    >
+      {children}
+    </Marker>
   );
 }
 
@@ -271,7 +267,10 @@ function ScanLine() {
   );
 }
 
-function KpiPanel({ obras, resumen }: { obras: PublicObra[]; resumen: any }) {
+// ===================================================================
+// KPI PANEL
+// ===================================================================
+function KpiPanel({ obras }: { obras: PublicObra[] }) {
   const total = obras.length;
   const completadas = obras.filter(o => o.status === 'completada').length;
   const enProgreso = obras.filter(o => o.status === 'en_progreso').length;
@@ -444,7 +443,6 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
 // ===================================================================
 export default function App() {
   const [obras, setObras] = useState<PublicObra[]>([]);
-  const [resumen, setResumen] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -452,12 +450,11 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const [obrasData, resumenData] = await Promise.all([
+      const [obrasData] = await Promise.all([
         fetchObrasPublic(),
         fetchResumenPublic().catch(() => null),
       ]);
       setObras(obrasData);
-      setResumen(resumenData);
     } catch (err: any) {
       console.error('Error cargando datos:', err);
       setError(err.message || 'Error desconocido');
@@ -480,7 +477,7 @@ export default function App() {
         <HeaderBar />
         <HudCorners />
         <ScanLine />
-        <KpiPanel obras={obras} resumen={resumen} />
+        <KpiPanel obras={obras} />
       </div>
     </MapProvider>
   );
