@@ -1,6 +1,7 @@
 import type { PublicObra, Region, ResumenData } from '@/types';
 
-const API_BASE = 'https://backend-obraspublicas.onrender.com';
+// Usa variable de entorno si esta disponible, o fallback a Render
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://backend-obraspublicas.onrender.com';
 
 export async function fetchObrasPublic(): Promise<PublicObra[]> {
   const res = await fetch(`${API_BASE}/api/public/obras`);
