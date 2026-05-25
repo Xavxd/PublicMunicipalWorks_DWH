@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useMapState } from '@/context/MapContext';
-import { useData } from '@/context/DataContext';
 import { motion } from 'framer-motion';
 import { Search, ChevronDown } from 'lucide-react';
 
@@ -12,11 +11,10 @@ const statusFilters = [
 ];
 
 export default function BottomFilterBar() {
-  const { filters, setFilters, counts } = useMapState();
-  const { regiones } = useData();
+  const { filters, setFilters, counts, filteredObras } = useMapState();
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
 
-  const uniqueRegions = ['todas', ...Array.from(new Set(regiones.map(r => r.comunidad)))];
+  const uniqueRegions = ['todas', ...Array.from(new Set(filteredObras.map(o => o.regionComunidad)))];
 
   return (
     <motion.div
@@ -40,15 +38,15 @@ export default function BottomFilterBar() {
 
       <div className="w-px h-5" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
-      {/* Status Filters */}
+      {/* Status filters */}
       <div className="flex items-center gap-1.5">
         {statusFilters.map((sf) => {
           const isActive = filters.status === sf.id;
-          const count = counts[sf.id];
+          const count = counts[sf.id === 'todas' ? 'todas' : sf.id as keyof typeof counts];
           return (
             <button
               key={sf.id}
-              onClick={() => setFilters(prev => ({ ...prev, status: isActive ? 'todas' : sf.id }))}
+              onClick={() => setFilters(prev => ({ ...prev, status: isActive && sf.id !== 'todas' ? 'todas' : sf.id }))}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200"
               style={{
                 background: isActive ? `${sf.color}18` : 'rgba(255,255,255,0.04)',
@@ -77,7 +75,7 @@ export default function BottomFilterBar() {
 
       <div className="w-px h-5" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
-      {/* Region Dropdown */}
+      {/* Region dropdown */}
       <div className="relative">
         <button
           onClick={() => setShowRegionDropdown(!showRegionDropdown)}
