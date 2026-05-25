@@ -32,7 +32,6 @@ export default function ProjectMarker({ obra, isSelected, onSelect, children }: 
           background: ${color};
           border: 2px solid white;
           box-shadow: 0 0 ${isSelected ? '16px' : '8px'} ${color}80, 0 0 ${isSelected ? '32px' : '16px'} ${color}40;
-          animation: marker-pulse 2s infinite;
           cursor: pointer;
           transition: all 0.2s ease;
         "></div>
@@ -44,9 +43,7 @@ export default function ProjectMarker({ obra, isSelected, onSelect, children }: 
     <Marker
       position={position}
       icon={icon}
-      eventHandlers={{
-        click: onSelect,
-      }}
+      eventHandlers={{ click: onSelect }}
     >
       <Tooltip
         direction="top"
@@ -63,7 +60,9 @@ export default function ProjectMarker({ obra, isSelected, onSelect, children }: 
           padding: '4px 8px',
           fontFamily: 'var(--font-body)',
           backdropFilter: 'blur(8px)',
-        }}>{obra.nombre}</span>
+        }}>
+          {obra.nombre}
+        </span>
       </Tooltip>
       {children}
     </Marker>
