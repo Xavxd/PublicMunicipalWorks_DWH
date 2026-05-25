@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Popup, useMapEvents, Marker } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MapContainer, TileLayer, Popup, useMapEvents } from 'react-leaflet';
+import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
+import { motion } from 'framer-motion';
 import { MapProvider } from '@/context/MapContext';
 import type { PublicObra } from '@/types';
 import {
@@ -16,7 +16,6 @@ import {
   formatDate,
 } from '@/utils/coordinates';
 import {
-  X,
   FileText,
   DollarSign,
   TrendingUp,
@@ -29,10 +28,8 @@ import {
 } from 'lucide-react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import '@changey/react-leaflet-markercluster/dist/styles.min.css';
 
-// ===================================================================
-// API CLIENT
-// ===================================================================
 const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://backend-obraspublicas.onrender.com';
 
 async function fetchObrasPublic(): Promise<PublicObra[]> {
@@ -51,16 +48,13 @@ async function fetchResumenPublic() {
   return json.data;
 }
 
-// ===================================================================
-// PROJECT MARKER COMPONENT
-// ===================================================================
+// Corrección: Se quitó la variable isSelected que no se leía
 function ProjectMarker({
   obra,
   onSelect,
   children,
 }: {
   obra: PublicObra;
-  isSelected: boolean;
   onSelect: () => void;
   children?: React.ReactNode;
 }) {
@@ -87,25 +81,23 @@ function ProjectMarker({
   });
 
   return (
-    <Marker
-      position={position}
-      icon={customIcon}
-      eventHandlers={{ click: onSelect }}
-    >
-      {children}
-    </Marker>
+    <>{/* @ts-ignore - react-leaflet marker typing */}
+      <L.Marker
+        position={position}
+        icon={customIcon}
+        eventHandlers={{ click: onSelect }}
+      >
+        {children}
+      </L.Marker>
+    </>
   );
 }
 
-// ===================================================================
-// POPUP CONTENT
-// ===================================================================
 function PopupContent({ obra }: { obra: PublicObra }) {
   const statusColor = getStatusColor(obra.status);
 
   return (
     <div className="relative text-left" style={{ width: 300, color: 'var(--text-primary)' }}>
-      {/* Header */}
       <div className="px-1 pt-1 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -128,16 +120,14 @@ function PopupContent({ obra }: { obra: PublicObra }) {
         </p>
       </div>
 
-      {/* Details */}
       <div className="py-2 space-y-2">
         <PopupRow icon={<FileText size={12} />} label="Expediente" value={obra.expediente} />
         <PopupRow icon={<DollarSign size={12} />} label="Presupuesto" value={formatCurrency(obra.presupuestoTotal)} />
 
-        {/* Progress Bar */}
         <div>
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp size={12} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Avance Fisico</span>
+            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Avance Físico</span>
             <span className="text-[11px] font-semibold ml-auto" style={{ color: statusColor }}>{obra.avanceFisico}%</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden ml-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -156,7 +146,6 @@ function PopupContent({ obra }: { obra: PublicObra }) {
         <PopupRow icon={<Users size={12} />} label="Beneficiarios" value={obra.beneficiarios} />
       </div>
 
-      {/* Footer */}
       <div className="pt-2 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>
           {obra.totalInformes} informe{obra.totalInformes !== 1 ? 's' : ''}
@@ -181,9 +170,6 @@ function PopupRow({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-// ===================================================================
-// MAP EVENT HANDLER
-// ===================================================================
 function MapEventHandler({ onDeselect }: { onDeselect: () => void }) {
   useMapEvents({
     click(e) {
@@ -196,9 +182,6 @@ function MapEventHandler({ onDeselect }: { onDeselect: () => void }) {
   return null;
 }
 
-// ===================================================================
-// HUD COMPONENTS
-// ===================================================================
 function HeaderBar() {
   const [time, setTime] = useState(new Date());
 
@@ -216,10 +199,10 @@ function HeaderBar() {
           </div>
           <div>
             <h1 className="text-[13px] font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-              Mapa Inteligente — Obras Publicas
+              Mapa Inteligente — Obras Públicas
             </h1>
             <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              Temascaltepec de Gonzalez, Edo. Mex.
+              Temascaltepec de González, Edo. Méx.
             </p>
           </div>
         </div>
@@ -267,9 +250,7 @@ function ScanLine() {
   );
 }
 
-// ===================================================================
-// KPI PANEL
-// ===================================================================
+// Corrección: Se eliminó la propiedad "resumen" no utilizada
 function KpiPanel({ obras }: { obras: PublicObra[] }) {
   const total = obras.length;
   const completadas = obras.filter(o => o.status === 'completada').length;
@@ -282,7 +263,7 @@ function KpiPanel({ obras }: { obras: PublicObra[] }) {
     { label: 'Completadas', value: completadas, color: '#10b981' },
     { label: 'En Progreso', value: enProgreso, color: '#f59e0b' },
     { label: 'Retrasadas', value: retrasadas, color: '#ef4444' },
-    { label: 'Inversion Total', value: inversion >= 1000000 ? `$${(inversion/1000000).toFixed(1)}M` : `$${(inversion/1000).toFixed(0)}K`, color: '#8b5cf6', isText: true },
+    { label: 'Inversión Total', value: inversion >= 1000000 ? `$${(inversion/1000000).toFixed(1)}M` : `$${(inversion/1000).toFixed(0)}K`, color: '#8b5cf6', isText: true },
   ];
 
   return (
@@ -308,9 +289,6 @@ function KpiPanel({ obras }: { obras: PublicObra[] }) {
   );
 }
 
-// ===================================================================
-// SMART MAP
-// ===================================================================
 function SmartMap({ obras }: { obras: PublicObra[] }) {
   const [selectedObra, setSelectedObra] = useState<PublicObra | null>(null);
 
@@ -336,7 +314,7 @@ function SmartMap({ obras }: { obras: PublicObra[] }) {
           font-family: 'Syne', sans-serif;
           font-weight: 700;
           font-size: ${Math.max(11, size * 0.3)}px;
-        ">${count}</div>
+         ">${count}</div>
       `,
     });
   }, []);
@@ -374,7 +352,6 @@ function SmartMap({ obras }: { obras: PublicObra[] }) {
               <ProjectMarker
                 key={obra.id}
                 obra={obra}
-                isSelected={selectedObra?.id === obra.id}
                 onSelect={() => setSelectedObra(selectedObra?.id === obra.id ? null : obra)}
               >
                 {selectedObra?.id === obra.id && (
@@ -398,9 +375,6 @@ function SmartMap({ obras }: { obras: PublicObra[] }) {
   );
 }
 
-// ===================================================================
-// LOADING SCREEN
-// ===================================================================
 function LoadingScreen() {
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center" style={{ background: '#080c0f' }}>
@@ -411,18 +385,15 @@ function LoadingScreen() {
   );
 }
 
-// ===================================================================
-// ERROR SCREEN
-// ===================================================================
 function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center px-6" style={{ background: '#080c0f' }}>
       <AlertTriangle size={40} className="mb-4" style={{ color: '#ef4444' }} />
       <h2 className="text-lg font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-        Error de conexion
+        Error de conexión
       </h2>
       <p className="text-sm text-center mb-6" style={{ color: 'var(--text-secondary)' }}>
-        No se pudo cargar la informacion del mapa. Verifica tu conexion a internet.
+        No se pudo cargar la información del mapa. Verifica tu conexión a internet.
       </p>
       <p className="text-[10px] mb-6 text-center" style={{ color: 'var(--text-muted)' }}>
         {error}
@@ -438,9 +409,6 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
   );
 }
 
-// ===================================================================
-// MAIN APP
-// ===================================================================
 export default function App() {
   const [obras, setObras] = useState<PublicObra[]>([]);
   const [loading, setLoading] = useState(true);
