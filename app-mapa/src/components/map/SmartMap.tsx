@@ -7,7 +7,7 @@ import ProjectMarker from './ProjectMarker';
 import { getObraCoordinates } from '@/utils/coordinates';
 import { getStatusColor, getStatusLabel, formatCurrency, formatDate } from '@/utils/coordinates';
 import { X, FileText, DollarSign, TrendingUp, Building2, Calendar, Users } from 'lucide-react';
-import L from 'leaflet';
+import * as L from 'leaflet';
 
 function MapEventHandler() {
   const { setSelectedObra } = useMapState();
@@ -72,7 +72,7 @@ function PopupContent({ obra }: { obra: import('@/types').PublicObra }) {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp size={12} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Avance Físico</span>
+            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Avance Fisico</span>
             <span className="text-[11px] font-semibold ml-auto" style={{ color: statusColor }}>{obra.avanceFisico}%</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden ml-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
