@@ -11,63 +11,121 @@ CASO DE ESTUDIO:
 H. Ayuntamiento de Temascaltepec, Estado de México
 Este sistema es una plataforma web robusta diseñada para la administración, supervisión y transparencia de la infraestructura pública. Permite el control total del ciclo de vida de una obra: desde la planeación presupuestal hasta la entrega final.
 
-🏗️ Arquitectura del Proyecto
+---
 
-El proyecto sigue una arquitectura de Single Page Application (SPA) simulada mediante el manejo de paneles dinámicos y persistencia de datos en el lado del cliente.
+### 🛠️ Tecnologías
+* **Frontend:** HTML5, CSS3 (Custom Properties, Flexbox, Grid) y JavaScript Vanilla (ES6+)
+* **Persistencia:** SessionStorage para control de sesiones y LocalStorage para datos de usuario
+* **Diseño:** Estética Dark Mode con efectos Glassmorphism y sistema de partículas animadas (Canvas API)
+* **Deploy:** Configurado para contenedores Podman/Docker
 
-Frontend: HTML5, CSS3 (Custom Properties, Flexbox, Grid) y JavaScript Vanila (ES6+).
+## Stack tecnológico
+ 
+| Capa | Tecnología |
+|---|---|
+| Lenguaje | Python 3.11 |
+| Framework | Flask 3.0 |
+| ORM | Flask-SQLAlchemy 3.1 / SQLAlchemy 2.0 |
+| Base de datos | PostgreSQL (Supabase) |
 
-Diseño: Interfaz de alto impacto visual con estética "Dark Mode", efectos de cristalería (Glassmorphism) y un sistema de partículas de ruido.
+---
 
-Persistencia: LocalStorage para datos globales (obras, presupuestos) y SessionStorage para el control de sesiones de usuario.
+### 🚀 Características Principales
 
-Contenedores: Configurado para desplegarse mediante Podman/Docker para asegurar la paridad de entornos.
+**🏛️ Director de Obras (Nivel Directivo)**
+- Creación y edición de expedientes de obra con wizard multi-paso
+- Catálogo de constructoras (Ayuntamiento vs. Privadas)
+- Vinculación de obras con fuentes de financiamiento (FISM, FORTAMUN)
+- Filtrado masivo y cálculo de estadísticas generales en tiempo real
 
-🛠️ Lógica de Negocio por Roles
+**📐 Proyectista (Nivel Técnico)**
+- Desglose de conceptos de costo: Materiales, Mano de Obra y Equipo
+- Cálculo automático y reactivo de subtotales e importes totales
+- Generación de gráficos de barras dinámicos por categoría de gasto
 
-El sistema se divide en 4 niveles de acceso, cada uno con una lógica programática específica:
+**📋 Supervisor (Nivel Operativo)**
+- Bitácora de avance con registro de informes mensuales y validación de fechas
+- Sliders sincronizados para representar avance físico vs. financiero
 
-1. Director de Obras (Nivel Directivo)
-Gestión Global: Creación y edición de expedientes de obra.
+**🗂️ Secretaría (Nivel Administrativo)**
+- Gestión de oficios de permisos y actas de entrega
+- Validación de requisitos legales previo al cierre de obra en el sistema
+- Desglose de tareas de recursos humanos, adjuntando personal: Proyectistas, Supervisores y Secretariado
+- Registro de concursos de selección por obra.
 
-Control de Constructoras: Catálogo de contratistas (Ayuntamiento vs. Privadas).
+## Seguridad
+ 
+- **Autenticación ligera:** cada request envía `X-User-Role` y `X-User-Id` en headers; el decorador `@require_auth` valida el rol antes de ejecutar cada ruta.
+- **Contraseñas:** almacenadas como hash PBKDF2-SHA256 con salt de 16 bytes.
+---
 
-Asignación de Recursos: Vinculación de obras con fuentes de financiamiento (FISM, FORTAMUN).
+### 📂 Estructura del Proyecto Frontend 
+```
+├── index.html                  # Landing page y portal de acceso por rol
+├── main.js                     # Lógica de routing, animaciones y autenticación
+├── css/
+│   ├── main.css                # Estilos globales y tema Dark Mode
+│   ├── director.css            # Estilos del panel directivo
+│   ├── proyectista.css         # Estilos del módulo técnico
+│   ├── supervisor.css          # Estilos del módulo operativo
+│   └── secretaria.css          # Estilos del módulo administrativo
+├── js/
+│   ├── api_client.js           # Cliente HTTP genérico con headers de autenticación
+│   └── cables.js               # Animación de circuitos eléctricos (Canvas)
+├── director/
+│   ├── director.html           # Panel del Director de Obras
+│   └── director.js             # Gestión de expedientes, constructoras y presupuestos
+├── proyectista/
+│   ├── proyectista.html        # Panel del Proyectista
+│   └── proyectista.js          # Cálculo de costos y generación de gráficos
+├── supervisor/
+│   ├── supervisor.html         # Panel del Supervisor
+│   └── supervisor.js           # Bitácora de avance y gestión de evidencias
+└── secretaria/
+    ├── secretaria.html         # Panel de Secretaría
+    └── secretaria.js           # Gestión documental y validación legal
+```
+## Estructura de archivos Backend 
+ 
+```
+backend/
+├── run.py                        # Punto de entrada
+├── requirements.txt
+├── runtime.txt                   # Python 3.11.9
+├── app/
+│   ├── __init__.py               # create_app(), registro de blueprints
+│   ├── database.py               # SQLAlchemy init, get_db()
+│   ├── models.py                 # Modelos ORM (ver abajo)
+│   ├── helpers.py                # Respuestas HTTP estándar + require_fields()
+│   └── password_security.py     # hash_password / verify_password
+└── routes/
+    ├── decorators.py             # @require_auth(*roles)
+    ├── auth.py                   # POST /api/auth/login
+    ├── director.py               # Constructoras, Regiones, Obras, Fuentes, Concursos
+    ├── secretaria.py             # Permisos, Actas, Concursos, Personal
+    ├── supervisor.py             # Informes (CRUD + agrupado por obra)
+    ├── proyectista.py            # Presupuesto por obra, Costos
+    └── public.py                 # Endpoints públicos (mapa ciudadano)
+```
+ 
+---
 
-Lógica JS: Maneja el filtrado masivo de datos y el cálculo de estadísticas generales en tiempo real.
+<details>
+<summary>🖼️ Ver capturas de pantalla</summary>
 
-2. Proyectista (Nivel Técnico)
-Ingeniería de Costos: Interfaz para el desglose de conceptos (Materiales, Mano de Obra, Equipo).
+## Capturas de pantalla
 
-Cálculos Automáticos: El script proyectista.js calcula subtotales por categoría e importes totales de forma reactiva.
+| |
+|---|
+| <img src="https://github.com/user-attachments/assets/a7211f15-710e-4fb1-9d7c-1a958ef3ef00" alt="Login" width="800"/> |
+| <img src="https://github.com/user-attachments/assets/b5bb340e-b40b-4dfd-897b-470650f917bb" alt="Panel Director" width="800"/> | 
+| <img src="https://github.com/user-attachments/assets/23371366-a686-4380-b19d-f824d35d0318"  alt="Secretaría" width="800"/> |
+| <img src="https://github.com/user-attachments/assets/e8666f39-f4c0-4145-a052-ae1e20134768" alt="Supervisor" width="800"/> | 
+| <img src="https://github.com/user-attachments/assets/0882b394-dd75-4959-bf74-e664175cbf17" alt="Proyectista" width="800"/> |
+| <img src="https://github.com/user-attachments/assets/8cf06dce-4605-4345-9d42-7dda3d9832ae" alt="Mapa Público DEMO" width="800"/> |
 
-Resumen Ejecutivo: Generación de gráficos de barras dinámicos según el peso porcentual de cada gasto.
-
-3. Supervisor (Nivel Operativo)
-Bitácora de Avance: Registro de informes mensuales con validación de fechas.
-
-Control de Avance: Uso de sliders sincronizados para representar el avance físico vs. financiero.
-
-Gestión de Evidencia: Lógica para adjuntar y visualizar archivos/fotografías de la obra.
-
-4. Secretaría (Nivel Administrativo)
-Documentación: Gestión de oficios de permisos y actas de entrega.
-
-Validación: Asegura que la obra cumpla con los requisitos legales antes de cerrarse en el sistema.
-
-💻 Detalles Técnicos Relevantes
-
-Sistema de Sesiones
-La autenticación es simulada mediante un objeto de configuración en main.js. Al iniciar sesión, se genera un token en sessionStorage:
-Incluye un usuario por cada uno de los ingresos. 
-
-
-EJEMPLOS DEL DESGLOSE DE LA SESION:
-
-<img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/9550f1a7-8405-47f0-b1f0-5e7c14395137" />
-<img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/ff2e23f9-02bd-4a0c-a113-d38aa02e6304" />
-<img width="1835" height="883" alt="image" src="https://github.com/user-attachments/assets/0446ed60-43ba-403d-b29e-efa5553e7199" />
-
+</details>
+---
 <div align="center">
   <table>
     <tr>
