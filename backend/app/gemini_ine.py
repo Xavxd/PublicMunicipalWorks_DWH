@@ -41,7 +41,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         raise GeminiConfigError("No se pudieron procesar los bytes de la imagen.") from exc
 
     # 3. Endpoint oficial de producción
-    url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
     # 4. Construir el payload usando camelCase (obligatorio para la API REST de Google)
     payload = {
