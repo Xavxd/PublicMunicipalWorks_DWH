@@ -22,13 +22,15 @@ def create_app() -> Flask:
     from routes.secretaria  import secretaria_bp
     from routes.proyectista import proyectista_bp
     from routes.public import public_bp
-    
+    from routes.propuestas import propuestas_bp
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(director_bp)
     app.register_blueprint(supervisor_bp)
     app.register_blueprint(secretaria_bp)
     app.register_blueprint(proyectista_bp)
     app.register_blueprint(public_bp)
+    app.register_blueprint(propuestas_bp)
 
 
     @app.route("/api/health")
