@@ -29,23 +29,28 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     if not api_key:
         raise GeminiConfigError("GEMINI_API_KEY no configurada en las variables de entorno de Render.")
 
-    # 1. Convertir los bytes binarios directamente a una cadena Base64
+    # 1. Normalización estricta del MIME Type (Google rechaza "image/jpg", requiere "image/jpeg")
+    exact_mime = mime_type.lower().strip() if mime_type else "image/jpeg"
+    if exact_mime == "image/jpg":
+        exact_mime = "image/jpeg"
+
+    # 2. Convertir los bytes binarios directamente a una cadena Base64
     try:
         image_b64 = base64.b64encode(image_bytes).decode("utf-8")
     except Exception as exc:
         raise GeminiConfigError("No se pudieron procesar los bytes de la imagen.") from exc
 
-    # 2. Endpoint oficial de producción (v1 estable)
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # 3. Endpoint oficial de producción (Limpio, sin exponer la API key en la URL)
+    url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 
-    # 3. Construir el payload JSON compatible con la API nativa de Google
+    # 4. Construir el payload JSON compatible con la API nativa de Google
     payload = {
         "contents": [{
             "parts": [
                 {"text": INE_PROMPT},
                 {
                     "inlineData": {
-                        "mimeType": mime_type or "image/jpeg",
+                        "mimeType": exact_mime,
                         "data": image_b64
                     }
                 }
@@ -57,16 +62,31 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         }
     }
 
-    headers = {"Content-Type": "application/json"}
+    # 5. Autenticación nativa por cabeceras para resolver el problema de las llaves con prefijo AQ.
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key.strip()
+    }
 
-    # 4. Realizar la petición POST hacia Google
+    # 6. Realizar la petición POST hacia Google con diagnóstico activo
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=20)
+        
+        # Si Google responde con algún error, se imprimirá detallado en la consola de Render
+        if response.status_code != 200:
+            print(f"[GOOGLE API ERROR DIAGNOSTIC] -> Status: {response.status_code} -> Body: {response.text}")
+            
         response.raise_for_status()
         resp_data = response.json()
         text = resp_data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
-        raise GeminiConfigError(f"Error en la comunicacion con la API de Google: {str(e)}")
+        error_details = ""
+        try:
+            if 'response' in locals() and response.text:
+                error_details = f" -> Detalle original de Google: {response.text}"
+        except:
+            pass
+        raise GeminiConfigError(f"Error en la comunicacion con la API de Google: {str(e)}{error_details}")
 
     if not text:
         return {
@@ -77,7 +97,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
             "pertenece_a_temascaltepec": False
         }
 
-    # 5. Limpieza segura de bloques Markdown sin usar librerías propensas a errores de sintaxis
+    # 7. Limpieza segura de bloques Markdown
     cleaned = text.strip()
     if cleaned.startswith("```"):
         lines = cleaned.splitlines()
@@ -87,7 +107,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
             lines = lines[:-1]
         cleaned = "\n".join(lines).strip()
 
-    # 6. Intentar parsear el JSON directamente o buscar llaves si viene con basura
+    # 8. Intentar parsear el JSON directamente o buscar llaves
     try:
         parsed = json.loads(cleaned)
     except Exception:
@@ -101,7 +121,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         else:
             parsed = {}
 
-    # 7. Normalizar respuestas
+    # 9. Normalizar respuestas booleanas
     def _bool(v):
         if isinstance(v, bool):
             return v
