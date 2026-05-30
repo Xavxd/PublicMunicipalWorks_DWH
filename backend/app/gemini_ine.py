@@ -29,7 +29,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     if not api_key:
         raise GeminiConfigError("GEMINI_API_KEY no configurada en las variables de entorno de Render.")
 
-    # 1. Normalización estricta del MIME Type (Google rechaza "image/jpg", requiere "image/jpeg")
+    # 1. Normalización estricta del MIME Type
     exact_mime = mime_type.lower().strip() if mime_type else "image/jpeg"
     if exact_mime == "image/jpg":
         exact_mime = "image/jpeg"
@@ -40,39 +40,38 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     except Exception as exc:
         raise GeminiConfigError("No se pudieron procesar los bytes de la imagen.") from exc
 
-    # 3. Endpoint oficial de producción (Limpio, sin exponer la API key en la URL)
+    # 3. Endpoint oficial de producción
     url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 
-    # 4. Construir el payload JSON compatible con la API nativa de Google
+    # 4. Construir el payload usando estrictamente snake_case compatible con el validador de Google
     payload = {
         "contents": [{
             "parts": [
                 {"text": INE_PROMPT},
                 {
-                    "inlineData": {
-                        "mimeType": exact_mime,
+                    "inline_data": {
+                        "mime_type": exact_mime,
                         "data": image_b64
                     }
                 }
             ]
         }],
-        "generationConfig": {
+        "generation_config": {
             "temperature": 0.0,
-            "responseMimeType": "application/json"
+            "response_mime_type": "application/json"
         }
     }
 
-    # 5. Autenticación nativa por cabeceras para resolver el problema de las llaves con prefijo AQ.
+    # 5. Autenticación por cabeceras para soportar llaves con formato AQ.
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": api_key.strip()
     }
 
-    # 6. Realizar la petición POST hacia Google con diagnóstico activo
+    # 6. Realizar la petición POST hacia Google
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=20)
         
-        # Si Google responde con algún error, se imprimirá detallado en la consola de Render
         if response.status_code != 200:
             print(f"[GOOGLE API ERROR DIAGNOSTIC] -> Status: {response.status_code} -> Body: {response.text}")
             
@@ -97,7 +96,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
             "pertenece_a_temascaltepec": False
         }
 
-    # 7. Limpieza segura de bloques Markdown
+    # 7. Limpieza de bloques Markdown del string devuelto
     cleaned = text.strip()
     if cleaned.startswith("```"):
         lines = cleaned.splitlines()
@@ -107,7 +106,7 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
             lines = lines[:-1]
         cleaned = "\n".join(lines).strip()
 
-    # 8. Intentar parsear el JSON directamente o buscar llaves
+    # 8. Intentar parsear el JSON directamente
     try:
         parsed = json.loads(cleaned)
     except Exception:
