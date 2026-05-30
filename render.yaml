@@ -10,3 +10,7 @@ services:
         sync: false
       - key: FLASK_ENV
         value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
