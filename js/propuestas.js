@@ -126,17 +126,35 @@
   // ============================================================
   //  Boton flotante en el hero + transiciones
   // ============================================================
-  function ensureLauncherButton() {
-    if (document.getElementById("pp-launcher-btn")) return;
+function ensureLauncherButton() {
+    if ($("pp-launcher-btn")) return;
     const hero = document.querySelector(".hero-content");
     if (!hero) return;
+
     const btn = document.createElement("button");
     btn.id = "pp-launcher-btn";
-    btn.type = "button";
     btn.className = "pp-launcher";
-    btn.innerHTML = '<span class="pp-launcher__spark" aria-hidden="true"></span>'
-      + 'Propuestas de la Comunidad';
-    btn.addEventListener("click", openModule);
+    
+    btn.style.display = "inline-flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.style.position = "relative";
+    btn.style.zIndex = "10";
+    btn.style.cursor = "pointer";
+    btn.style.marginTop = "1.5rem";
+
+    btn.innerHTML = `
+      <span class="pp-launcher__spark"></span>
+      <span style="position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;">
+        🗳️ Presupuesto Participativo
+      </span>
+    `;
+
+    btn.addEventListener("click", () => {
+      if (typeof openModule === "function") {
+        openModule();
+      }
+    });
     hero.appendChild(btn);
   }
 
