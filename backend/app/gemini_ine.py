@@ -43,22 +43,22 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     # 3. Endpoint oficial de producción
     url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 
-    # 4. Construir el payload usando estrictamente snake_case compatible con el validador de Google
+    # 4. Construir el payload usando camelCase (obligatorio para la API REST de Google)
     payload = {
         "contents": [{
             "parts": [
                 {"text": INE_PROMPT},
                 {
-                    "inline_data": {
-                        "mime_type": exact_mime,
+                    "inlineData": {          # ← CORREGIDO: inlineData (camelCase)
+                        "mimeType": exact_mime,   # ← CORREGIDO: mimeType
                         "data": image_b64
                     }
                 }
             ]
         }],
-        "generation_config": {
+        "generationConfig": {               # ← CORREGIDO: generationConfig
             "temperature": 0.0,
-            "response_mime_type": "application/json"
+            "responseMimeType": "application/json"   # ← CORREGIDO: responseMimeType
         }
     }
 
@@ -77,7 +77,13 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
             
         response.raise_for_status()
         resp_data = response.json()
-        text = resp_data["candidates"][0]["content"]["parts"][0]["text"]
+        
+        # Validar que la respuesta contenga candidatos
+        candidates = resp_data.get("candidates", [])
+        if not candidates:
+            raise GeminiConfigError("La API no devolvió candidatos. Revisa tu prompt o la imagen.")
+        
+        text = candidates[0]["content"]["parts"][0]["text"]
     except Exception as e:
         error_details = ""
         try:
