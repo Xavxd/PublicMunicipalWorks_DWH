@@ -267,3 +267,91 @@ class Permiso(db.Model):
                                    nullable=False)
 
     obra = db.relationship('Obra', lazy='joined')
+
+
+# ════════════════════════════════════════════════════════════════
+#  SISTEMA DE PRESUPUESTO PARTICIPATIVO
+# ════════════════════════════════════════════════════════════════
+
+class Poblador(db.Model):
+    """Ciudadanos registrados que pueden proponer obras y votar."""
+    __tablename__ = 'pobladores'
+    __table_args__ = {'schema': 'public'}
+
+    id                 = db.Column('id', db.Integer, primary_key=True)
+    nombre             = db.Column('nombre', db.String(100), nullable=False)
+    apellidos          = db.Column('apellidos', db.String(100), nullable=False)
+    comunidad          = db.Column('comunidad', db.String(100), nullable=False)
+    username           = db.Column('username', db.String(50), unique=True, nullable=False)
+    password_hash      = db.Column('password_hash', db.String(255), nullable=False)
+    clave_elector_ine  = db.Column('clave_elector_ine', db.String(18), unique=True, nullable=False)
+    creado_en          = db.Column('creado_en', db.DateTime(timezone=True),
+                                   server_default=db.func.now())
+
+    def to_public_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "apellidos": self.apellidos,
+            "nombre_completo": f"{self.nombre} {self.apellidos}".strip(),
+            "comunidad": self.comunidad,
+            "username": self.username,
+        }
+
+
+class PropuestaObra(db.Model):
+    """Propuestas de obra publicadas por pobladores."""
+    __tablename__ = 'propuestas_obras'
+    __table_args__ = {'schema': 'public'}
+
+    id                       = db.Column('id', db.Integer, primary_key=True)
+    poblador_id              = db.Column('poblador_id', db.Integer,
+                                         db.ForeignKey('public.pobladores.id',
+                                                       ondelete='CASCADE'),
+                                         nullable=False)
+    titulo                   = db.Column('titulo', db.String(150), nullable=False)
+    region                   = db.Column('region', db.String(100), nullable=False)
+    descripcion_obra         = db.Column('descripcion_obra', db.Text, nullable=False)
+    descripcion_beneficiados = db.Column('descripcion_beneficiados', db.Text, nullable=False)
+    pros_comunidad           = db.Column('pros_comunidad', db.Text, nullable=False)
+    anio_convocatoria        = db.Column('anio_convocatoria', db.Integer, nullable=False)
+    creado_en                = db.Column('creado_en', db.DateTime(timezone=True),
+                                         server_default=db.func.now())
+
+    poblador = db.relationship('Poblador', lazy='joined')
+
+    def to_public_dict(self, votos: int = 0):
+        """Convierte la propuesta a JSON publico. NO expone poblador_id por conflicto de interes."""
+        return {
+            "id": self.id,
+            "titulo": self.titulo,
+            "region": self.region,
+            "descripcion_obra": self.descripcion_obra,
+            "descripcion_beneficiados": self.descripcion_beneficiados,
+            "pros_comunidad": self.pros_comunidad,
+            "anio_convocatoria": self.anio_convocatoria,
+            "creado_en": self.creado_en.isoformat() if self.creado_en else None,
+            "votos": int(votos or 0),
+        }
+
+
+class VotoPropuesta(db.Model):
+    """Voto de un poblador a una propuesta dentro de un periodo cuatrimestral."""
+    __tablename__ = 'votos_propuestas'
+    __table_args__ = (
+        db.UniqueConstraint('poblador_id', 'propuesta_id', 'periodo_voto',
+                            name='unique_voto_poblador_propuesta_periodo'),
+        {'schema': 'public'},
+    )
+
+    id            = db.Column('id', db.Integer, primary_key=True)
+    poblador_id   = db.Column('poblador_id', db.Integer,
+                              db.ForeignKey('public.pobladores.id', ondelete='CASCADE'),
+                              nullable=False)
+    propuesta_id  = db.Column('propuesta_id', db.Integer,
+                              db.ForeignKey('public.propuestas_obras.id',
+                                            ondelete='CASCADE'),
+                              nullable=False)
+    periodo_voto  = db.Column('periodo_voto', db.String(10), nullable=False)
+    creado_en     = db.Column('creado_en', db.DateTime(timezone=True),
+                              server_default=db.func.now())
