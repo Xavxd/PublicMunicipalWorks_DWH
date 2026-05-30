@@ -25,4 +25,3 @@ def _extract_json(text: str) -> dict:
     text = text.strip()
     if text.startswith("```"):
         text = re.sub(r"^
-http://googleusercontent.com/immersive_entry_chip/0
