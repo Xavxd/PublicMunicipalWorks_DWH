@@ -124,38 +124,30 @@
   }
 
   // ============================================================
-  //  Boton flotante en el hero + transiciones
+  //  Boton de entrada (static en index.html) + transiciones
   // ============================================================
-function ensureLauncherButton() {
-    if ($("pp-launcher-btn")) return;
-    const hero = document.querySelector(".hero-content");
-    if (!hero) return;
-
-    const btn = document.createElement("button");
-    btn.id = "pp-launcher-btn";
-    btn.className = "pp-launcher";
-    
-    btn.style.display = "inline-flex";
-    btn.style.alignItems = "center";
-    btn.style.justifyContent = "center";
-    btn.style.position = "relative";
-    btn.style.zIndex = "10";
-    btn.style.cursor = "pointer";
-    btn.style.marginTop = "1.5rem";
-
-    btn.innerHTML = `
-      <span class="pp-launcher__spark"></span>
-      <span style="position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;">
-        🗳️ Presupuesto Participativo
-      </span>
-    `;
-
-    btn.addEventListener("click", () => {
-      if (typeof openModule === "function") {
-        openModule();
-      }
-    });
-    hero.appendChild(btn);
+  function ensureLauncherButton() {
+    // El boton ahora vive en index.html como HTML estatico (.hero-cta-row
+    // > #pp-launcher-btn). Aqui solo enlazamos el click. Si por compatibilidad
+    // con paginas anteriores el boton no existe, lo inyectamos al hero.
+    let btn = document.getElementById("pp-launcher-btn");
+    if (!btn) {
+      const hero = document.querySelector(".hero-content");
+      if (!hero) return;
+      btn = document.createElement("button");
+      btn.id = "pp-launcher-btn";
+      btn.type = "button";
+      btn.className = "pp-launcher";
+      btn.innerHTML = '<span class="pp-launcher__spark" aria-hidden="true"></span>'
+        + 'Propuestas de la Comunidad';
+      const wrap = document.createElement("div");
+      wrap.className = "hero-cta-row";
+      wrap.appendChild(btn);
+      hero.appendChild(wrap);
+    }
+    if (btn.dataset.ppBound === "1") return;
+    btn.dataset.ppBound = "1";
+    btn.addEventListener("click", openModule);
   }
 
   async function openModule() {
