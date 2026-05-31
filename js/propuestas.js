@@ -1,27 +1,21 @@
 /* ============================================================
-   propuestas.js
+   propuestas.js  v2
    Sistema de Presupuesto Participativo · Temascaltepec
    ------------------------------------------------------------
-   Controlador SPA Vanilla:
-   - Transiciones fade-out / fade-in entre el hero original y el
-     modulo de propuestas (sin recargas).
-   - Carga del fragmento propuestas/propuestas.html con fetch().
-   - Llamadas asincronas al backend (trending, cercanas, todas,
-     auth, voto, registro de propuestas, verificacion INE).
-   - Geolocalizacion nativa + spinner reactivo para INE.
-   - Persistencia del token en localStorage.
+   CAMBIOS v2:
+   - fetchAndRenderNearby(): maneja el nuevo campo usuario_en_area
+     de la API. Si el servidor retorna usuario_en_area=false, muestra
+     mensaje explicativo en lugar de lista vacía silenciosa.
    ============================================================ */
 (function () {
   "use strict";
 
-  // ── Configuracion ───────────────────────────────────────────
   const PP_API_BASE = (typeof window !== "undefined" && window.PP_API_BASE)
     || "https://backend-obraspublicas.onrender.com";
   const TOKEN_KEY = "pp_token";
   const USER_KEY = "pp_user";
   const FRAGMENT_URL = "propuestas/propuestas.html";
 
-  // ── Estado runtime ──────────────────────────────────────────
   const state = {
     mounted: false,
     visible: false,
@@ -30,16 +24,13 @@
     period: null,
     creditsTotal: 3,
     creditsUsed: 0,
-    user: null, // { id, nombre_completo, comunidad, username }
+    user: null,
     ineVerified: false,
     ineClave: null,
     geoCoords: null,
   };
 
-  // ── Utilidades de DOM/fetch ─────────────────────────────────
-  function $(id) {
-    return document.getElementById(id);
-  }
+  function $(id) { return document.getElementById(id); }
 
   function authHeaders(extra = {}) {
     const headers = { Accept: "application/json", ...extra };
@@ -63,11 +54,8 @@
     }
     const res = await fetch(`${PP_API_BASE}${path}`, opts);
     let json;
-    try {
-      json = await res.json();
-    } catch (_) {
-      json = { success: false, message: `HTTP ${res.status}` };
-    }
+    try { json = await res.json(); }
+    catch (_) { json = { success: false, message: `HTTP ${res.status}` }; }
     if (!res.ok && !json.success) {
       const err = new Error(json.message || `HTTP ${res.status}`);
       err.status = res.status;
@@ -80,10 +68,8 @@
   function escapeHtml(value) {
     if (value === null || value === undefined) return "";
     return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
 
@@ -98,14 +84,12 @@
     showToast._t = setTimeout(() => toast.classList.remove("show"), 3400);
   }
 
-  // ── Sesion persistida ───────────────────────────────────────
+  // ── Sesión persistida ───────────────────────────────────────
   function loadStoredSession() {
     try {
       const raw = localStorage.getItem(USER_KEY);
       if (raw) state.user = JSON.parse(raw);
-    } catch (_) {
-      state.user = null;
-    }
+    } catch (_) { state.user = null; }
   }
 
   function storeSession(token, poblador) {
@@ -123,13 +107,8 @@
     state.creditsUsed = 0;
   }
 
-  // ============================================================
-  //  Boton de entrada (static en index.html) + transiciones
-  // ============================================================
+  // ── Botón de entrada ────────────────────────────────────────
   function ensureLauncherButton() {
-    // El boton ahora vive en index.html como HTML estatico (.hero-cta-row
-    // > #pp-launcher-btn). Aqui solo enlazamos el click. Si por compatibilidad
-    // con paginas anteriores el boton no existe, lo inyectamos al hero.
     let btn = document.getElementById("pp-launcher-btn");
     if (!btn) {
       const hero = document.querySelector(".hero-content");
@@ -162,7 +141,6 @@
     if (!root) return;
     root.hidden = false;
     document.body.style.overflowY = "auto";
-    // Esperar al frame siguiente para que la transicion arranque.
     requestAnimationFrame(() => root.classList.add("is-visible"));
     state.visible = true;
     setTimeout(() => {
@@ -189,9 +167,7 @@
     setTimeout(() => { root.hidden = true; }, 700);
   }
 
-  // ============================================================
-  //  Carga diferida del fragmento HTML
-  // ============================================================
+  // ── Carga diferida del fragmento HTML ───────────────────────
   async function ensureFragmentLoaded() {
     if (state.fragmentLoaded) return;
     let root = $("pp-root");
@@ -204,8 +180,7 @@
     }
     const res = await fetch(FRAGMENT_URL, { credentials: "same-origin" });
     if (!res.ok) {
-      console.error("[propuestas] No pude cargar", FRAGMENT_URL, res.status);
-      showToast("No se pudo cargar el modulo. Recarga e intenta de nuevo.", "error");
+      showToast("No se pudo cargar el módulo. Recarga e intenta de nuevo.", "error");
       throw new Error(`Fragmento HTTP ${res.status}`);
     }
     root.innerHTML = await res.text();
@@ -214,16 +189,14 @@
     renderSession();
   }
 
-  // ============================================================
-  //  Bind de eventos del fragmento (una sola vez)
-  // ============================================================
+  // ── Bind de eventos ─────────────────────────────────────────
   function bindModuleEvents() {
     $("pp-back")?.addEventListener("click", closeModule);
     $("pp-cta-login")?.addEventListener("click", openAuthModal);
     $("pp-logout")?.addEventListener("click", () => {
       clearSession();
       renderSession();
-      showToast("Sesion cerrada.");
+      showToast("Sesión cerrada.");
     });
     $("pp-gps-btn")?.addEventListener("click", requestGeolocation);
     $("pp-fab-new")?.addEventListener("click", openNuevaModal);
@@ -240,26 +213,18 @@
       document.querySelectorAll(".pp-modal:not([hidden])").forEach((m) => (m.hidden = true));
     });
 
-    // Tabs login / register
     document.querySelectorAll(".pp-tab").forEach((tab) => {
       tab.addEventListener("click", () => switchAuthTab(tab.dataset.tab));
     });
 
-    // Forms
     $("pp-form-login")?.addEventListener("submit", handleLogin);
     $("pp-form-register")?.addEventListener("submit", handleRegister);
     $("pp-form-nueva")?.addEventListener("submit", handleNewPropuesta);
-
-    // INE input
     $("pp-ine-input")?.addEventListener("change", handleIneFileChange);
-
-    // Detalle vote
     $("pp-detail-vote")?.addEventListener("click", handleDetailVote);
   }
 
-  // ============================================================
-  //  Render: sesion / cabecera
-  // ============================================================
+  // ── Render sesión ────────────────────────────────────────────
   function renderSession() {
     const cta = $("pp-cta-login");
     const userBox = $("pp-user");
@@ -293,16 +258,11 @@
         `${json.data.creditos_restantes} / ${state.creditsTotal} votos`;
       if (state.period) $("pp-period-pill").textContent = `Periodo ${state.period}`;
     } catch (err) {
-      if (err.status === 401) {
-        clearSession();
-        renderSession();
-      }
+      if (err.status === 401) { clearSession(); renderSession(); }
     }
   }
 
-  // ============================================================
-  //  Refresh general (al abrir, al votar, al crear propuesta)
-  // ============================================================
+  // ── Refresh general ─────────────────────────────────────────
   async function refreshAll() {
     renderSession();
     await Promise.allSettled([
@@ -311,9 +271,7 @@
     ]);
   }
 
-  // ============================================================
-  //  TRENDING
-  // ============================================================
+  // ── TRENDING ─────────────────────────────────────────────────
   async function fetchAndRenderTrending() {
     const container = $("pp-trending");
     if (!container) return;
@@ -323,8 +281,8 @@
       state.period = json.data?.periodo || state.period;
       if (state.period) $("pp-period-pill").textContent = `Periodo ${state.period}`;
       if (!propuestas.length) {
-        container.innerHTML = `<div class="pp-empty">Aun no hay propuestas en
-          el periodo actual. Se el primero en proponer una obra.</div>`;
+        container.innerHTML = `<div class="pp-empty">Aún no hay propuestas en
+          el periodo actual. Sé el primero en proponer una obra.</div>`;
         return;
       }
       container.innerHTML = propuestas
@@ -338,27 +296,24 @@
     }
   }
 
-  // ============================================================
-  //  CERCANAS
-  // ============================================================
+  // ── CERCANAS ─────────────────────────────────────────────────
   function requestGeolocation() {
     const hint = $("pp-nearby-hint");
     if (!navigator.geolocation) {
-      hint.textContent = "Tu navegador no soporta geolocalizacion.";
+      hint.textContent = "Tu navegador no soporta geolocalización.";
       return;
     }
-    hint.textContent = "Solicitando ubicacion…";
+    hint.textContent = "Solicitando ubicación…";
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         state.geoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        hint.textContent = `Ubicacion recibida (${pos.coords.latitude.toFixed(3)}, `
-          + `${pos.coords.longitude.toFixed(3)}). Buscando propuestas cercanas…`;
+        hint.textContent = "Ubicación recibida. Buscando propuestas cercanas…";
         fetchAndRenderNearby();
       },
       (err) => {
         hint.textContent = err && err.code === 1
-          ? "Permiso de ubicacion negado. Puedes activarlo desde la barra del navegador."
-          : "No pudimos obtener tu ubicacion. Intenta de nuevo.";
+          ? "Permiso de ubicación negado. Puedes activarlo desde la barra del navegador."
+          : "No pudimos obtener tu ubicación. Intenta de nuevo.";
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
     );
@@ -368,39 +323,56 @@
     const container = $("pp-nearby");
     const hint = $("pp-nearby-hint");
     if (!container || !state.geoCoords) return;
+
     container.innerHTML = `<div class="pp-skeleton-row">
       <div class="pp-skeleton"></div>
       <div class="pp-skeleton"></div>
       <div class="pp-skeleton"></div>
     </div>`;
+
     try {
       const json = await ppFetch("/api/propuestas/cercanas", {
         method: "POST",
         body: state.geoCoords,
       });
-      const propuestas = json.data?.propuestas || [];
-      if (!propuestas.length) {
-        const msg = json.data?.mensaje
-          || "No hay propuestas registradas cerca de tu comunidad para este periodo.";
-        container.innerHTML = `<div class="pp-empty">${escapeHtml(msg)}</div>`;
-        hint.textContent = "Sin coincidencias en tu micro-region.";
+
+      const data = json.data || {};
+      const propuestas = data.propuestas || [];
+
+      // Caso: usuario fuera del municipio
+      if (data.usuario_en_area === false) {
+        const msg = data.mensaje || "Tu ubicación está fuera del municipio de Temascaltepec.";
+        hint.textContent = msg;
+        container.innerHTML = `
+          <div class="pp-empty">
+            📍 ${escapeHtml(msg)}
+          </div>`;
         return;
       }
-      hint.textContent = `Mostrando hasta 5 propuestas mas cercanas a tu micro-region.`;
+
+      // Caso: usuario en el municipio pero sin propuestas registradas
+      if (!propuestas.length) {
+        const msg = data.mensaje || "No hay propuestas registradas cerca de tu comunidad.";
+        container.innerHTML = `<div class="pp-empty">${escapeHtml(msg)}</div>`;
+        hint.textContent = "Sin coincidencias en tu micro-región.";
+        return;
+      }
+
+      // Caso exitoso
+      hint.textContent = `Mostrando hasta 5 propuestas más cercanas a tu micro-región.`;
       container.innerHTML = propuestas
         .map((p) => renderCard(p, { variant: "nearby" }))
         .join("");
       attachCardEvents(container);
+
     } catch (err) {
       console.error("[propuestas] cercanas", err);
       container.innerHTML = `<div class="pp-empty">No pudimos cargar las
-        propuestas cercanas. Intenta mas tarde.</div>`;
+        propuestas cercanas. Intenta más tarde.</div>`;
     }
   }
 
-  // ============================================================
-  //  TODAS
-  // ============================================================
+  // ── TODAS ────────────────────────────────────────────────────
   async function fetchAndRenderAll() {
     const container = $("pp-all");
     const counter = $("pp-all-count");
@@ -412,8 +384,8 @@
       counter && (counter.textContent = `${propuestas.length} propuestas`);
       if (!propuestas.length) {
         container.innerHTML = `<div class="pp-empty" style="grid-column: span 12;">
-          Todavia no hay propuestas publicadas. Cuando alguien registre una,
-          aparecera aqui.</div>`;
+          Todavía no hay propuestas publicadas. Cuando alguien registre una,
+          aparecerá aquí.</div>`;
         return;
       }
       container.innerHTML = propuestas
@@ -423,18 +395,15 @@
     } catch (err) {
       console.error("[propuestas] todas", err);
       container.innerHTML = `<div class="pp-empty" style="grid-column: span 12;">
-        No pudimos cargar el listado. Intenta mas tarde.</div>`;
+        No pudimos cargar el listado. Intenta más tarde.</div>`;
     }
   }
 
-  // ============================================================
-  //  Renderizado de tarjetas
-  // ============================================================
+  // ── Renderizado de tarjetas ──────────────────────────────────
   function renderCard(p, opts = {}) {
     const rank = opts.rank
       ? `<span class="pp-card__rank">#${opts.rank}</span>` : "";
-    const variantClass = opts.variant === "trend" ? "pp-card pp-card--trend"
-      : "pp-card";
+    const variantClass = opts.variant === "trend" ? "pp-card pp-card--trend" : "pp-card";
     const desc = p.descripcion_obra || "";
     return `
       <article class="${variantClass}" role="listitem" data-id="${p.id}">
@@ -469,9 +438,7 @@
     return state.propuestas.find((p) => p.id === id) || null;
   }
 
-  // ============================================================
-  //  Modal detalle
-  // ============================================================
+  // ── Modal detalle ────────────────────────────────────────────
   async function openDetailModal(id) {
     let propuesta = findPropuesta(id);
     if (!propuesta) {
@@ -498,13 +465,11 @@
     triggerVote(id);
   }
 
-  // ============================================================
-  //  Votar
-  // ============================================================
+  // ── Votar ────────────────────────────────────────────────────
   async function triggerVote(id) {
     if (!state.user) {
       openAuthModal();
-      showToast("Inicia sesion para poder votar.");
+      showToast("Inicia sesión para poder votar.");
       return;
     }
     try {
@@ -516,7 +481,6 @@
       $("pp-user-creds").textContent =
         `${data.creditos_restantes ?? Math.max(0, state.creditsTotal - state.creditsUsed)} / ${state.creditsTotal} votos`;
       await refreshAll();
-      // Si modal detalle abierto, refrescar conteo
       if (!$("pp-modal-detalle").hidden) {
         $("pp-detail-votos").textContent = data.votos_propuesta || 0;
       }
@@ -525,9 +489,7 @@
     }
   }
 
-  // ============================================================
-  //  Modal AUTH
-  // ============================================================
+  // ── Modal AUTH ───────────────────────────────────────────────
   function openAuthModal() {
     const modal = $("pp-modal-auth");
     if (!modal) return;
@@ -553,7 +515,7 @@
     const password = form.password.value;
     $("pp-login-error").textContent = "";
     if (!username || !password) {
-      $("pp-login-error").textContent = "Captura usuario y contrasena.";
+      $("pp-login-error").textContent = "Captura usuario y contraseña.";
       return;
     }
     try {
@@ -603,9 +565,7 @@
     }
   }
 
-  // ============================================================
-  //  Verificacion INE en caliente
-  // ============================================================
+  // ── Verificación INE ─────────────────────────────────────────
   async function handleIneFileChange(e) {
     const file = e.target.files && e.target.files[0];
     const submit = $("pp-register-submit");
@@ -613,6 +573,7 @@
     const spinner = $("pp-ine-spinner");
     const msg = $("pp-ine-message");
     if (!file) return;
+
     state.ineVerified = false;
     state.ineClave = null;
     $("pp-ine-clave").value = "";
@@ -631,18 +592,19 @@
       });
       const data = json.data || {};
       spinner.hidden = true;
+
       if (data.valida && data.pertenece_a_temascaltepec) {
         state.ineVerified = true;
         state.ineClave = data.clave_elector || "";
         $("pp-ine-clave").value = state.ineClave;
         status.classList.add("is-success");
-        msg.innerHTML = `✅ Identificacion verificada${data.ya_registrada
-          ? " (clave ya registrada, debes iniciar sesion)"
+        msg.innerHTML = `✅ Identificación verificada${data.ya_registrada
+          ? " — clave ya registrada, inicia sesión en su lugar"
           : ""}`;
-        submit && (submit.disabled = data.ya_registrada);
+        submit && (submit.disabled = !!data.ya_registrada);
       } else {
         status.classList.add("is-error");
-        msg.innerHTML = `❌ ${escapeHtml(data.motivo || "Region no valida para el registro.")}`;
+        msg.innerHTML = `❌ ${escapeHtml(data.motivo || "Región no válida para el registro.")}`;
       }
     } catch (err) {
       spinner.hidden = true;
@@ -651,14 +613,9 @@
     }
   }
 
-  // ============================================================
-  //  Modal nueva propuesta
-  // ============================================================
+  // ── Modal nueva propuesta ────────────────────────────────────
   function openNuevaModal() {
-    if (!state.user) {
-      openAuthModal();
-      return;
-    }
+    if (!state.user) { openAuthModal(); return; }
     $("pp-modal-nueva").hidden = false;
   }
 
@@ -684,9 +641,7 @@
     }
   }
 
-  // ============================================================
-  //  Boot
-  // ============================================================
+  // ── Boot ─────────────────────────────────────────────────────
   function boot() {
     loadStoredSession();
     ensureLauncherButton();
@@ -698,10 +653,5 @@
     boot();
   }
 
-  // Expose minimal API for debugging / tests.
-  window.PresupuestoParticipativo = {
-    open: openModule,
-    close: closeModule,
-    state,
-  };
+  window.PresupuestoParticipativo = { open: openModule, close: closeModule, state };
 })();
