@@ -3,11 +3,11 @@ backend/routes/propuestas.py
 ========================================================================
 SISTEMA DE PRESUPUESTO PARTICIPATIVO - Temascaltepec
 
-Endpoints publicos y autenticados para que los pobladores puedan
-proponer obras, ver tendencias y emitir votos cuatrimestrales.
-
-El RLS en Supabase ya restringe estas tablas a SELECT/INSERT, asi que
-toda mutacion aqui se hace mediante INSERT explicitos.
+CAMBIOS v2:
+- propuestas_cercanas(): usa nueva firma de rank_propuestas_por_proximidad
+  que retorna (lista, usuario_en_area). Si el usuario está fuera del
+  municipio (ej. CDMX), retorna lista vacía con mensaje explicativo
+  en lugar de propuestas irrelevantes.
 ========================================================================
 """
 
@@ -29,11 +29,11 @@ from app.token_security import issue_poblador_token, read_poblador_token
 propuestas_bp = Blueprint("propuestas", __name__)
 
 ALLOWED_INE_MIME = {"image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic"}
-MAX_INE_BYTES = 10 * 1024 * 1024  # 10 MB de margen para fotos modernas.
+MAX_INE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 # =====================================================================
-#  CORS helpers (mismo patron que routes/public.py)
+#  CORS helpers
 # =====================================================================
 
 def _add_cors_headers(response):
@@ -53,8 +53,7 @@ def _cors_preflight():
 
 
 # =====================================================================
-#  AUTH: token de poblador en header Authorization: Bearer <token>
-#  (o X-Poblador-Token)
+#  AUTH: token de poblador
 # =====================================================================
 
 def _extract_token() -> str | None:
@@ -66,8 +65,7 @@ def _extract_token() -> str | None:
 
 
 def require_poblador(fn):
-    """Decorador que exige token valido de poblador y carga el objeto."""
-
+    """Decorador que exige token válido de poblador."""
     @wraps(fn)
     def wrapper(*args, **kwargs):
         token = _extract_token()
@@ -75,21 +73,20 @@ def require_poblador(fn):
         if not pid:
             return _add_cors_headers((jsonify({
                 "success": False,
-                "message": "Sesion no valida. Inicia sesion como poblador.",
+                "message": "Sesión no válida. Inicia sesión como poblador.",
             }), 401))
         poblador = Poblador.query.get(pid)
         if not poblador:
             return _add_cors_headers((jsonify({
                 "success": False,
-                "message": "Sesion expirada. Vuelve a iniciar sesion.",
+                "message": "Sesión expirada. Vuelve a iniciar sesión.",
             }), 401))
         return fn(*args, poblador=poblador, **kwargs)
-
     return wrapper
 
 
 # =====================================================================
-#  HELPERS DE SERIALIZACION
+#  HELPERS DE SERIALIZACIÓN
 # =====================================================================
 
 def _votos_actuales_map(periodo: str) -> dict[int, int]:
@@ -104,17 +101,14 @@ def _votos_actuales_map(periodo: str) -> dict[int, int]:
 
 
 # =====================================================================
-#  VALIDACION EFIMERA DE INE
+#  VALIDACIÓN EFÍMERA DE INE
 # =====================================================================
 
 @propuestas_bp.route("/api/propuestas/ine/verify", methods=["POST", "OPTIONS"])
 def verify_ine():
-    """Procesa una foto del reverso de la INE en RAM y la valida con Gemini.
-
-    La imagen JAMAS toca el disco: se lee con request.files[...].read(),
-    se envia a Gemini desde memoria y se descarta. Si el frontend
-    indica `pertenece_a_temascaltepec=true` el flujo de registro queda
-    habilitado para guardar la `clave_elector` como unica.
+    """
+    Procesa una foto del reverso de la INE en RAM y la valida con Gemini.
+    La imagen JAMÁS toca el disco.
     """
     if request.method == "OPTIONS":
         return _cors_preflight()
@@ -125,7 +119,7 @@ def verify_ine():
             "Adjunta la imagen del reverso de tu INE en el campo 'file'."
         ))
 
-    mime = (upload.mimetype or "").lower()
+    mime = (upload.mimetype or "").lower().strip()
     if mime and mime not in ALLOWED_INE_MIME:
         return _add_cors_headers(bad_request(
             "Formato no soportado. Sube una foto JPG, PNG o WEBP."
@@ -133,10 +127,10 @@ def verify_ine():
 
     image_bytes = upload.read()
     if not image_bytes:
-        return _add_cors_headers(bad_request("La imagen llego vacia, intenta de nuevo."))
+        return _add_cors_headers(bad_request("La imagen llegó vacía, intenta de nuevo."))
     if len(image_bytes) > MAX_INE_BYTES:
         return _add_cors_headers(bad_request(
-            "La imagen excede 10 MB. Comprimela e intenta otra vez."
+            "La imagen excede 10 MB. Comprímela e intenta otra vez."
         ))
 
     try:
@@ -144,12 +138,12 @@ def verify_ine():
     except GeminiConfigError as exc:
         return _add_cors_headers((jsonify({
             "success": False,
-            "message": f"Servicio de verificacion no disponible: {exc}",
+            "message": f"Servicio de verificación no disponible: {exc}",
         }), 503))
-    except Exception as exc:  # pragma: no cover - red externa
+    except Exception as exc:
         return _add_cors_headers(db_error_response(exc))
     finally:
-        image_bytes = None  # libera la referencia explicitamente.
+        image_bytes = None  # Liberar referencia explícitamente
 
     pertenece = bool(result.get("pertenece_a_temascaltepec"))
     es_ine = bool(result.get("es_ine"))
@@ -170,10 +164,15 @@ def verify_ine():
             "pertenece_a_temascaltepec": False,
             "estado": result.get("estado"),
             "municipio": result.get("municipio"),
-        }, message="Region no valida para el registro."))
+        }, message="Región no válida para el registro."))
 
     clave = (result.get("clave_elector") or "").strip().upper()
-    existe = Poblador.query.filter_by(clave_elector_ine=clave).first() if clave else None
+    # Solo consultar BD si tenemos una clave válida de 18 chars
+    existe = (
+        Poblador.query.filter_by(clave_elector_ine=clave).first()
+        if clave and len(clave) == 18
+        else None
+    )
     return _add_cors_headers(ok({
         "valida": True,
         "es_ine": True,
@@ -182,7 +181,7 @@ def verify_ine():
         "municipio": result.get("municipio"),
         "clave_elector": clave,
         "ya_registrada": bool(existe),
-    }, message="Identificacion verificada."))
+    }, message="Identificación verificada."))
 
 
 # =====================================================================
@@ -208,14 +207,14 @@ def register_poblador():
     if len(username) < 4 or len(username) > 50:
         return _add_cors_headers(bad_request("El nombre de usuario debe tener entre 4 y 50 caracteres."))
     if len(password) < 6:
-        return _add_cors_headers(bad_request("La contrasena debe tener al menos 6 caracteres."))
+        return _add_cors_headers(bad_request("La contraseña debe tener al menos 6 caracteres."))
     if len(clave) != 18:
         return _add_cors_headers(bad_request("La clave de elector debe tener 18 caracteres."))
 
     if Poblador.query.filter_by(username=username).first():
-        return _add_cors_headers(bad_request("Ese nombre de usuario ya esta registrado."))
+        return _add_cors_headers(bad_request("Ese nombre de usuario ya está registrado."))
     if Poblador.query.filter_by(clave_elector_ine=clave).first():
-        return _add_cors_headers(bad_request("Esa clave de elector ya esta registrada."))
+        return _add_cors_headers(bad_request("Esa clave de elector ya está registrada."))
 
     try:
         poblador = Poblador(
@@ -236,7 +235,7 @@ def register_poblador():
     return _add_cors_headers(created({
         "poblador": poblador.to_public_dict(),
         "token": token,
-    }, message="Cuenta creada con exito."))
+    }, message="Cuenta creada con éxito."))
 
 
 @propuestas_bp.route("/api/propuestas/auth/login", methods=["POST", "OPTIONS"])
@@ -256,14 +255,14 @@ def login_poblador():
     if not poblador or not verify_password(password, poblador.password_hash):
         return _add_cors_headers((jsonify({
             "success": False,
-            "message": "Usuario o contrasena incorrectos.",
+            "message": "Usuario o contraseña incorrectos.",
         }), 401))
 
     token = issue_poblador_token(poblador.id)
     return _add_cors_headers(ok({
         "poblador": poblador.to_public_dict(),
         "token": token,
-    }, message="Sesion iniciada."))
+    }, message="Sesión iniciada."))
 
 
 @propuestas_bp.route("/api/propuestas/auth/me", methods=["GET", "OPTIONS"])
@@ -276,13 +275,13 @@ def me_poblador():
     if not pid:
         return _add_cors_headers((jsonify({
             "success": False,
-            "message": "Sin sesion activa.",
+            "message": "Sin sesión activa.",
         }), 401))
     poblador = Poblador.query.get(pid)
     if not poblador:
         return _add_cors_headers((jsonify({
             "success": False,
-            "message": "Sesion expirada.",
+            "message": "Sesión expirada.",
         }), 401))
 
     periodo = periodo_actual()
@@ -306,7 +305,7 @@ def me_poblador():
 
 @propuestas_bp.route("/api/propuestas/trending", methods=["GET", "OPTIONS"])
 def trending_propuestas():
-    """Top 5 mas votadas en el periodo cuatrimestral actual."""
+    """Top 5 más votadas en el periodo cuatrimestral actual."""
     if request.method == "OPTIONS":
         return _cors_preflight()
 
@@ -331,8 +330,7 @@ def trending_propuestas():
             rows.sort(key=lambda p: votos_por_id.get(p.id, 0), reverse=True)
             propuestas_ordenadas = rows
 
-        # Si aun no hay votos en el periodo: devolver las 5 mas recientes para no
-        # mostrar un carrusel vacio.
+        # Si aún no hay votos: devolver las 5 más recientes
         if not propuestas_ordenadas:
             propuestas_ordenadas = (
                 PropuestaObra.query
@@ -355,7 +353,11 @@ def trending_propuestas():
 
 @propuestas_bp.route("/api/propuestas/cercanas", methods=["POST", "OPTIONS"])
 def propuestas_cercanas():
-    """Hasta 5 propuestas mas cercanas en linea de sierra al usuario."""
+    """
+    Hasta 5 propuestas más cercanas al usuario, SOLO si está dentro
+    del radio del municipio de Temascaltepec (35km desde el centro).
+    Usuarios en CDMX u otras ciudades recibirán lista vacía con mensaje.
+    """
     if request.method == "OPTIONS":
         return _cors_preflight()
 
@@ -364,29 +366,50 @@ def propuestas_cercanas():
         lat = float(body.get("lat"))
         lng = float(body.get("lng"))
     except (TypeError, ValueError):
-        return _add_cors_headers(bad_request("Coordenadas 'lat' y 'lng' invalidas."))
+        return _add_cors_headers(bad_request("Coordenadas 'lat' y 'lng' inválidas."))
 
     try:
         todas = PropuestaObra.query.all()
-        ranked = rank_propuestas_por_proximidad(lat, lng, todas, max_results=5)
+
+        # Nueva firma: retorna (lista, usuario_en_area)
+        ranked, usuario_en_area = rank_propuestas_por_proximidad(
+            lat, lng, todas, max_results=5
+        )
+
+        if not usuario_en_area:
+            return _add_cors_headers(ok({
+                "propuestas": [],
+                "usuario_en_area": False,
+                "mensaje": (
+                    "Tu ubicación no corresponde al municipio de Temascaltepec. "
+                    "Esta sección muestra propuestas únicamente para residentes del municipio."
+                ),
+            }))
+
         if not ranked:
             return _add_cors_headers(ok({
                 "propuestas": [],
+                "usuario_en_area": True,
                 "mensaje": (
                     "No hay propuestas registradas cerca de tu comunidad para este "
-                    "periodo. Se el primero en proponer una obra para tu region!"
+                    "periodo. ¡Sé el primero en proponer una obra para tu región!"
                 ),
             }))
+
         votos = _votos_actuales_map(periodo_actual())
         data = [p.to_public_dict(votos=votos.get(p.id, 0)) for p in ranked]
-        return _add_cors_headers(ok({"propuestas": data}))
+        return _add_cors_headers(ok({
+            "propuestas": data,
+            "usuario_en_area": True,
+        }))
+
     except Exception as exc:
         return _add_cors_headers(db_error_response(exc))
 
 
 @propuestas_bp.route("/api/propuestas", methods=["GET", "OPTIONS"])
 def listar_propuestas():
-    """Listado publico completo (sin exponer al poblador proponente)."""
+    """Listado público completo."""
     if request.method == "OPTIONS":
         return _cors_preflight()
 
@@ -438,9 +461,9 @@ def crear_propuesta(poblador: Poblador):
     titulo = body["titulo"].strip()
     region = body["region"].strip()
     if len(titulo) > 150:
-        return _add_cors_headers(bad_request("El titulo no puede exceder 150 caracteres."))
+        return _add_cors_headers(bad_request("El título no puede exceder 150 caracteres."))
     if len(region) > 100:
-        return _add_cors_headers(bad_request("El nombre de region no puede exceder 100 caracteres."))
+        return _add_cors_headers(bad_request("El nombre de región no puede exceder 100 caracteres."))
 
     try:
         propuesta = PropuestaObra(
@@ -460,7 +483,7 @@ def crear_propuesta(poblador: Poblador):
 
     return _add_cors_headers(created(
         propuesta.to_public_dict(votos=0),
-        message="Propuesta registrada con exito.",
+        message="Propuesta registrada con éxito.",
     ))
 
 
@@ -478,13 +501,13 @@ def votar_propuesta(propuesta_id: int):
     if not pid:
         return _add_cors_headers((jsonify({
             "success": False,
-            "message": "Inicia sesion para poder votar.",
+            "message": "Inicia sesión para poder votar.",
         }), 401))
     poblador = Poblador.query.get(pid)
     if not poblador:
         return _add_cors_headers((jsonify({
             "success": False,
-            "message": "Sesion expirada.",
+            "message": "Sesión expirada.",
         }), 401))
 
     propuesta = PropuestaObra.query.get(propuesta_id)
@@ -495,7 +518,6 @@ def votar_propuesta(propuesta_id: int):
         }), 404))
 
     periodo = periodo_actual()
-
     consumidos = (
         VotoPropuesta.query
         .filter_by(poblador_id=poblador.id, periodo_voto=periodo)
@@ -503,8 +525,8 @@ def votar_propuesta(propuesta_id: int):
     )
     if consumidos >= CREDITOS_POR_PERIODO:
         return _add_cors_headers(bad_request(
-            f"Has agotado tus {CREDITOS_POR_PERIODO} creditos del periodo {periodo}. "
-            "Volveran a regenerarse el proximo cuatrimestre."
+            f"Has agotado tus {CREDITOS_POR_PERIODO} créditos del periodo {periodo}. "
+            "Se regenerarán el próximo cuatrimestre."
         ))
 
     repetido = (
