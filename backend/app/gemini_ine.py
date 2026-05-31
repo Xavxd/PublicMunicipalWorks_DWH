@@ -4,7 +4,6 @@ import os
 import base64
 import requests
 import time
-from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +14,13 @@ GEMINI_SUPPORTED_MIME = {
     "image/gif",
 }
 
-# Modelos confirmados funcionales en 2026 (ordenados por preferencia)
-# Se verifican dinámicamente contra la API para descartar los que no existan
+# ORDEN CRÍTICO: 1.5-flash primero porque es el más estable y disponible
+# gemini-2.0-flash puede requerir permisos especiales o estar en beta cerrada
 _FALLBACK_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash",        # ✅ Más estable, cuota gratuita generosa
+    "gemini-1.5-flash-latest", # ✅ Alias del anterior
+    "gemini-2.0-flash",        # ⚠️ Puede requerir acceso especial
+    "gemini-1.5-pro",          # ✅ Fallback de último recurso (más lento pero funciona)
 ]
 
 INE_PROMPT = """Analiza esta imagen de una credencial para votar (INE/IFE) mexicana.
@@ -44,44 +44,6 @@ Reglas:
 
 class GeminiConfigError(RuntimeError):
     pass
-
-
-@lru_cache(maxsize=1)
-def _get_available_models(api_key: str) -> list:
-    """
-    Consulta la API de Gemini para obtener modelos reales disponibles.
-    Se cachea para no repetir en cada request.
-    """
-    if not api_key:
-        return []
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key.strip()}"
-    try:
-        resp = requests.get(url, timeout=15)
-        if resp.status_code != 200:
-            logger.warning(f"[Gemini] No se pudo listar modelos: HTTP {resp.status_code}")
-            return []
-
-        data = resp.json()
-        available = {m["name"].replace("models/", "") for m in data.get("models", [])}
-        logger.info(f"[Gemini] Modelos disponibles: {available}")
-
-        # Filtrar nuestros fallbacks por los que realmente existen
-        valid = [m for m in _FALLBACK_MODELS if m in available]
-        if not valid:
-            # Si ninguno coincide exactamente, buscar alternativas comunes
-            for alt in ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]:
-                if any(alt in name for name in available):
-                    # Encontrar el nombre exacto
-                    for name in available:
-                        if alt in name:
-                            valid.append(name)
-                            break
-        return valid
-
-    except Exception as e:
-        logger.warning(f"[Gemini] Error listando modelos: {e}")
-        return []
 
 
 def _build_payload(image_b64: str, mime_type: str) -> dict:
@@ -110,77 +72,86 @@ def _build_payload(image_b64: str, mime_type: str) -> dict:
     }
 
 
-def _call_gemini(api_key: str, model: str, image_b64: str, mime_type: str, max_retries: int = 2) -> str:
+def _call_gemini_single(api_key: str, model: str, image_b64: str, mime_type: str) -> str:
     """
-    Llama a Gemini con un solo modelo.
-    Maneja 429 con backoff exponencial.
+    Un solo intento SIN reintentos automáticos (excepto 429).
+    Loguea TODO para diagnóstico.
     """
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    payload = _build_payload(image_b64, mime_type)
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": api_key.strip()
-    }
+    # Probar ambos métodos de auth: header y query param
+    urls = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key.strip()}",
+    ]
 
-    for attempt in range(max_retries + 1):
+    payload = _build_payload(image_b64, mime_type)
+    headers = {"Content-Type": "application/json"}
+
+    for url in urls:
         try:
             response = requests.post(url, json=payload, headers=headers, timeout=30)
 
-            # 429: Too Many Requests → esperar y reintentar
-            if response.status_code == 429:
-                wait = 2 ** attempt  # 1s, 2s
-                logger.warning(f"[Gemini] 429 en {model}, esperando {wait}s...")
-                time.sleep(wait)
-                continue
+            # LOG DETALLADO para diagnóstico
+            logger.warning(
+                f"[Gemini] {model} | Status: {response.status_code} | "
+                f"Body: {response.text[:400]}"
+            )
 
-            # 404: Modelo no existe → no reintentar, fallar rápido
+            # 429: esperar 3 segundos y reintentar UNA vez
+            if response.status_code == 429:
+                logger.warning(f"[Gemini] 429 en {model}, esperando 3s...")
+                time.sleep(3)
+                response = requests.post(url, json=payload, headers=headers, timeout=30)
+                logger.warning(
+                    f"[Gemini] {model} reintento | Status: {response.status_code} | "
+                    f"Body: {response.text[:400]}"
+                )
+                if response.status_code == 429:
+                    raise GeminiConfigError(f"Cuota agotada (429) para {model}")
+
             if response.status_code == 404:
                 raise GeminiConfigError(f"Modelo '{model}' no existe (404)")
 
             if response.status_code == 400:
                 err = response.text[:500]
-                raise GeminiConfigError(f"Bad request: {err}")
+                raise GeminiConfigError(f"Bad request ({model}): {err}")
+
+            if response.status_code == 403:
+                err = response.text[:500]
+                raise GeminiConfigError(f"API key sin permisos para {model} (403): {err}")
 
             if response.status_code != 200:
                 err = response.text[:300]
-                raise GeminiConfigError(f"HTTP {response.status_code}: {err}")
+                raise GeminiConfigError(f"HTTP {response.status_code} ({model}): {err}")
 
             resp_data = response.json()
             candidates = resp_data.get("candidates", [])
 
             if not candidates:
                 block_reason = resp_data.get("promptFeedback", {}).get("blockReason", "desconocida")
-                raise GeminiConfigError(f"Sin candidatos (bloqueado: {block_reason})")
+                raise GeminiConfigError(f"Sin candidatos ({model}, bloqueado: {block_reason})")
 
             candidate = candidates[0]
             finish_reason = candidate.get("finishReason", "STOP")
 
             if finish_reason in ("SAFETY", "RECITATION", "OTHER"):
-                raise GeminiConfigError(f"Respuesta bloqueada por {finish_reason}")
+                raise GeminiConfigError(f"Respuesta bloqueada ({model}): {finish_reason}")
 
             parts = candidate.get("content", {}).get("parts", [])
             if not parts:
-                raise GeminiConfigError("Respuesta vacía del modelo")
+                raise GeminiConfigError(f"Respuesta vacía ({model})")
 
             text = parts[0].get("text", "")
             if text:
-                logger.info(f"[Gemini] Éxito con {model}")
+                logger.info(f"[Gemini] ÉXITO con {model}")
                 return text
 
-            raise GeminiConfigError("Campo 'text' vacío")
+            raise GeminiConfigError(f"Texto vacío ({model})")
 
         except requests.exceptions.Timeout:
-            if attempt < max_retries:
-                time.sleep(1)
-                continue
             raise GeminiConfigError(f"Timeout con {model}")
         except requests.exceptions.RequestException as e:
-            if attempt < max_retries:
-                time.sleep(1)
-                continue
-            raise GeminiConfigError(f"Error de red: {e}")
+            raise GeminiConfigError(f"Error de red ({model}): {e}")
 
-    raise GeminiConfigError(f"Agotados reintentos con {model}")
+    raise GeminiConfigError(f"Fallo total con {model}")
 
 
 def _normalize_mime(mime_type: str) -> str:
@@ -255,25 +226,24 @@ def verify_ine_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     except Exception as exc:
         raise GeminiConfigError(f"Error al codificar imagen: {exc}") from exc
 
-    # Obtener modelos disponibles (cacheado)
-    available_models = _get_available_models(api_key)
-    models_to_try = available_models if available_models else _FALLBACK_MODELS
-
-    logger.info(f"[Gemini] Intentando modelos: {models_to_try}")
+    logger.info(f"[Gemini] Iniciando verificación INE. Modelos a probar: {_FALLBACK_MODELS}")
 
     last_error = None
-    for model in models_to_try:
+    for model in _FALLBACK_MODELS:
         try:
-            text = _call_gemini(api_key, model, image_b64, exact_mime)
+            text = _call_gemini_single(api_key, model, image_b64, exact_mime)
             parsed = _parse_json_response(text)
             break
         except GeminiConfigError as e:
             last_error = str(e)
-            logger.warning(f"[Gemini] Modelo {model} falló: {last_error}")
-            # Si el error es 404, no seguir intentando otros modelos si ya sabemos
-            # que la API key no tiene acceso. Pero si es 429, el backoff ya manejó.
-            if "no existe (404)" in last_error:
+            logger.warning(f"[Gemini] {last_error}")
+            # Si es 404 o 403, saltar inmediatamente al siguiente modelo
+            if "no existe (404)" in last_error or "sin permisos" in last_error:
                 continue
+            # Si es 429 (cuota), también saltar al siguiente modelo
+            if "Cuota agotada" in last_error:
+                continue
+            # Para otros errores, también intentar siguiente modelo
             continue
     else:
         raise GeminiConfigError(
