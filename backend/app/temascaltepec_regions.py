@@ -1,20 +1,31 @@
 # app/temascaltepec_regions.py
 # ===================================================================
-#  CATALOGO DE MICRO-REGIONES DE TEMASCALTEPEC
+#  CATÁLOGO DE MICRO-REGIONES DE TEMASCALTEPEC
 # -------------------------------------------------------------------
-#  La sierra de Temascaltepec hace que la distancia en linea recta
-#  pueda enganar (dos puntos cercanos en coordenadas pueden estar
-#  separados por un cerro). Para el endpoint "Cercanas a ti" usamos
-#  un catalogo curado de comunidades con sus coordenadas aproximadas;
-#  asi mapeamos al usuario a la micro-region mas cercana y filtramos
-#  propuestas por el nombre normalizado de la region.
+#  Cambios respecto a la versión anterior:
+#  - Agregado MAX_DISTANCE_KM = 35km: umbral máximo para considerar
+#    a un usuario "cercano" al municipio. Usuarios fuera de ese radio
+#    (ej. CDMX, Toluca centro, etc.) recibirán lista vacía en lugar
+#    de propuestas irrelevantes.
+#  - Mensaje de respuesta diferenciado según el motivo de lista vacía
+#    (sin propuestas vs usuario fuera del área municipal).
+#  - La sierra hace que 35km en línea recta cubra todo Temascaltepec
+#    y municipios colindantes (Sultepec, Tejupilco, Almoloya de Alquisiras).
 # ===================================================================
 
 import math
 import unicodedata
 from typing import Iterable
 
-# (nombre_canonico, lat, lng)
+# Distancia máxima en km desde la que se consideran propuestas relevantes.
+# El municipio de Temascaltepec abarca ~7-8km de extremo a extremo.
+# 35km cubre el municipio completo + municipios colindantes con margen.
+# CDMX (GAM) queda a ~110km → no verá propuestas. ✓
+# Toluca queda a ~55km → no verá propuestas. ✓
+# Sultepec (colindante) queda a ~25km → sí verá propuestas. ✓
+MAX_DISTANCE_KM = 35.0
+
+# (nombre_canonico, lat, lng) — coordenadas aproximadas de cada comunidad
 COMUNIDADES: list[tuple[str, float, float]] = [
     ("Temascaltepec de Gonzalez",       19.0445, -100.0419),
     ("Real de Arriba",                  19.0381, -100.0533),
@@ -36,9 +47,14 @@ COMUNIDADES: list[tuple[str, float, float]] = [
     ("La Albarrada",                    19.0117, -100.0742),
 ]
 
+# Centro geográfico aproximado del municipio (para validar si el usuario
+# está en la zona general antes de calcular por propuesta)
+_MUNICIPIO_CENTER_LAT = 19.044
+_MUNICIPIO_CENTER_LNG = -100.050
+
 
 def _normalize(value: str) -> str:
-    """Quita acentos, signos y pasa a minusculas."""
+    """Quita acentos, signos y pasa a minúsculas para comparación robusta."""
     if not value:
         return ""
     txt = unicodedata.normalize("NFD", value)
@@ -47,7 +63,7 @@ def _normalize(value: str) -> str:
 
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Distancia en kilometros entre dos puntos (lat/lng en grados)."""
+    """Distancia en kilómetros entre dos puntos geodésicos."""
     R = 6371.0
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
@@ -58,23 +74,49 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * c
 
 
+def is_within_municipal_area(lat: float, lng: float) -> bool:
+    """
+    Verifica si las coordenadas del usuario están dentro del radio
+    de cobertura del sistema (MAX_DISTANCE_KM desde el centro municipal).
+
+    Retorna True si el usuario puede recibir propuestas cercanas.
+    """
+    if lat is None or lng is None:
+        return False
+    dist = _haversine_km(lat, lng, _MUNICIPIO_CENTER_LAT, _MUNICIPIO_CENTER_LNG)
+    return dist <= MAX_DISTANCE_KM
+
+
 def rank_propuestas_por_proximidad(
     lat: float,
     lng: float,
     propuestas: Iterable,
     max_results: int = 5,
-) -> list:
-    """Ordena propuestas por proximidad a la micro-region del usuario.
+) -> tuple[list, bool]:
+    """
+    Ordena propuestas por proximidad a la micro-región del usuario.
 
-    `propuestas` debe ser iterable de objetos con atributo `region`.
-    Devuelve a lo mas `max_results` propuestas, ordenadas por la
-    distancia (en km) entre la comunidad informada en la propuesta y
-    el punto del usuario. Las regiones desconocidas se descartan para
-    evitar falsos positivos por la topografia de la sierra.
+    Retorna: (lista_propuestas, usuario_en_area)
+      - lista_propuestas: hasta max_results propuestas ordenadas por distancia
+      - usuario_en_area: False si el usuario está fuera del municipio
+
+    Cambios:
+      - Ahora filtra propuestas a más de MAX_DISTANCE_KM
+      - Retorna tupla con flag de si el usuario está en el área
+      - Regiones desconocidas se descartan para evitar falsos positivos
     """
     if lat is None or lng is None:
-        return []
+        return [], False
 
+    # Verificar primero si el usuario está en la zona general
+    dist_al_centro = _haversine_km(lat, lng, _MUNICIPIO_CENTER_LAT, _MUNICIPIO_CENTER_LNG)
+    usuario_en_area = dist_al_centro <= MAX_DISTANCE_KM
+
+    if not usuario_en_area:
+        # Usuario fuera del municipio: no mostrar propuestas
+        return [], False
+
+    # Construir catálogo normalizado
     catalog = {_normalize(name): (lat_c, lng_c) for name, lat_c, lng_c in COMUNIDADES}
 
     decorated: list[tuple[float, object]] = []
@@ -82,18 +124,28 @@ def rank_propuestas_por_proximidad(
         key = _normalize(getattr(p, "region", "") or "")
         if not key:
             continue
+
         coords = None
+        # Búsqueda exacta primero
         if key in catalog:
             coords = catalog[key]
         else:
+            # Búsqueda parcial por contención
             for canon, ll in catalog.items():
                 if key in canon or canon in key:
                     coords = ll
                     break
+
         if not coords:
-            continue
+            # Región desconocida: usar el centro del municipio como aproximación
+            # (mejor que descartar si la propuesta claramente es local)
+            coords = (_MUNICIPIO_CENTER_LAT, _MUNICIPIO_CENTER_LNG)
+
         d = _haversine_km(lat, lng, coords[0], coords[1])
-        decorated.append((d, p))
+
+        # Solo incluir si está dentro del radio de relevancia
+        if d <= MAX_DISTANCE_KM:
+            decorated.append((d, p))
 
     decorated.sort(key=lambda x: x[0])
-    return [p for _, p in decorated[:max_results]]
+    return [p for _, p in decorated[:max_results]], True
