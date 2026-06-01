@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="../css/main.css"/>
   <link rel="stylesheet" href="../css/supervisor.css"/>
+<base target="_blank">
 </head>
 <body>
 <div class="cursor" id="cursor"></div>
@@ -142,6 +143,30 @@
               <input type="url" class="form-input" id="inf-doc" placeholder="https://drive.google.com/... o URL del documento"/>
               <p class="form-hint">Enlace al documento del informe (PDF, DOC, etc.). Dejar vac&iacute;o si no aplica.</p>
             </div>
+          </div>
+        </div>
+
+        <!-- ── EVIDENCIA FOTOGR&Aacute;FICA (Cloudflare R2) ── -->
+        <div class="card">
+          <div class="card-title">Evidencia Fotogr&aacute;fica del Avance</div>
+          <div class="form-group">
+            <label class="form-label" for="inf-imagenes">Adjuntar im&aacute;genes</label>
+
+            <label for="inf-imagenes" class="r2-dropzone" id="r2-dropzone">
+              <svg viewBox="0 0 24 24" fill="none" width="32" height="32" aria-hidden="true">
+                <path d="M12 16V8m0 0l-3 3m3-3l3 3M5 20h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div>
+                <strong>Haz clic para seleccionar fotograf&iacute;as</strong>
+                <span class="r2-dropzone-hint">JPG o PNG &mdash; m&aacute;ximo 10&nbsp;MB por imagen</span>
+              </div>
+            </label>
+
+            <input type="file" id="inf-imagenes" accept="image/jpeg,image/png" multiple
+                   style="display:none" onchange="onImagenesSelected(event)"/>
+
+            <div id="imagenes-preview" class="imagenes-preview" aria-live="polite"></div>
+            <p class="form-hint">Las im&aacute;genes se subir&aacute;n al registrar el informe. Quedar&aacute;n visibles en el mapa p&uacute;blico para la ciudadan&iacute;a.</p>
           </div>
         </div>
 
