@@ -1,6 +1,7 @@
 /* ================================================================
    SUPERVISOR — Informes de Obra
    Integración completa con backend ORM (Flask + SQLAlchemy)
+   + Evidencia fotográfica vía Cloudflare R2
    ================================================================ */
 
 // ── Autenticación ──────────────────────────────────────────────
@@ -33,6 +34,11 @@ const meses = [
 // Cache de datos
 let obrasAsignadas = [];
 let informesCache = [];
+
+// ── Estado del selector de imágenes (formulario "Nuevo Informe") ──
+const MAX_IMG_BYTES = 10 * 1024 * 1024;       // 10 MB
+const ALLOWED_IMG_MIMES = ["image/jpeg", "image/png"];
+let imagenesSeleccionadas = [];                // File[] pendientes de subir
 
 
 // ════════════════════════════════════════════════════════════════
@@ -205,12 +211,33 @@ async function submitInforme(e) {
     documento: documento
   };
 
+  // Botón "Registrar Informe" — feedback visual
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Registrando...'; }
+
   try {
-    await createInforme(payload);
+    const resp = await createInforme(payload);
+    const informeId = resp?.data?.id;
+
+    // Subir imágenes si hay seleccionadas
+    if (informeId && imagenesSeleccionadas.length) {
+      if (submitBtn) submitBtn.innerHTML = `Subiendo ${imagenesSeleccionadas.length} imagen(es)...`;
+      try {
+        await uploadInformeImagenes(informeId, imagenesSeleccionadas);
+      } catch (errImg) {
+        showToast(`Informe creado, pero falló la subida de imágenes: ${errImg.message}`, 'error');
+        resetForm();
+        return;
+      }
+    }
+
     showToast(`Informe de ${meses[parseInt(mes)]} ${anio} registrado exitosamente.`);
     resetForm();
   } catch (err) {
     showToast(err.message || 'Error al registrar el informe.', 'error');
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
   }
 }
 
@@ -225,6 +252,64 @@ function resetForm() {
   // Restaurar año actual
   const yr = document.getElementById('inf-anio');
   if (yr) yr.value = new Date().getFullYear();
+
+  // Limpiar selección de imágenes
+  imagenesSeleccionadas = [];
+  renderImagenesPreview();
+  const inp = document.getElementById('inf-imagenes');
+  if (inp) inp.value = '';
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  SELECTOR DE IMÁGENES (formulario "Nuevo Informe")
+// ════════════════════════════════════════════════════════════════
+
+function onImagenesSelected(e) {
+  const incoming = Array.from(e.target.files || []);
+  for (const f of incoming) {
+    if (!ALLOWED_IMG_MIMES.includes(f.type)) {
+      showToast(`"${f.name}": solo se aceptan JPG y PNG.`, 'error');
+      continue;
+    }
+    if (f.size > MAX_IMG_BYTES) {
+      showToast(`"${f.name}" excede los 10 MB.`, 'error');
+      continue;
+    }
+    // Evitar duplicados (por nombre+tamaño)
+    const dup = imagenesSeleccionadas.find(x => x.name === f.name && x.size === f.size);
+    if (!dup) imagenesSeleccionadas.push(f);
+  }
+  // Permitir volver a seleccionar el mismo archivo si se quitó
+  e.target.value = '';
+  renderImagenesPreview();
+}
+
+function removeImagenSeleccionada(idx) {
+  imagenesSeleccionadas.splice(idx, 1);
+  renderImagenesPreview();
+}
+
+function renderImagenesPreview() {
+  const wrap = document.getElementById('imagenes-preview');
+  if (!wrap) return;
+
+  // Revocar URLs previas para evitar leaks
+  wrap.querySelectorAll('img[data-blob]').forEach(img => {
+    try { URL.revokeObjectURL(img.src); } catch (_) {}
+  });
+
+  if (!imagenesSeleccionadas.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = imagenesSeleccionadas.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `
+      <div class="imagen-thumb">
+        <img src="${url}" data-blob="1" alt="${f.name}"/>
+        <button type="button" class="thumb-remove" title="Quitar" onclick="removeImagenSeleccionada(${i})">×</button>
+        <div class="thumb-name">${f.name}</div>
+      </div>`;
+  }).join('');
 }
 
 
@@ -271,6 +356,9 @@ async function renderLibro() {
       const informesPorObra = await fetchInformesPorObra();
       _renderLibroAgrupado(container, informesPorObra);
     }
+
+    // Cargar galerías de imágenes después del render
+    _cargarGaleriasLibro();
   } catch (err) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><p>Error al cargar informes.</p><p style="font-size:0.8rem;color:var(--text-muted)">${err.message || 'Intenta de nuevo.'}</p></div>`;
   }
@@ -330,6 +418,7 @@ function _renderLibroAgrupado(container, obrasConInformes) {
         </div>
         <div class="informe-body">${inf.descripcion}</div>
         ${inf.documento ? `<div class="informe-files"><a href="${inf.documento}" target="_blank" class="file-chip" style="text-decoration:none;color:inherit">📎 Ver documento del informe</a></div>` : ''}
+        <div class="informe-galeria" id="gal-${inf.id}" data-informe="${inf.id}"></div>
       </div>`;
     }).join('');
 
@@ -396,8 +485,81 @@ function _renderLibroListaPlana(container, informes) {
       </div>
       <div class="informe-body">${inf.descripcion}</div>
       ${inf.documento ? `<div class="informe-files"><a href="${inf.documento}" target="_blank" class="file-chip" style="text-decoration:none;color:inherit">📎 Ver documento del informe</a></div>` : ''}
+      <div class="informe-galeria" id="gal-${inf.id}" data-informe="${inf.id}"></div>
     </div>`;
   }).join('');
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  GALERÍAS DE IMÁGENES EN EL LIBRO DE INFORMES
+// ════════════════════════════════════════════════════════════════
+
+async function _cargarGaleriasLibro() {
+  const contenedores = document.querySelectorAll('.informe-galeria[data-informe]');
+  // Cargar en paralelo (con un cap pequeño no hace falta limitar)
+  await Promise.all(Array.from(contenedores).map(async (el) => {
+    const informeId = el.getAttribute('data-informe');
+    if (!informeId) return;
+    try {
+      const imgs = await fetchInformeImagenes(informeId);
+      _renderGaleriaInforme(el, informeId, imgs);
+    } catch (e) {
+      // Si falla la carga de una galería, no rompemos el libro entero
+      el.innerHTML = '';
+    }
+  }));
+}
+
+function _renderGaleriaInforme(el, informeId, imagenes) {
+  if (!imagenes.length) { el.innerHTML = ''; return; }
+  el.innerHTML = imagenes.map(img => `
+    <div class="gal-item" onclick="abrirLightbox('${img.url}')">
+      <img src="${img.url}" alt="${img.nombreOriginal || 'Evidencia'}" loading="lazy"/>
+      <button type="button" class="gal-del" title="Eliminar imagen"
+              onclick="event.stopPropagation(); eliminarImagenInforme('${img.id}','${informeId}')">×</button>
+    </div>
+  `).join('');
+}
+
+async function eliminarImagenInforme(idImagen, informeId) {
+  if (!confirm('¿Eliminar esta imagen del informe? Esta acción no se puede deshacer.')) return;
+  try {
+    await deleteInformeImagen(idImagen);
+    showToast('Imagen eliminada.');
+    // Recargar solo esa galería
+    const el = document.getElementById(`gal-${informeId}`);
+    if (el) {
+      try {
+        const imgs = await fetchInformeImagenes(informeId);
+        _renderGaleriaInforme(el, informeId, imgs);
+      } catch (_) { /* ignore */ }
+    }
+  } catch (err) {
+    showToast(err.message || 'No se pudo eliminar la imagen.', 'error');
+  }
+}
+
+// ── Lightbox simple ────────────────────────────────────────────
+function abrirLightbox(url) {
+  let lb = document.getElementById('r2-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'r2-lightbox';
+    lb.className = 'r2-lightbox';
+    lb.innerHTML = `
+      <button class="lb-close" type="button" onclick="cerrarLightbox()">×</button>
+      <img id="r2-lightbox-img" src="" alt="Evidencia"/>
+    `;
+    lb.addEventListener('click', (e) => { if (e.target === lb) cerrarLightbox(); });
+    document.body.appendChild(lb);
+  }
+  document.getElementById('r2-lightbox-img').src = url;
+  lb.classList.add('show');
+}
+function cerrarLightbox() {
+  const lb = document.getElementById('r2-lightbox');
+  if (lb) lb.classList.remove('show');
 }
 
 
