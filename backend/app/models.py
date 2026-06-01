@@ -1,3 +1,4 @@
+import uuid
 from .database import db
 
 
@@ -168,7 +169,7 @@ class Proyectista(db.Model):
 
     personal = db.relationship('Personal', lazy='joined')
     constructora = db.relationship('Constructora', lazy='joined') 
-    
+
 # ════════════════════════════════════════════════════════════════
 #  OPCIÓN SELECCIÓN (concursos)
 # ════════════════════════════════════════════════════════════════
@@ -355,3 +356,47 @@ class VotoPropuesta(db.Model):
     periodo_voto  = db.Column('periodo_voto', db.String(10), nullable=False)
     creado_en     = db.Column('creado_en', db.DateTime(timezone=True),
                               server_default=db.func.now())
+
+
+# ════════════════════════════════════════════════════════════════
+#  IMAGENES DE INFORME (Cloudflare R2)
+# ════════════════════════════════════════════════════════════════
+
+class ImagenInforme(db.Model):
+    """
+    Evidencia fotográfica adjunta a un informe mensual.
+    Las imágenes residen en Cloudflare R2; aquí se guarda el metadato.
+    """
+    __tablename__ = 'imagenes_informe'
+    __table_args__ = {'schema': 'public'}
+
+    id_imagen       = db.Column('id_imagen', db.String(36), primary_key=True,
+                                default=lambda: str(uuid.uuid4()))
+    id_informe      = db.Column('id_informe', db.String(36),
+                                db.ForeignKey('public.informes.id_informe',
+                                              ondelete='CASCADE'),
+                                nullable=False)
+    url_publica     = db.Column('url_publica', db.Text, nullable=False)
+    ruta_r2         = db.Column('ruta_r2', db.Text, nullable=False)
+    nombre_original = db.Column('nombre_original', db.Text, nullable=False)
+    tipo_mime       = db.Column('tipo_mime', db.Text, nullable=True)
+    # Nota: la columna en BD se llama "tamaño_bytes" (con ñ). Se mapea explícitamente.
+    tamano_bytes    = db.Column('tamaño_bytes', db.Integer, nullable=True)
+    fecha_subida    = db.Column('fecha_subida', db.DateTime(timezone=True),
+                                server_default=db.func.now())
+
+    # Relación: desde ImagenInforme puedes acceder a informe.nombre_obra, etc.
+    # backref='imagenes' permite hacer: informe.imagenes  (lista de imágenes)
+    informe = db.relationship('Informe', lazy='joined', backref='imagenes')
+
+    def to_dict(self):
+        return {
+            "id":             str(self.id_imagen),
+            "informeId":      (self.id_informe or "").strip(),
+            "url":            self.url_publica,
+            "rutaR2":         self.ruta_r2,
+            "nombreOriginal": self.nombre_original,
+            "tipoMime":       self.tipo_mime,
+            "tamanoBytes":    self.tamano_bytes,
+            "fechaSubida":    self.fecha_subida.isoformat() if self.fecha_subida else None,
+        }
