@@ -178,6 +178,10 @@ async function fetchFuentes() {
 }
 
 
+// ================================================================
+//  INFORMES
+// ================================================================
+
 async function fetchInformes(params = {}) {
   const qs = new URLSearchParams(
     Object.fromEntries(Object.entries(params).filter(([, v]) => v))
@@ -192,6 +196,57 @@ async function createInforme(data) {
 
 async function deleteInforme(id) {
   return await API.delete(`/api/informes/${id}`);
+}
+
+
+// ================================================================
+//  IMÁGENES DE INFORME (Cloudflare R2)
+// ================================================================
+
+/**
+ * Sube una o varias imágenes (File[]) a un informe.
+ * Usa multipart/form-data y NO requiere Content-Type manual.
+ */
+async function uploadInformeImagenes(informeId, files) {
+  if (!files || !files.length) return { success: true, data: [] };
+
+  const fd = new FormData();
+  for (const f of files) fd.append("imagenes", f, f.name);
+
+  const u = getCurrentUser();
+  const headers = {};
+  if (u) {
+    headers["X-User-Role"]     = u.role;
+    headers["X-User-Id"]       = u.id;
+    headers["X-User-Nombre"]   = u.nombre   || "";
+    headers["X-User-Username"] = u.username || "";
+  }
+  // NO setear Content-Type: el navegador lo hace con boundary correcto
+
+  const res = await fetch(`${API_BASE}/api/informes/${encodeURIComponent(informeId)}/imagenes`, {
+    method: "POST",
+    headers,
+    body: fd,
+  });
+
+  const json = await res.json().catch(() => ({
+    success: false, message: "Respuesta inválida del servidor."
+  }));
+  if (!res.ok && !json.success) {
+    throw new Error(json.message || `HTTP ${res.status}`);
+  }
+  return json;
+}
+
+/** Lista imágenes de un informe (autenticado). */
+async function fetchInformeImagenes(informeId) {
+  const json = await API.get(`/api/informes/${encodeURIComponent(informeId)}/imagenes`);
+  return json.data || [];
+}
+
+/** Elimina una imagen por su id_imagen. */
+async function deleteInformeImagen(idImagen) {
+  return await API.delete(`/api/imagenes/${encodeURIComponent(idImagen)}`);
 }
 
 
