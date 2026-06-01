@@ -29,8 +29,8 @@ def _cors(resp):
     if isinstance(resp, tuple):
         resp = make_response(resp[0], resp[1] if len(resp) > 1 else 200)
     resp.headers.add("Access-Control-Allow-Origin", "*")
-    resp.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-    resp.headers.add("Access-Control-Allow-Methods", "GET, OPTIONS")
+    resp.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Role, X-User-Id, X-User-Nombre, X-User-Username")
+    resp.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     return resp
 
 
@@ -180,10 +180,12 @@ def _limpiar_r2(object_keys):
 #  LISTAR IMÁGENES DE UN INFORME (autenticado)
 # ════════════════════════════════════════════════════════════════
 
-@imagenes_bp.route("/api/informes/<informe_id>/imagenes", methods=["GET"])
+@imagenes_bp.route("/api/informes/<informe_id>/imagenes", methods=["GET", "OPTIONS"])
 @require_auth("supervisor", "director", "secretaria", "proyectista")
 def list_imagenes_informe(informe_id, current_user):
     """Lista las imágenes de un informe (cualquier usuario autenticado)."""
+    if request.method == "OPTIONS":
+        return _cors_preflight()
     informe_id = informe_id.strip()
     try:
         imagenes = (
@@ -248,7 +250,7 @@ def list_imagenes_obra_publico(obra_id):
 #  ELIMINAR IMAGEN (supervisor dueño o director)
 # ════════════════════════════════════════════════════════════════
 
-@imagenes_bp.route("/api/imagenes/<id_imagen>", methods=["DELETE"])
+@imagenes_bp.route("/api/imagenes/<id_imagen>", methods=["DELETE", "OPTIONS"])
 @require_auth("supervisor", "director")
 def delete_imagen(id_imagen, current_user):
     """
@@ -262,6 +264,8 @@ def delete_imagen(id_imagen, current_user):
 
     El supervisor solo puede borrar imágenes de sus propios informes.
     """
+    if request.method == "OPTIONS":
+        return _cors_preflight()
     try:
         img = ImagenInforme.query.filter_by(id_imagen=id_imagen.strip()).first()
         if not img:
