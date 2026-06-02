@@ -104,17 +104,24 @@ def validate_image(file_storage) -> Tuple[bool, str]:
     if mime not in ALLOWED_MIME_TYPES:
         return False, f"Tipo MIME no permitido: {mime}. Solo se aceptan image/jpeg y image/png."
 
-    # Obtener tamaño: primero intentar content_length (sin mover el stream),
-    # luego fallback a seek/tell (Flask FileStorage lo soporta).
-    size = 0
-    if hasattr(file_storage, "content_length") and file_storage.content_length is not None:
-        size = file_storage.content_length
-    else:
-        stream = file_storage.stream
+    # ── Medir tamaño del stream de forma robusta ──
+    # Werkzeug/Flask usa SpooledTemporaryFile; content_length a veces es 0
+    # o None aunque el archivo tenga datos. Usamos seek/tell directamente.
+    stream = file_storage.stream
+    try:
+        # Guardar posición actual (por si acaso)
+        pos = stream.tell() if hasattr(stream, "tell") else 0
+        # Ir al final
+        stream.seek(0, 2)
+        size = stream.tell()
+        # Volver al inicio (o a la posición original si no era 0)
+        stream.seek(0)
+    except (OSError, ValueError, AttributeError):
+        # Si el stream no soporta seek, intentar leer para verificar que no está vacío
         try:
-            stream.seek(0, 2)              # ir al final
-            size = stream.tell()
-            stream.seek(0)                 # volver al inicio
+            first_byte = stream.read(1)
+            stream.seek(0)
+            size = 1 if first_byte else 0
         except Exception:
             return False, "No se pudo determinar el tamaño del archivo."
 
