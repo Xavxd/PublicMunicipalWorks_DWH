@@ -347,6 +347,83 @@
 }
 
 
+/* ---- LIGHT THEME OVERRIDES (supervisor.css) ---- */
+html[data-theme="light"] .sup-sidebar .nav-item.active {
+  background: rgba(16,185,129,0.06);
+  border-color: rgba(16,185,129,0.15);
+}
+html[data-theme="light"] .nav-item:hover {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .obra-asignada-card {
+  background: var(--bg-card);
+}
+html[data-theme="light"] .obra-asignada-card:hover {
+  background: var(--bg-card-hover);
+}
+html[data-theme="light"] .obra-info-strip {
+  background: rgba(16,185,129,0.03);
+}
+html[data-theme="light"] .informe-card {
+  background: var(--bg-card);
+}
+html[data-theme="light"] .informe-card:hover {
+  border-color: rgba(16,185,129,0.15);
+}
+html[data-theme="light"] .slider {
+  background: rgba(0,0,0,0.08);
+}
+html[data-theme="light"] .slider::-webkit-slider-thumb {
+  border-color: var(--bg-card);
+}
+html[data-theme="light"] .slider-bar {
+  background: rgba(0,0,0,0.06);
+}
+html[data-theme="light"] .progress-bar {
+  background: rgba(0,0,0,0.06);
+}
+html[data-theme="light"] .libro-obra-grupo {
+  background: var(--bg-card);
+}
+html[data-theme="light"] .libro-obra-grupo:hover {
+  border-color: rgba(16, 185, 129, 0.15);
+}
+html[data-theme="light"] .libro-obra-header {
+  background: rgba(16, 185, 129, 0.03);
+}
+html[data-theme="light"] .libro-obra-exp {
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .libro-obra-informes .informe-card:hover {
+  background: rgba(0,0,0,0.01);
+}
+html[data-theme="light"] .r2-dropzone {
+  background: rgba(16,185,129,0.03);
+}
+html[data-theme="light"] .r2-dropzone:hover {
+  background: rgba(16,185,129,0.05);
+}
+html[data-theme="light"] .imagen-thumb {
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .imagen-thumb .thumb-name {
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+}
+html[data-theme="light"] .informe-galeria .gal-item {
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .user-session-badge {
+  background: rgba(59,130,246,0.06);
+}
+html[data-theme="light"] .btn-logout {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .btn-logout:hover {
+  color: var(--text-primary);
+}
+
 /* ================================================================
    EVIDENCIA FOTOGRÁFICA — Cloudflare R2
    ================================================================ */

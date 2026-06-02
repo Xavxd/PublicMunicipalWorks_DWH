@@ -114,6 +114,68 @@
 @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 1.5rem; } }
 @media (max-width: 640px) { .add-row-inputs { flex-direction: column; } .add-inp { min-width: 100%; } }
 
+/* ---- LIGHT THEME OVERRIDES (proyectista.css) ---- */
+html[data-theme="light"] .proy-sidebar .nav-item.active {
+  background: rgba(245,158,11,0.06);
+  border-color: rgba(245,158,11,0.15);
+}
+html[data-theme="light"] .nav-item:hover {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .sidebar-obra-card {
+  background: rgba(245,158,11,0.04);
+}
+html[data-theme="light"] .obra-select-card {
+  background: var(--bg-card);
+}
+html[data-theme="light"] .obra-select-card:hover {
+  background: var(--bg-card-hover);
+}
+html[data-theme="light"] .osc-presupuesto {
+  color: #b45309;
+}
+html[data-theme="light"] .cat-tab {
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .cat-tab.active {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.30);
+}
+html[data-theme="light"] .presupuesto-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+html[data-theme="light"] .inline-edit {
+  color: var(--text-secondary);
+}
+html[data-theme="light"] .inline-edit:focus {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .add-row-form {
+  background: rgba(245,158,11,0.03);
+}
+html[data-theme="light"] .resumen-cat-header:hover {
+  background: rgba(0,0,0,0.02);
+}
+html[data-theme="light"] .resumen-container .resumen-obra-header,
+html[data-theme="light"] .resumen-cat-card {
+  background: var(--bg-card);
+}
+html[data-theme="light"] .has-presupuesto-badge {
+  background: rgba(16,185,129,0.08);
+}
+html[data-theme="light"] .user-session-badge {
+  background: rgba(59,130,246,0.06);
+}
+html[data-theme="light"] .btn-logout {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .btn-logout:hover {
+  color: var(--text-primary);
+}
+
 /* ============ FORZAR CURSOR VISIBLE EN PROYECTISTA ============ */
 
 .cursor, .cursor-follower {

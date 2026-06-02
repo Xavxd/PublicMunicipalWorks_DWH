@@ -617,6 +617,73 @@
    ================================================================ */
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---- LIGHT THEME OVERRIDES (director.css) ---- */
+html[data-theme="light"] .nav-item:hover {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .nav-item.active {
+  background: rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.18);
+}
+html[data-theme="light"] .search-input {
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .wizard-stepper {
+  background: var(--bg-surface);
+}
+html[data-theme="light"] .step-num {
+  background: rgba(0,0,0,0.04);
+}
+html[data-theme="light"] .fuente-checkbox {
+  background: rgba(0,0,0,0.02);
+}
+html[data-theme="light"] .fuente-checkbox:hover {
+  background: rgba(0,0,0,0.04);
+}
+html[data-theme="light"] .fuente-checkbox:has(input:checked) {
+  background: rgba(59,130,246,0.05);
+}
+html[data-theme="light"] .obras-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+html[data-theme="light"] .btn-icon {
+  background: rgba(0,0,0,0.03);
+}
+html[data-theme="light"] .btn-icon:hover {
+  background: rgba(0,0,0,0.06);
+}
+html[data-theme="light"] .constructora-card,
+html[data-theme="light"] .fuente-card {
+  background: var(--bg-card);
+}
+html[data-theme="light"] .confirm-banner {
+  background: rgba(16,185,129,0.04);
+}
+html[data-theme="light"] .success-banner {
+  background: rgba(59,130,246,0.04);
+}
+html[data-theme="light"] .prev-steps-summary {
+  background: rgba(59,130,246,0.03) !important;
+}
+html[data-theme="light"] .obra-badge {
+  background: rgba(59,130,246,0.06);
+}
+html[data-theme="light"] .breadcrumb-chip {
+  background: rgba(59,130,246,0.05);
+}
+html[data-theme="light"] .user-session-badge {
+  background: rgba(59,130,246,0.06);
+}
+html[data-theme="light"] .btn-logout {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .btn-logout:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
 /* ================================================================
    RESPONSIVE
    ================================================================ */
