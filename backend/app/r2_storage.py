@@ -137,15 +137,18 @@ def validate_image(file_storage) -> Tuple[bool, str]:
 
 def build_object_key(id_obra: str, anio: int, mes: str | int, original_name: str) -> str:
     """
-    Estructura tipo data lake (Hive-style):
-      obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
+    Estructura tipo data lake (Hive-style) bajo el directorio base del bucket:
+      docobraspublicas/obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
+
+    El prefijo 'docobraspublicas/' es el subdirectorio raíz del bucket R2;
+    debe incluirse en la ruta para que build_public_url genere URLs accesibles.
     """
     ext = _ext_from_filename(original_name) or "jpg"
     base = original_name.rsplit(".", 1)[0] if "." in original_name else original_name
     safe = _slugify(base)
     ts   = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     mes_str = str(mes).strip().zfill(2)
-    return f"obras/{id_obra.strip()}/reportes/{int(anio)}-{mes_str}/{ts}_{safe}.{ext}"
+    return f"docobraspublicas/obras/{id_obra.strip()}/reportes/{int(anio)}-{mes_str}/{ts}_{safe}.{ext}"
 
 
 def build_public_url(object_key: str) -> str:
