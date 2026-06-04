@@ -390,10 +390,19 @@ class ImagenInforme(db.Model):
     informe = db.relationship('Informe', lazy='joined', backref='imagenes')
 
     def to_dict(self):
+        # ── Reconstruir la URL pública en tiempo de lectura ──────────────
+        # url_publica en BD puede estar desactualizada si R2_PUBLIC_URL
+        # o la ruta base del bucket cambiaron (ej: faltaba el prefijo
+        # "docobraspublicas/" cuando se subieron las primeras imágenes).
+        # Reconstruirla aquí garantiza que siempre use la config actual
+        # sin necesidad de migrar filas existentes.
+        from app.r2_storage import build_public_url
+        url = build_public_url((self.ruta_r2 or "").strip()) if self.ruta_r2 else (self.url_publica or "")
+
         return {
             "id":             str(self.id_imagen),
             "informeId":      (self.id_informe or "").strip(),
-            "url":            self.url_publica,
+            "url":            url,
             "rutaR2":         self.ruta_r2,
             "nombreOriginal": self.nombre_original,
             "tipoMime":       self.tipo_mime,
