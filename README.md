@@ -144,14 +144,16 @@ De manera general, puedes acceder a cada uno de los roles predispustos, pero no 
 <details>
 <summary>🖼️ Ver Diagramas</summary>
 
-## Diagrama Entidad Rel. Etendido
+## Diagrama Relacional
 
 | |
 |---|
 | <img src="https://github.com/user-attachments/assets/28638031-7d27-42f3-b2b1-c932fb207ef6" alt="Login" width="800"/> |
 
 
-## Diagrama Entidad Relacional
+
+## Diagrama Entidad Rel. Etendido
+
 
 | |
 |---|
