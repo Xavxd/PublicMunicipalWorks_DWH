@@ -42,16 +42,20 @@ def get_projects(current_user):
     autenticado.
     """
     try:
-        proy = Proyectista.query.get(current_user["id"].strip())
-        if not proy:
-            return ok([])
+        is_demo = current_user.get("is_demo", False)
 
-        constructora_id = proy.id_constructora
-        obras = (
-            Obra.query.filter_by(id_constructora=constructora_id)
-            .order_by(Obra.fecha_inicio.desc())
-            .all()
-        )
+        if is_demo:
+            # Demo: muestra todas las obras con sus presupuestos
+            obras = Obra.query.order_by(Obra.fecha_inicio.desc()).all()
+        else:
+            proy = Proyectista.query.get(current_user["id"].strip())
+            if not proy:
+                return ok([])
+            obras = (
+                Obra.query.filter_by(id_constructora=proy.id_constructora)
+                .order_by(Obra.fecha_inicio.desc())
+                .all()
+            )
         if not obras:
             return ok([])
 
@@ -111,13 +115,19 @@ def get_budget(obra_id, current_user):
     """
     try:
         obra_id = obra_id.strip()
-        proy = Proyectista.query.get(current_user["id"].strip())
-        if not proy:
-            return forbidden("Perfil de proyectista no encontrado.")
+        is_demo = current_user.get("is_demo", False)
 
-        obra = Obra.query.get(obra_id)
-        if not obra or obra.id_constructora != proy.id_constructora:
-            return forbidden("No tienes acceso a esta obra.")
+        if is_demo:
+            obra = Obra.query.get(obra_id)
+            if not obra:
+                return not_found("Obra no encontrada.")
+        else:
+            proy = Proyectista.query.get(current_user["id"].strip())
+            if not proy:
+                return forbidden("Perfil de proyectista no encontrado.")
+            obra = Obra.query.get(obra_id)
+            if not obra or obra.id_constructora != proy.id_constructora:
+                return forbidden("No tienes acceso a esta obra.")
 
         pres = PresupuestoObra.query.filter_by(id_obra=obra_id).first()
         if not pres:
@@ -287,6 +297,9 @@ def save_budget(obra_id, current_user):
 def get_constructora(current_user):
     """Devuelve nombre y RFC de la constructora del proyectista."""
     try:
+        if current_user.get("is_demo"):
+            return ok({"nombre": "Usuario Demo", "rfc": "DEMO000000000"})
+
         proy = Proyectista.query.get(current_user["id"].strip())
         if not proy:
             return not_found("Proyectista no encontrado.")
