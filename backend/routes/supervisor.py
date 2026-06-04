@@ -74,12 +74,11 @@ def get_supervisor_obras(current_user):
       }
     """
     try:
-        obras = (
-            Obra.query
-            .filter_by(codigo_supervisor=current_user["id"].strip())
-            .order_by(Obra.fecha_inicio.desc())
-            .all()
-        )
+        # Demo: muestra todas las obras (no tiene ninguna asignada a su ID)
+        query = Obra.query
+        if not current_user.get("is_demo"):
+            query = query.filter_by(codigo_supervisor=current_user["id"].strip())
+        obras = query.order_by(Obra.fecha_inicio.desc()).all()
 
         result = []
         for o in obras:
@@ -136,9 +135,12 @@ def get_informes(current_user):
     obra_filter = request.args.get("obra")
     anio_filter = request.args.get("anio")
 
-    # Un supervisor solo ve sus propios informes
-    supervisor_id = current_user["id"].strip() \
-        if current_user["role"] == "supervisor" else None
+    # Un supervisor real solo ve sus propios informes.
+    # Un demo-supervisor ve todos (no tiene informes propios reales).
+    is_demo = current_user.get("is_demo", False)
+    supervisor_id = None
+    if current_user["role"] == "supervisor" and not is_demo:
+        supervisor_id = current_user["id"].strip()
 
     try:
         query = (
