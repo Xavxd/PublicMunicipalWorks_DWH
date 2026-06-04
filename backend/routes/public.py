@@ -68,14 +68,23 @@ def _get_latest_informe_data(obra_id: str) -> dict:
             .first()
         )
         if latest:
+            # Construir fecha aproximada del informe a partir de año+mes
+            # (la tabla no tiene columna fecha_creacion; usamos año+mes como proxy)
+            try:
+                mes_int = int(str(latest.mes).strip())
+                informe_fecha = date(int(latest.ano_infor), mes_int, 1).isoformat()
+            except (ValueError, TypeError):
+                informe_fecha = None
+
             return {
                 "avance_fisico": latest.porcentaje_avance_fisico or 0,
                 "avance_financiero": latest.porcentaje_avance_presupuestario or 0,
                 "total_informes": Informe.query.filter(Informe.id_obra == clean_id).count(),
+                "ultimo_informe_fecha": informe_fecha,
             }
     except Exception:
         pass
-    return {"avance_fisico": 0, "avance_financiero": 0, "total_informes": 0}
+    return {"avance_fisico": 0, "avance_financiero": 0, "total_informes": 0, "ultimo_informe_fecha": None}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -122,6 +131,7 @@ def get_public_obras():
                 "constructoraTipo": (obra.constructora.tipo_ejecutor or "").strip() if obra.constructora else "",
                 "supervisorNombre": supervisor_nombre,
                 "totalInformes": informe_data["total_informes"],
+                "ultimoInformeFecha": informe_data["ultimo_informe_fecha"],
             })
 
         return _add_cors_headers(ok(result))
