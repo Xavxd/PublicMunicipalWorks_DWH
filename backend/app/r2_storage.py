@@ -137,19 +137,17 @@ def validate_image(file_storage) -> Tuple[bool, str]:
 
 def build_object_key(id_obra: str, anio: int, mes: str | int, original_name: str) -> str:
     """
-    Estructura tipo data lake (Hive-style) dentro del bucket:
-      obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
-
-    Nota: el nombre del bucket en R2 es "docobraspublicas". Su URL pública
-    ya incluye ese segmento vía R2_PUBLIC_URL. El object_key es la ruta
-    relativa DENTRO del bucket, por lo que no lleva ese prefijo.
+    Ruta del objeto dentro del bucket R2.
+    R2_PUBLIC_URL apunta a la raíz del bucket (sin subdirectorio), por lo
+    que el object_key debe incluir 'docobraspublicas/' como prefijo base.
+      docobraspublicas/obras/{id_obra}/reportes/{año}-{mes}/{ts}_{slug}.{ext}
     """
-    ext = _ext_from_filename(original_name) or "jpg"
-    base = original_name.rsplit(".", 1)[0] if "." in original_name else original_name
-    safe = _slugify(base)
-    ts   = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    ext     = _ext_from_filename(original_name) or "jpg"
+    base    = original_name.rsplit(".", 1)[0] if "." in original_name else original_name
+    safe    = _slugify(base)
+    ts      = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     mes_str = str(mes).strip().zfill(2)
-    return f"obras/{id_obra.strip()}/reportes/{int(anio)}-{mes_str}/{ts}_{safe}.{ext}"
+    return f"docobraspublicas/obras/{id_obra.strip()}/reportes/{int(anio)}-{mes_str}/{ts}_{safe}.{ext}"
 
 
 def build_public_url(object_key: str) -> str:
