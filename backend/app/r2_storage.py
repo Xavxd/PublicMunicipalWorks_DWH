@@ -136,22 +136,16 @@ def validate_image(file_storage) -> Tuple[bool, str]:
 # ── Construcción de la ruta dentro del bucket ────────────────────
 
 def build_object_key(id_obra: str, anio: int, mes: str | int, original_name: str) -> str:
-    """
-    Ruta del objeto dentro del bucket R2.
-    R2_PUBLIC_URL apunta a la raíz del bucket (sin subdirectorio), por lo
-    que el object_key debe incluir 'docobraspublicas/' como prefijo base.
-      docobraspublicas/obras/{id_obra}/reportes/{año}-{mes}/{ts}_{slug}.{ext}
-    """
     ext     = _ext_from_filename(original_name) or "jpg"
     base    = original_name.rsplit(".", 1)[0] if "." in original_name else original_name
     safe    = _slugify(base)
     ts      = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     mes_str = str(mes).strip().zfill(2)
-    return f"docobraspublicas/obras/{id_obra.strip()}/reportes/{int(anio)}-{mes_str}/{ts}_{safe}.{ext}"
+    return f"obras/{id_obra.strip()}/reportes/{int(anio)}-{mes_str}/{ts}_{safe}.{ext}"
 
 
 def build_public_url(object_key: str) -> str:
-    return f"{R2_PUBLIC_URL}/{object_key}"
+    return f"{R2_PUBLIC_URL}/docobraspublicas/{object_key}"
 
 
 # ── Operaciones de alto nivel ────────────────────────────────────
