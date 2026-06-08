@@ -1,16 +1,9 @@
 """
 backend/routes/propuestas.py
 ========================================================================
-SISTEMA DE PRESUPUESTO PARTICIPATIVO - Temascaltepec
-
-CAMBIOS v2:
-- propuestas_cercanas(): usa nueva firma de rank_propuestas_por_proximidad
-  que retorna (lista, usuario_en_area). Si el usuario está fuera del
-  municipio (ej. CDMX), retorna lista vacía con mensaje explicativo
-  en lugar de propuestas irrelevantes.
-========================================================================
 """
 
+import re
 from datetime import date
 from functools import wraps
 
@@ -18,7 +11,6 @@ from flask import Blueprint, jsonify, make_response, request
 from sqlalchemy import func
 
 from app.database import db
-from app.gemini_ine import GeminiConfigError, verify_ine_image
 from app.helpers import bad_request, created, db_error_response, ok, require_fields
 from app.models import Poblador, PropuestaObra, VotoPropuesta
 from app.password_security import hash_password, verify_password
@@ -28,8 +20,45 @@ from app.token_security import issue_poblador_token, read_poblador_token
 
 propuestas_bp = Blueprint("propuestas", __name__)
 
-ALLOWED_INE_MIME = {"image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic"}
-MAX_INE_BYTES = 10 * 1024 * 1024  # 10 MB
+# =====================================================================
+#  VALIDACIÓN DE CURP — Estado de México
+# =====================================================================
+
+# Formato oficial CURP: 18 caracteres alfanuméricos, sin Ñ en pos 11-12
+_CURP_REGEX = re.compile(
+    r'^[A-Z]{4}\d{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9]\d$',
+    re.IGNORECASE
+)
+
+# Claves de entidad federativa del Estado de México en la CURP
+# Fuente: RENAPO — catálogo oficial de claves de estados
+_EDOMEX_CLAVES = {"MC", "ME"}   # "MC" histórico, "ME" actual
+
+
+def _validar_curp(curp: str) -> tuple[bool, str]:
+    """
+    Valida formato y origen estatal de una CURP.
+    Retorna (es_valida, mensaje_error).
+    Si es_valida=True, el mensaje está vacío.
+    """
+    curp = curp.strip().upper()
+
+    if len(curp) != 18:
+        return False, "La CURP debe tener exactamente 18 caracteres."
+
+    if not _CURP_REGEX.match(curp):
+        return False, "El formato de la CURP no es válido."
+
+    # Posiciones 11-12: clave de entidad federativa
+    clave_estado = curp[11:13]
+    if clave_estado not in _EDOMEX_CLAVES:
+        return False, (
+            f"La CURP no corresponde al Estado de México "
+            f"(clave de estado detectada: '{clave_estado}'). "
+            "Solo pueden registrarse residentes del Estado de México."
+        )
+
+    return True, ""
 
 
 # =====================================================================
@@ -90,7 +119,6 @@ def require_poblador(fn):
 # =====================================================================
 
 def _votos_actuales_map(periodo: str) -> dict[int, int]:
-    """Conteo de votos por propuesta en el periodo dado."""
     rows = (
         db.session.query(VotoPropuesta.propuesta_id, func.count(VotoPropuesta.id))
         .filter(VotoPropuesta.periodo_voto == periodo)
@@ -101,87 +129,41 @@ def _votos_actuales_map(periodo: str) -> dict[int, int]:
 
 
 # =====================================================================
-#  VALIDACIÓN EFÍMERA DE INE
+#  VALIDACIÓN DE CURP (endpoint público)
 # =====================================================================
 
-@propuestas_bp.route("/api/propuestas/ine/verify", methods=["POST", "OPTIONS"])
-def verify_ine():
+@propuestas_bp.route("/api/propuestas/curp/verify", methods=["POST", "OPTIONS"])
+def verify_curp():
     """
-    Procesa una foto del reverso de la INE en RAM y la valida con Gemini.
-    La imagen JAMÁS toca el disco.
+    Valida que una CURP tenga formato correcto y sea del Estado de México.
+    No guarda nada — es una verificación efímera antes del registro.
     """
     if request.method == "OPTIONS":
         return _cors_preflight()
 
-    upload = request.files.get("file") or request.files.get("ine")
-    if not upload:
-        return _add_cors_headers(bad_request(
-            "Adjunta la imagen del reverso de tu INE en el campo 'file'."
-        ))
+    body = request.get_json(silent=True) or {}
+    curp = (body.get("curp") or "").strip().upper()
 
-    mime = (upload.mimetype or "").lower().strip()
-    if mime and mime not in ALLOWED_INE_MIME:
-        return _add_cors_headers(bad_request(
-            "Formato no soportado. Sube una foto JPG, PNG o WEBP."
-        ))
+    if not curp:
+        return _add_cors_headers(bad_request("El campo 'curp' es requerido."))
 
-    image_bytes = upload.read()
-    if not image_bytes:
-        return _add_cors_headers(bad_request("La imagen llegó vacía, intenta de nuevo."))
-    if len(image_bytes) > MAX_INE_BYTES:
-        return _add_cors_headers(bad_request(
-            "La imagen excede 10 MB. Comprímela e intenta otra vez."
-        ))
+    valida, mensaje = _validar_curp(curp)
 
-    try:
-        result = verify_ine_image(image_bytes, mime_type=mime or "image/jpeg")
-    except GeminiConfigError as exc:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": f"Servicio de verificación no disponible: {exc}",
-        }), 503))
-    except Exception as exc:
-        return _add_cors_headers(db_error_response(exc))
-    finally:
-        image_bytes = None  # Liberar referencia explícitamente
-
-    pertenece = bool(result.get("pertenece_a_temascaltepec"))
-    es_ine = bool(result.get("es_ine"))
-
-    if not es_ine:
+    if not valida:
         return _add_cors_headers(ok({
             "valida": False,
-            "motivo": "La imagen no corresponde al reverso de una INE.",
-            "es_ine": False,
-            "pertenece_a_temascaltepec": False,
-        }, message="INE no reconocida."))
+            "motivo": mensaje,
+        }, message="CURP no válida."))
 
-    if not pertenece:
-        return _add_cors_headers(ok({
-            "valida": False,
-            "motivo": "La INE no pertenece al municipio de Temascaltepec.",
-            "es_ine": True,
-            "pertenece_a_temascaltepec": False,
-            "estado": result.get("estado"),
-            "municipio": result.get("municipio"),
-        }, message="Región no válida para el registro."))
+    # Verificar si ya está registrada
+    ya_registrada = bool(Poblador.query.filter_by(curp=curp).first())
 
-    clave = (result.get("clave_elector") or "").strip().upper()
-    # Solo consultar BD si tenemos una clave válida de 18 chars
-    existe = (
-        Poblador.query.filter_by(clave_elector_ine=clave).first()
-        if clave and len(clave) == 18
-        else None
-    )
     return _add_cors_headers(ok({
         "valida": True,
-        "es_ine": True,
-        "pertenece_a_temascaltepec": True,
-        "estado": result.get("estado"),
-        "municipio": result.get("municipio"),
-        "clave_elector": clave,
-        "ya_registrada": bool(existe),
-    }, message="Identificación verificada."))
+        "curp": curp,
+        "estado": "Estado de México",
+        "ya_registrada": ya_registrada,
+    }, message="CURP verificada correctamente."))
 
 
 # =====================================================================
@@ -195,26 +177,29 @@ def register_poblador():
 
     body = request.get_json(silent=True) or {}
     valid, err = require_fields(
-        body, "nombre", "apellidos", "comunidad", "username", "password", "clave_elector_ine"
+        body, "nombre", "apellidos", "comunidad", "username", "password", "curp"
     )
     if not valid:
         return _add_cors_headers(err)
 
     username = body["username"].strip().lower()
-    clave = body["clave_elector_ine"].strip().upper()
+    curp     = body["curp"].strip().upper()
     password = body["password"]
 
     if len(username) < 4 or len(username) > 50:
         return _add_cors_headers(bad_request("El nombre de usuario debe tener entre 4 y 50 caracteres."))
     if len(password) < 6:
         return _add_cors_headers(bad_request("La contraseña debe tener al menos 6 caracteres."))
-    if len(clave) != 18:
-        return _add_cors_headers(bad_request("La clave de elector debe tener 18 caracteres."))
+
+    # Validar CURP antes de tocar la BD
+    curp_valida, curp_msg = _validar_curp(curp)
+    if not curp_valida:
+        return _add_cors_headers(bad_request(curp_msg))
 
     if Poblador.query.filter_by(username=username).first():
         return _add_cors_headers(bad_request("Ese nombre de usuario ya está registrado."))
-    if Poblador.query.filter_by(clave_elector_ine=clave).first():
-        return _add_cors_headers(bad_request("Esa clave de elector ya está registrada."))
+    if Poblador.query.filter_by(curp=curp).first():
+        return _add_cors_headers(bad_request("Esa CURP ya está registrada."))
 
     try:
         poblador = Poblador(
@@ -223,7 +208,7 @@ def register_poblador():
             comunidad=body["comunidad"].strip(),
             username=username,
             password_hash=hash_password(password),
-            clave_elector_ine=clave,
+            curp=curp,
         )
         db.session.add(poblador)
         db.session.commit()
@@ -233,9 +218,9 @@ def register_poblador():
 
     token = issue_poblador_token(poblador.id)
     return _add_cors_headers(created({
-        "poblador": poblador.to_public_dict(),
         "token": token,
-    }, message="Cuenta creada con éxito."))
+        "poblador": poblador.to_public_dict(),
+    }, message="Cuenta creada exitosamente. ¡Bienvenido!"))
 
 
 @propuestas_bp.route("/api/propuestas/auth/login", methods=["POST", "OPTIONS"])
@@ -260,103 +245,28 @@ def login_poblador():
 
     token = issue_poblador_token(poblador.id)
     return _add_cors_headers(ok({
-        "poblador": poblador.to_public_dict(),
         "token": token,
+        "poblador": poblador.to_public_dict(),
     }, message="Sesión iniciada."))
 
 
 @propuestas_bp.route("/api/propuestas/auth/me", methods=["GET", "OPTIONS"])
-def me_poblador():
+@require_poblador
+def me_poblador(poblador: Poblador):
     if request.method == "OPTIONS":
         return _cors_preflight()
-
-    token = _extract_token()
-    pid = read_poblador_token(token) if token else None
-    if not pid:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": "Sin sesión activa.",
-        }), 401))
-    poblador = Poblador.query.get(pid)
-    if not poblador:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": "Sesión expirada.",
-        }), 401))
-
-    periodo = periodo_actual()
-    consumidos = (
-        VotoPropuesta.query
-        .filter_by(poblador_id=poblador.id, periodo_voto=periodo)
-        .count()
-    )
-    return _add_cors_headers(ok({
-        "poblador": poblador.to_public_dict(),
-        "periodo": periodo,
-        "creditos_totales": CREDITOS_POR_PERIODO,
-        "creditos_usados": int(consumidos),
-        "creditos_restantes": max(0, CREDITOS_POR_PERIODO - int(consumidos)),
-    }))
+    return _add_cors_headers(ok(poblador.to_public_dict()))
 
 
 # =====================================================================
-#  LISTADOS DE PROPUESTAS
+#  PROPUESTAS — listado, detalle, cercanas
 # =====================================================================
-
-@propuestas_bp.route("/api/propuestas/trending", methods=["GET", "OPTIONS"])
-def trending_propuestas():
-    """Top 5 más votadas en el periodo cuatrimestral actual."""
-    if request.method == "OPTIONS":
-        return _cors_preflight()
-
-    try:
-        periodo = periodo_actual()
-        top = (
-            db.session.query(VotoPropuesta.propuesta_id, func.count(VotoPropuesta.id).label("votos"))
-            .filter(VotoPropuesta.periodo_voto == periodo)
-            .group_by(VotoPropuesta.propuesta_id)
-            .order_by(func.count(VotoPropuesta.id).desc())
-            .limit(5)
-            .all()
-        )
-
-        propuestas_ordenadas: list = []
-        votos_por_id: dict[int, int] = {}
-        for pid, vcount in top:
-            votos_por_id[int(pid)] = int(vcount)
-
-        if votos_por_id:
-            rows = PropuestaObra.query.filter(PropuestaObra.id.in_(votos_por_id.keys())).all()
-            rows.sort(key=lambda p: votos_por_id.get(p.id, 0), reverse=True)
-            propuestas_ordenadas = rows
-
-        # Si aún no hay votos: devolver las 5 más recientes
-        if not propuestas_ordenadas:
-            propuestas_ordenadas = (
-                PropuestaObra.query
-                .order_by(PropuestaObra.creado_en.desc())
-                .limit(5)
-                .all()
-            )
-
-        data = [
-            p.to_public_dict(votos=votos_por_id.get(p.id, 0))
-            for p in propuestas_ordenadas
-        ]
-        return _add_cors_headers(ok({
-            "periodo": periodo,
-            "propuestas": data,
-        }))
-    except Exception as exc:
-        return _add_cors_headers(db_error_response(exc))
-
 
 @propuestas_bp.route("/api/propuestas/cercanas", methods=["POST", "OPTIONS"])
 def propuestas_cercanas():
     """
     Hasta 5 propuestas más cercanas al usuario, SOLO si está dentro
     del radio del municipio de Temascaltepec (35km desde el centro).
-    Usuarios en CDMX u otras ciudades recibirán lista vacía con mensaje.
     """
     if request.method == "OPTIONS":
         return _cors_preflight()
@@ -370,8 +280,6 @@ def propuestas_cercanas():
 
     try:
         todas = PropuestaObra.query.all()
-
-        # Nueva firma: retorna (lista, usuario_en_area)
         ranked, usuario_en_area = rank_propuestas_por_proximidad(
             lat, lng, todas, max_results=5
         )
@@ -409,16 +317,10 @@ def propuestas_cercanas():
 
 @propuestas_bp.route("/api/propuestas", methods=["GET", "OPTIONS"])
 def listar_propuestas():
-    """Listado público completo."""
     if request.method == "OPTIONS":
         return _cors_preflight()
-
     try:
-        propuestas = (
-            PropuestaObra.query
-            .order_by(PropuestaObra.creado_en.desc())
-            .all()
-        )
+        propuestas = PropuestaObra.query.order_by(PropuestaObra.creado_en.desc()).all()
         votos = _votos_actuales_map(periodo_actual())
         return _add_cors_headers(ok({
             "propuestas": [p.to_public_dict(votos=votos.get(p.id, 0)) for p in propuestas],
@@ -432,19 +334,15 @@ def listar_propuestas():
 def detalle_propuesta(propuesta_id: int):
     if request.method == "OPTIONS":
         return _cors_preflight()
-
     propuesta = PropuestaObra.query.get(propuesta_id)
     if not propuesta:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": "Propuesta no encontrada.",
-        }), 404))
+        return _add_cors_headers((jsonify({"success": False, "message": "Propuesta no encontrada."}), 404))
     votos = _votos_actuales_map(periodo_actual()).get(propuesta.id, 0)
     return _add_cors_headers(ok(propuesta.to_public_dict(votos=votos)))
 
 
 # =====================================================================
-#  REGISTRO DE NUEVA PROPUESTA (autenticado)
+#  REGISTRO DE PROPUESTA (autenticado)
 # =====================================================================
 
 @propuestas_bp.route("/api/propuestas", methods=["POST"])
@@ -499,23 +397,14 @@ def votar_propuesta(propuesta_id: int):
     token = _extract_token()
     pid = read_poblador_token(token) if token else None
     if not pid:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": "Inicia sesión para poder votar.",
-        }), 401))
+        return _add_cors_headers((jsonify({"success": False, "message": "Inicia sesión para poder votar."}), 401))
     poblador = Poblador.query.get(pid)
     if not poblador:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": "Sesión expirada.",
-        }), 401))
+        return _add_cors_headers((jsonify({"success": False, "message": "Sesión expirada."}), 401))
 
     propuesta = PropuestaObra.query.get(propuesta_id)
     if not propuesta:
-        return _add_cors_headers((jsonify({
-            "success": False,
-            "message": "Propuesta no encontrada.",
-        }), 404))
+        return _add_cors_headers((jsonify({"success": False, "message": "Propuesta no encontrada."}), 404))
 
     periodo = periodo_actual()
     consumidos = (
@@ -529,17 +418,11 @@ def votar_propuesta(propuesta_id: int):
             "Se regenerarán el próximo cuatrimestre."
         ))
 
-    repetido = (
-        VotoPropuesta.query
-        .filter_by(poblador_id=poblador.id,
-                   propuesta_id=propuesta.id,
-                   periodo_voto=periodo)
-        .first()
-    )
+    repetido = VotoPropuesta.query.filter_by(
+        poblador_id=poblador.id, propuesta_id=propuesta.id, periodo_voto=periodo
+    ).first()
     if repetido:
-        return _add_cors_headers(bad_request(
-            "Ya votaste por esta propuesta en el periodo actual."
-        ))
+        return _add_cors_headers(bad_request("Ya votaste por esta propuesta en el periodo actual."))
 
     try:
         voto = VotoPropuesta(
@@ -554,11 +437,9 @@ def votar_propuesta(propuesta_id: int):
         return _add_cors_headers(db_error_response(exc))
 
     nuevos_usados = consumidos + 1
-    votos_propuesta = (
-        VotoPropuesta.query
-        .filter_by(propuesta_id=propuesta.id, periodo_voto=periodo)
-        .count()
-    )
+    votos_propuesta = VotoPropuesta.query.filter_by(
+        propuesta_id=propuesta.id, periodo_voto=periodo
+    ).count()
 
     return _add_cors_headers(created({
         "propuesta_id": propuesta.id,
