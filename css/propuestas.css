@@ -702,7 +702,7 @@
 }
 
 /* ── INE drop + spinner ──────────────────────────────────── */
-.pp-ine {
+.pp-curp {
   border: 1px solid rgba(125, 211, 252, 0.16);
   background: rgba(56, 189, 248, 0.05);
   border-radius: 14px;
@@ -711,7 +711,7 @@
   flex-direction: column;
   gap: 0.7rem;
 }
-.pp-ine legend {
+.pp-curp legend {
   padding: 0 0.4rem;
   font-family: var(--font-display);
   font-size: 0.78rem;
@@ -719,32 +719,12 @@
   text-transform: uppercase;
   color: var(--pp-accent);
 }
-.pp-ine__copy {
+.pp-curp__copy {
   font-size: 0.82rem;
   color: var(--text-secondary);
   margin: 0;
 }
-.pp-ine__drop {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0.9rem 1rem;
-  border-radius: 12px;
-  border: 1px dashed rgba(125, 211, 252, 0.35);
-  background: rgba(255, 255, 255, 0.02);
-  cursor: none;
-  transition: border-color 0.25s, background 0.25s;
-}
-.pp-ine__drop:hover { border-color: var(--pp-accent); background: rgba(125, 211, 252, 0.06); }
-.pp-ine__drop input { position: absolute; inset: 0; opacity: 0; cursor: none; }
-.pp-ine__icon { font-size: 1.4rem; }
-.pp-ine__label {
-  font-family: var(--font-display);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-}
-.pp-ine__status {
+.pp-curp__status {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -753,16 +733,9 @@
   color: var(--text-secondary);
   transition: color 0.25s;
 }
-.pp-ine__status.is-success { color: var(--pp-success); }
-.pp-ine__status.is-error   { color: var(--pp-danger); }
-.pp-ine__spinner {
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  border: 2px solid rgba(125, 211, 252, 0.25);
-  border-top-color: var(--pp-accent-strong);
-  animation: pp-spin 0.9s linear infinite;
-}
-@keyframes pp-spin { to { transform: rotate(360deg); } }
+.pp-curp__status.is-success { color: var(--pp-success); }
+.pp-curp__status.is-error   { color: var(--pp-danger); }
+.pp-curp__status.is-loading { color: var(--pp-accent); }
 
 /* ── FAB Nueva Propuesta ─────────────────────────────────── */
 .pp-fab {
@@ -915,16 +888,9 @@ html[data-theme="light"] .pp-tabs {
 html[data-theme="light"] .pp-tab:not(.is-active):hover {
   color: var(--text-primary);
 }
-html[data-theme="light"] .pp-ine {
+html[data-theme="light"] .pp-curp {
   border-color: rgba(125, 211, 252, 0.12);
   background: rgba(56, 189, 248, 0.03);
-}
-html[data-theme="light"] .pp-ine__drop {
-  background: rgba(255, 255, 255, 0.5);
-  border-color: rgba(125, 211, 252, 0.25);
-}
-html[data-theme="light"] .pp-ine__drop:hover {
-  background: rgba(125, 211, 252, 0.06);
 }
 html[data-theme="light"] .pp-toast {
   background: rgba(255, 255, 255, 0.95);
