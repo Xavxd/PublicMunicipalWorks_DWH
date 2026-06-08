@@ -259,6 +259,63 @@ def me_poblador(poblador: Poblador):
 
 
 # =====================================================================
+#  TRENDING — top 5 más votadas del periodo
+# =====================================================================
+
+@propuestas_bp.route("/api/propuestas/trending", methods=["GET", "OPTIONS"])
+def trending_propuestas():
+    """Top 5 más votadas en el periodo cuatrimestral actual."""
+    if request.method == "OPTIONS":
+        return _cors_preflight()
+
+    try:
+        periodo = periodo_actual()
+        top = (
+            db.session.query(
+                VotoPropuesta.propuesta_id,
+                func.count(VotoPropuesta.id).label("votos")
+            )
+            .filter(VotoPropuesta.periodo_voto == periodo)
+            .group_by(VotoPropuesta.propuesta_id)
+            .order_by(func.count(VotoPropuesta.id).desc())
+            .limit(5)
+            .all()
+        )
+
+        propuestas_ordenadas = []
+        votos_por_id: dict[int, int] = {}
+        for pid, vcount in top:
+            votos_por_id[int(pid)] = int(vcount)
+
+        if votos_por_id:
+            rows = PropuestaObra.query.filter(
+                PropuestaObra.id.in_(votos_por_id.keys())
+            ).all()
+            rows.sort(key=lambda p: votos_por_id.get(p.id, 0), reverse=True)
+            propuestas_ordenadas = rows
+
+        # Sin votos aún: devolver las 5 más recientes
+        if not propuestas_ordenadas:
+            propuestas_ordenadas = (
+                PropuestaObra.query
+                .order_by(PropuestaObra.creado_en.desc())
+                .limit(5)
+                .all()
+            )
+
+        data = [
+            p.to_public_dict(votos=votos_por_id.get(p.id, 0))
+            for p in propuestas_ordenadas
+        ]
+        return _add_cors_headers(ok({
+            "periodo": periodo,
+            "propuestas": data,
+        }))
+    except Exception as exc:
+        return _add_cors_headers(db_error_response(exc))
+
+
+# =====================================================================
 #  PROPUESTAS — listado, detalle, cercanas
 # =====================================================================
 
