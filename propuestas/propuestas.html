@@ -187,26 +187,34 @@
           </label>
         </div>
 
-        <fieldset class="pp-ine">
-          <legend>Verificacion INE</legend>
-          <p class="pp-ine__copy">
-            Sube una foto clara de la <strong>parte de atras (reverso)</strong> de tu
-            INE para verificar al instante que vives en Temascaltepec.
+        <fieldset class="pp-curp">
+          <legend>Verificacion CURP</legend>
+          <p class="pp-curp__copy">
+            Ingresa tu CURP de 18 caracteres. Solo se aceptan registros de
+            residentes del <strong>Estado de Mexico</strong>.
           </p>
-          <label class="pp-ine__drop" id="pp-ine-drop">
-            <input type="file" id="pp-ine-input" accept="image/*" />
-            <span class="pp-ine__icon" aria-hidden="true">📇</span>
-            <span class="pp-ine__label">Selecciona tu INE (reverso)</span>
+          <label class="pp-field">
+            <span>CURP</span>
+            <input
+              type="text"
+              id="pp-curp-input"
+              name="curp"
+              required
+              minlength="18"
+              maxlength="18"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Ej. GOML850101HMCMRR09"
+              style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"
+            />
           </label>
-          <div class="pp-ine__status" id="pp-ine-status">
-            <span class="pp-ine__spinner" id="pp-ine-spinner" hidden></span>
-            <span id="pp-ine-message">Esperando archivo…</span>
+          <div class="pp-curp__status" id="pp-curp-status">
+            <span id="pp-curp-message"></span>
           </div>
-          <input type="hidden" name="clave_elector_ine" id="pp-ine-clave" />
         </fieldset>
 
         <p class="pp-form__error" id="pp-register-error" role="alert"></p>
-        <button type="submit" class="pp-cta" id="pp-register-submit" disabled>
+        <button type="submit" class="pp-cta" id="pp-register-submit">
           Crear cuenta
         </button>
       </form>
