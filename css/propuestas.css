@@ -5,24 +5,24 @@
    Reutiliza los tokens del Design System v1.0 (css/main.css)
    y agrega los componentes propios del modulo: shell SPA,
    carrusel horizontal, grids asimetricos, modales flotantes y
-   spinner reactivo para verificacion de INE.
+   validacion de CURP.
    ============================================================ */
 
 :root {
-  --pp-accent: #7dd3fc;
-  --pp-accent-strong: #38bdf8;
-  --pp-accent-warm: #f59e0b;
-  --pp-success: #10b981;
-  --pp-danger: #ef4444;
-  --pp-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-  --pp-card-border: 1px solid rgba(125, 211, 252, 0.18);
-  --pp-card-bg: linear-gradient(180deg,
-                                rgba(17, 24, 32, 0.92) 0%,
-                                rgba(8, 12, 15, 0.92) 100%);
-  --pp-glow: 0 0 0 1px rgba(125, 211, 252, 0.18),
-             0 0 28px rgba(56, 189, 248, 0.18),
-             0 0 60px rgba(245, 158, 11, 0.06);
-  --pp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --pp-accent:        #7dd3fc;      /* sky-300  — acento principal   */
+  --pp-accent-strong: #38bdf8;      /* sky-400  — acento intenso     */
+  --pp-accent-warm:   #60a5fa;      /* blue-400 — antes naranja/amber */
+  --pp-success:       #10b981;      /* emerald-500                   */
+  --pp-danger:        #ef4444;      /* red-500                       */
+  --pp-card-shadow:   0 24px 80px rgba(0, 0, 0, 0.55);
+  --pp-card-border:   1px solid rgba(125, 211, 252, 0.18);
+  --pp-card-bg:       linear-gradient(180deg,
+                        rgba(17, 24, 32, 0.92) 0%,
+                        rgba(8, 12, 15,  0.92) 100%);
+  --pp-glow:          0 0 0 1px rgba(125, 211, 252, 0.18),
+                      0 0 28px rgba(56, 189, 248, 0.18),
+                      0 0 60px rgba(96, 165, 250, 0.06);
+  --pp-ease:          cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Wrapper colocado en index.html. Empieza oculto. */
@@ -73,7 +73,7 @@
   background: linear-gradient(135deg,
               rgba(56, 189, 248, 0.85) 0%,
               rgba(59, 130, 246, 0.85) 55%,
-              rgba(245, 158, 11, 0.65) 100%);
+              rgba(96, 165, 250, 0.65) 100%);
   color: #03121f;
   font-family: var(--font-display);
   font-weight: 700;
@@ -122,7 +122,7 @@
   background-image: radial-gradient(circle at 20% 20%,
                                     rgba(56, 189, 248, 0.08), transparent 45%),
                     radial-gradient(circle at 85% 30%,
-                                    rgba(245, 158, 11, 0.06), transparent 50%),
+                                    rgba(96, 165, 250, 0.06), transparent 50%),
                     radial-gradient(circle at 50% 90%,
                                     rgba(125, 211, 252, 0.06), transparent 55%);
 }
@@ -230,9 +230,9 @@
   box-shadow: none;
 }
 .pp-cta--vote {
-  background: linear-gradient(135deg, var(--pp-accent-warm), #f97316);
-  color: #1a0f00;
-  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.28);
+  background: linear-gradient(135deg, var(--pp-accent-warm), var(--pp-accent-strong));
+  color: #03121f;
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.28);
 }
 .pp-ghost {
   background: transparent;
@@ -317,7 +317,7 @@
   margin: 0;
 }
 .pp-section-title .pp-flame {
-  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.7));
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7));
 }
 .pp-period-pill,
 .pp-counter {
@@ -413,7 +413,7 @@
   padding: 1px;
   background: linear-gradient(120deg,
               rgba(125, 211, 252, 0.55) 0%,
-              rgba(245, 158, 11, 0.4) 50%,
+              rgba(56, 189, 248, 0.4) 50%,
               rgba(125, 211, 252, 0) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box,
                 linear-gradient(#000 0 0);
@@ -499,9 +499,9 @@
   border-color: rgba(125, 211, 252, 0.4);
 }
 .pp-card__btn--vote {
-  background: linear-gradient(135deg, var(--pp-accent-warm), #f97316);
+  background: linear-gradient(135deg, var(--pp-accent-warm), var(--pp-accent-strong));
   border: none;
-  color: #1a0f00;
+  color: #03121f;
   font-weight: 600;
 }
 .pp-card__btn--vote:hover {
@@ -676,7 +676,8 @@
   color: var(--text-secondary);
 }
 .pp-field input,
-.pp-field textarea {
+.pp-field textarea,
+.pp-field select {
   padding: 0.7rem 0.85rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -687,8 +688,23 @@
   resize: vertical;
   transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
 }
+.pp-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237dd3fc' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+  resize: none;
+}
+.pp-field select option {
+  background: #0d1721;
+  color: var(--text-primary);
+}
 .pp-field input:focus,
-.pp-field textarea:focus {
+.pp-field textarea:focus,
+.pp-field select:focus {
   outline: none;
   border-color: rgba(125, 211, 252, 0.55);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
@@ -757,7 +773,7 @@
   text-transform: uppercase;
   font-size: 0.78rem;
   cursor: none;
-  box-shadow: 0 18px 40px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 18px 40px rgba(56, 189, 248, 0.35);
   animation: pp-float 4.5s ease-in-out infinite;
 }
 @keyframes pp-float {
@@ -805,7 +821,7 @@ html[data-theme="light"] :root {
   --pp-card-shadow: 0 12px 48px rgba(0, 0, 0, 0.06);
   --pp-glow: 0 0 0 1px rgba(125, 211, 252, 0.12),
              0 0 20px rgba(56, 189, 248, 0.08),
-             0 0 40px rgba(245, 158, 11, 0.03);
+             0 0 40px rgba(96, 165, 250, 0.03);
 }
 html[data-theme="light"] .pp-root {
   color: var(--text-primary);
@@ -814,7 +830,7 @@ html[data-theme="light"] .pp-noise {
   background-image: radial-gradient(circle at 20% 20%,
                                     rgba(56, 189, 248, 0.05), transparent 45%),
                     radial-gradient(circle at 85% 30%,
-                                    rgba(245, 158, 11, 0.04), transparent 50%),
+                                    rgba(96, 165, 250, 0.04), transparent 50%),
                     radial-gradient(circle at 50% 90%,
                                     rgba(125, 211, 252, 0.04), transparent 55%);
 }
@@ -829,7 +845,7 @@ html[data-theme="light"] .pp-card {
 html[data-theme="light"] .pp-card::before {
   background: linear-gradient(120deg,
               rgba(125, 211, 252, 0.35) 0%,
-              rgba(245, 158, 11, 0.25) 50%,
+              rgba(56, 189, 248, 0.25) 50%,
               rgba(125, 211, 252, 0) 100%);
 }
 html[data-theme="light"] .pp-card:hover {
@@ -871,13 +887,15 @@ html[data-theme="light"] .pp-modal__card {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.10);
 }
 html[data-theme="light"] .pp-field input,
-html[data-theme="light"] .pp-field textarea {
+html[data-theme="light"] .pp-field textarea,
+html[data-theme="light"] .pp-field select {
   background: rgba(0, 0, 0, 0.03);
   border-color: rgba(0, 0, 0, 0.10);
   color: var(--text-primary);
 }
 html[data-theme="light"] .pp-field input:focus,
-html[data-theme="light"] .pp-field textarea:focus {
+html[data-theme="light"] .pp-field textarea:focus,
+html[data-theme="light"] .pp-field select:focus {
   background: rgba(56, 189, 248, 0.04);
   border-color: rgba(125, 211, 252, 0.55);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.10);
@@ -927,5 +945,5 @@ html[data-theme="light"] .pp-launcher {
   color: #0f2b4d;
 }
 html[data-theme="light"] .pp-fab {
-  box-shadow: 0 14px 36px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 14px 36px rgba(56, 189, 248, 0.25);
 }
