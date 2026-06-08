@@ -25,8 +25,7 @@
     creditsTotal: 3,
     creditsUsed: 0,
     user: null,
-    ineVerified: false,
-    ineClave: null,
+    curpVerified: false,
     geoCoords: null,
   };
 
@@ -220,7 +219,8 @@
     $("pp-form-login")?.addEventListener("submit", handleLogin);
     $("pp-form-register")?.addEventListener("submit", handleRegister);
     $("pp-form-nueva")?.addEventListener("submit", handleNewPropuesta);
-    $("pp-ine-input")?.addEventListener("change", handleIneFileChange);
+    $("pp-curp-input")?.addEventListener("input", handleCurpInput);
+    $("pp-curp-input")?.addEventListener("blur", handleCurpBlur);
     $("pp-detail-vote")?.addEventListener("click", handleDetailVote);
   }
 
@@ -536,20 +536,30 @@
   async function handleRegister(e) {
     e.preventDefault();
     const form = e.currentTarget;
-    if (!state.ineVerified || !state.ineClave) {
-      $("pp-register-error").textContent =
-        "Debes verificar tu INE antes de crear la cuenta.";
+    const curp = (form.curp?.value || "").trim().toUpperCase();
+
+    $("pp-register-error").textContent = "";
+
+    if (curp.length !== 18) {
+      $("pp-register-error").textContent = "Ingresa tu CURP de 18 caracteres.";
       return;
     }
+
+    if (!state.curpVerified) {
+      // Verificar en el backend antes de registrar
+      const ok = await verifyCurp(curp);
+      if (!ok) return;
+    }
+
     const body = {
-      nombre: form.nombre.value.trim(),
+      nombre:    form.nombre.value.trim(),
       apellidos: form.apellidos.value.trim(),
       comunidad: form.comunidad.value.trim(),
-      username: form.username.value.trim(),
-      password: form.password.value,
-      clave_elector_ine: state.ineClave,
+      username:  form.username.value.trim(),
+      password:  form.password.value,
+      curp,
     };
-    $("pp-register-error").textContent = "";
+
     try {
       const json = await ppFetch("/api/propuestas/auth/register", {
         method: "POST",
@@ -565,51 +575,68 @@
     }
   }
 
-  // ── Verificación INE ─────────────────────────────────────────
-  async function handleIneFileChange(e) {
-    const file = e.target.files && e.target.files[0];
-    const submit = $("pp-register-submit");
-    const status = $("pp-ine-status");
-    const spinner = $("pp-ine-spinner");
-    const msg = $("pp-ine-message");
-    if (!file) return;
+  // ── Verificación CURP ────────────────────────────────────────
+  function setCurpStatus(type, html) {
+    const el = $("pp-curp-message");
+    if (!el) return;
+    el.innerHTML = html;
+    const status = $("pp-curp-status");
+    if (status) {
+      status.classList.remove("is-success", "is-error", "is-loading");
+      if (type) status.classList.add(`is-${type}`);
+    }
+  }
 
-    state.ineVerified = false;
-    state.ineClave = null;
-    $("pp-ine-clave").value = "";
-    submit && (submit.disabled = true);
-    status.classList.remove("is-success", "is-error");
-    msg.textContent = "Verificando con IA…";
-    spinner.hidden = false;
+  // Formatear a mayúsculas mientras escribe
+  function handleCurpInput(e) {
+    const input = e.currentTarget;
+    const pos = input.selectionStart;
+    input.value = input.value.toUpperCase();
+    input.setSelectionRange(pos, pos);
+    // Limpiar estado si el usuario modifica la CURP después de verificarla
+    state.curpVerified = false;
+    setCurpStatus("", "");
+  }
 
-    const fd = new FormData();
-    fd.append("file", file);
+  // Verificar contra el backend al salir del campo
+  async function handleCurpBlur(e) {
+    const curp = e.currentTarget.value.trim().toUpperCase();
+    if (curp.length === 0) return;
+    if (curp.length !== 18) {
+      setCurpStatus("error", "❌ La CURP debe tener exactamente 18 caracteres.");
+      state.curpVerified = false;
+      return;
+    }
+    await verifyCurp(curp);
+  }
 
+  async function verifyCurp(curp) {
+    setCurpStatus("loading", "⏳ Verificando CURP…");
+    state.curpVerified = false;
     try {
-      const json = await ppFetch("/api/propuestas/ine/verify", {
+      const json = await ppFetch("/api/propuestas/curp/verify", {
         method: "POST",
-        body: fd,
+        body: { curp },
       });
       const data = json.data || {};
-      spinner.hidden = true;
-
-      if (data.valida && data.pertenece_a_temascaltepec) {
-        state.ineVerified = true;
-        state.ineClave = data.clave_elector || "";
-        $("pp-ine-clave").value = state.ineClave;
-        status.classList.add("is-success");
-        msg.innerHTML = `✅ Identificación verificada${data.ya_registrada
-          ? " — clave ya registrada, inicia sesión en su lugar"
-          : ""}`;
-        submit && (submit.disabled = !!data.ya_registrada);
+      if (data.valida) {
+        if (data.ya_registrada) {
+          setCurpStatus("error", "❌ Esta CURP ya tiene una cuenta. Inicia sesión.");
+          state.curpVerified = false;
+          return false;
+        }
+        setCurpStatus("success", "✅ CURP válida — Estado de México confirmado.");
+        state.curpVerified = true;
+        return true;
       } else {
-        status.classList.add("is-error");
-        msg.innerHTML = `❌ ${escapeHtml(data.motivo || "Región no válida para el registro.")}`;
+        setCurpStatus("error", `❌ ${escapeHtml(data.motivo || "CURP no válida.")}`);
+        state.curpVerified = false;
+        return false;
       }
     } catch (err) {
-      spinner.hidden = true;
-      status.classList.add("is-error");
-      msg.innerHTML = `❌ ${escapeHtml(err.message || "Error al verificar la INE.")}`;
+      setCurpStatus("error", `❌ ${escapeHtml(err.message || "Error al verificar la CURP.")}`);
+      state.curpVerified = false;
+      return false;
     }
   }
 
