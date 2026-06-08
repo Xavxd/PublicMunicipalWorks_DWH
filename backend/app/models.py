@@ -279,15 +279,15 @@ class Poblador(db.Model):
     __tablename__ = 'pobladores'
     __table_args__ = {'schema': 'public'}
 
-    id                 = db.Column('id', db.Integer, primary_key=True)
-    nombre             = db.Column('nombre', db.String(100), nullable=False)
-    apellidos          = db.Column('apellidos', db.String(100), nullable=False)
-    comunidad          = db.Column('comunidad', db.String(100), nullable=False)
-    username           = db.Column('username', db.String(50), unique=True, nullable=False)
-    password_hash      = db.Column('password_hash', db.String(255), nullable=False)
-    clave_elector_ine  = db.Column('clave_elector_ine', db.String(18), unique=True, nullable=False)
-    creado_en          = db.Column('creado_en', db.DateTime(timezone=True),
-                                   server_default=db.func.now())
+    id            = db.Column('id', db.Integer, primary_key=True)
+    nombre        = db.Column('nombre', db.String(100), nullable=False)
+    apellidos     = db.Column('apellidos', db.String(100), nullable=False)
+    comunidad     = db.Column('comunidad', db.String(100), nullable=False)
+    username      = db.Column('username', db.String(50), unique=True, nullable=False)
+    password_hash = db.Column('password_hash', db.String(255), nullable=False)
+    curp          = db.Column('curp', db.String(18), unique=True, nullable=False)
+    creado_en     = db.Column('creado_en', db.DateTime(timezone=True),
+                              server_default=db.func.now())
 
     def to_public_dict(self):
         return {
@@ -390,14 +390,13 @@ class ImagenInforme(db.Model):
     informe = db.relationship('Informe', lazy='joined', backref='imagenes')
 
     def to_dict(self):
-        # ── Reconstruir la URL pública en tiempo de lectura ──────────────
-        # url_publica en BD puede estar desactualizada si R2_PUBLIC_URL
-        # o la ruta base del bucket cambiaron (ej: faltaba el prefijo
-        # "docobraspublicas/" cuando se subieron las primeras imágenes).
-        # Reconstruirla aquí garantiza que siempre use la config actual
-        # sin necesidad de migrar filas existentes.
-        from app.r2_storage import build_public_url
-        url = build_public_url((self.ruta_r2 or "").strip()) if self.ruta_r2 else (self.url_publica or "")
+        # url_publica es la fuente de verdad: se guarda en el momento del
+        # upload con la URL pública real del bucket (R2_PUBLIC_URL + object_key).
+        # Solo reconstruimos si url_publica está vacía (fila corrupta).
+        url = (self.url_publica or "").strip()
+        if not url and self.ruta_r2:
+            from app.r2_storage import build_public_url
+            url = build_public_url((self.ruta_r2 or "").strip())
 
         return {
             "id":             str(self.id_imagen),
