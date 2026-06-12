@@ -74,8 +74,8 @@ def get_supervisor_obras(current_user):
       }
     """
     try:
-        # Demo: muestra todas las obras (no tiene ninguna asignada a su ID)
-        query = Obra.query
+        # Demo: muestra todas las obras activas (no tiene ninguna asignada a su ID)
+        query = Obra.query.filter(Obra.estado == True)  # noqa: E712
         if not current_user.get("is_demo"):
             query = query.filter_by(codigo_supervisor=current_user["id"].strip())
         obras = query.order_by(Obra.fecha_inicio.desc()).all()
