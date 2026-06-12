@@ -312,6 +312,41 @@ def create_region(current_user):
 #  OBRAS
 # ════════════════════════════════════════════════════════════════
 
+@director_bp.route("/api/obras/activas", methods=["GET"])
+@require_auth("director", "supervisor", "proyectista", "secretario")
+def get_obras_activas(current_user):
+    """
+    Lista ligera de obras con estado=True (activas).
+    Diseñada para poblar <select> en todos los perfiles.
+    No incluye filtros — devuelve todas las activas ordenadas por expediente.
+
+    Respuesta item:
+    {
+      "id":         "OBRA0000...",
+      "expediente": "EXP-2026-001",
+      "nombre":     "Pavimento Hidráulico..."
+    }
+    """
+    try:
+        obras = (
+            Obra.query
+            .filter(Obra.estado == True)          # noqa: E712 — SQLAlchemy requiere ==
+            .order_by(Obra.codigo_expediente.asc().nullslast())
+            .all()
+        )
+        rows = [
+            {
+                "id":         (o.id_obra or "").strip(),
+                "expediente": (o.codigo_expediente or "").strip(),
+                "nombre":     (o.nombre_obra or "").strip(),
+            }
+            for o in obras
+        ]
+        return ok(rows)
+    except Exception as exc:
+        return db_error_response(exc)
+
+
 @director_bp.route("/api/obras", methods=["GET"])
 @require_auth("director", "supervisor", "proyectista", "secretario")
 def get_obras(current_user):
