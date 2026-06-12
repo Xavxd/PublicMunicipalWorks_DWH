@@ -79,15 +79,16 @@ async function init() {
 // ════════════════════════════════════════════════════════════════
 async function loadObras() {
   try {
-    const res = await http.get('/api/obras');
+    const res = await http.get('/api/obras/activas');
     OBRAS = (res.data || []).map(o => ({
-      id:     o.id,
-      nombre: o.nombre || o.nombre_obra || '(sin nombre)',
+      id:         o.id,
+      nombre:     o.nombre || '(sin nombre)',
+      expediente: o.expediente || '',
     }));
   } catch (err) {
     console.error('[loadObras]', err);
     OBRAS = [];
-    showToast('No se pudieron cargar las obras desde el servidor.', 'error');
+    showToast('No se pudieron cargar las obras activas.', 'error');
   }
   populateAllObraSelects();
 }
