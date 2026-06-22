@@ -163,6 +163,33 @@ De manera general, puedes acceder a cada uno de los roles predispustos, pero no 
 </details>
 ---
 
+ ## 🚀 Rendimiento (Lighthouse)
+
+Los resultados de las auditorías de rendimiento se generan automáticamente con [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) en cada despliegue.
+
+### General
+
+| Métrica | Valor | Umbral |
+|---------|-------|--------|
+| Rendimiento | 88 | ≥ 85 |
+| Accesibilidad | 88 | ≥ 85 |
+| Prácticas recomendadas | 100 | ≥ 98 |
+| SEO | 90 | ≥ 90 |
+
+### Mapa Interactivo 
+
+| Métrica | Valor | Umbral |
+|---------|-------|--------|
+| Performance | 96 | ≥ 95 |
+| Accessibility | 96 | ≥ 95 |
+| Best Practices | 100 | ≥ 98 |
+| SEO | 92 | ≥ 90 |
+
+&gt; **Última ejecución:** 2026-06-22  
+&gt; **Entorno:** Chrome 125, Mobile, 4G simulado
+
+
+
 <div align="center">
   <table>
     <tr>
