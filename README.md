@@ -188,7 +188,22 @@ Los resultados de las auditorías de rendimiento se generan automáticamente con
 &gt; **Última ejecución:** 2026-06-22  
 &gt; **Entorno:** Chrome 125, Mobile, 4G simulado
 
+### 🔗 Enlaces de versión static del proyecto: 
+A continuación, se detalla el enlace para esquemas de emulado del proyecto:
 
+- [**Entorno de Pruebas (Demo)**](https://urigc.github.io/Obras_Pub/): Interactúa con la versión en vivo del proyecto y prueba las funcionalidades.
+
+Usuarios de Prueba: 
+
+| Usuario | Contraseña | Rol |
+| :--- | :--- | :---: |
+| `director`    | `admin123`    | Director de Obras      |
+| `supervisor`  | `admin123`    | Supervisor de Obra     |
+| `proyectista` | `admin123`    | Proyectista            |
+| `secretario`  | `admin123`    | Secretaría             |
+| `supervisor2` | `admin123`    | Supervisor (adicional) |
+| `poblador1`   | `poblador123` | Ciudadano / Poblador   |
+| `poblador2`   | `poblador123` | Ciudadano / Poblador   |
 
 <div align="center">
   <table>
