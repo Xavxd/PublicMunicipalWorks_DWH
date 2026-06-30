@@ -267,6 +267,38 @@ obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
 
 </details>
 
+# Reporte de Benchmark - Sistema Lakehouse Obras Públicas
+
+**Fecha de ejecución**: 2026-06-26  
+**Versión del sistema**: 1.0.0  
+**Responsable**: Uriel González Casiano
+
+---
+
+## 1. Entorno de Pruebas
+
+### 1.1 Infraestructura
+
+| Componente | Especificación |
+|------------|----------------|
+| **Backend** | Flask 3.0 + Python 3.11 |
+| **Hosting** | Render (Free Tier) |
+| **Base de datos** | PostgreSQL 14+ (Supabase Free Tier) |
+| **Data Lake** | Cloudflare R2 |
+| **Región** | us-east-1 (N. Virginia) |
+
+
+## 2. Metodología
+
+### 2.1 Pruebas de Carga (API REST)
+
+**Herramienta**: Locust  
+**Configuración**:
+- Usuarios concurrentes: 50
+- Spawn rate: 2 usuarios/segundo
+- Duración: 3 minutos
+- Repeticiones: 3 corridas independientes
+
 ## 📊 Datos del Proyecto
 
 **⚠️ IMPORTANTE**: Los datos de este repositorio son **SINTÉTICOS** y fueron generados exclusivamente con fines académicos y de demostración. No representan datos reales de obras públicas.
