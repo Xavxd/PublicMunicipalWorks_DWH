@@ -267,11 +267,10 @@ obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
 
 </details>
 
-# Reporte de Benchmark - Sistema Lakehouse Obras Públicas
+## Reporte de Benchmark - Sistema Lakehouse Obras Públicas
 
 **Fecha de ejecución**: 2026-06-26  
 **Versión del sistema**: 1.0.0  
-**Responsable**: Uriel González Casiano
 
 ---
 
