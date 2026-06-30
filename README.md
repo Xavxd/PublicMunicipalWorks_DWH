@@ -267,6 +267,22 @@ obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
 
 </details>
 
+## 📊 Datos del Proyecto
+
+**⚠️ IMPORTANTE**: Los datos de este repositorio son **SINTÉTICOS** y fueron generados exclusivamente con fines académicos y de demostración. No representan datos reales de obras públicas.
+
+### Generación de Datos
+
+Los datos fueron generados utilizando el script `scripts/generate_synthetic_data.py` con la librería [Faker](https://faker.readthedocs.io/) para Python.
+
+**Para regenerar los datos:**
+
+``bash
+# Instalar dependencias
+pip install faker psycopg2-binary
+
+# Ejecutar el script
+python scripts/generate_synthetic_data.py
 
 
 
