@@ -266,6 +266,18 @@ obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
 
 </details>
 
+## 🗄️ Estructura de la Base de Datos
+
+La carpeta `db/arquitectura/` contiene los scripts SQL que definen la arquitectura completa del sistema:
+
+| Archivo | Descripción |
+|---------|-------------|
+| `DDLBASESObpub.sql` | Esquema de la base de datos operacional (tablas: `obra`, `informes`, `costos`, `personal`, `constructora`, etc.) |
+| `ESQUEMA DEL DATA WAREHOUSE.sql` | Definición del Data Warehouse dimensional: esquema en estrella con 10 dimensiones (SCD 0/1/2) y 2 tablas de hechos particionadas |
+| `FUNCIONES Y TRIGGERS.sql` | Funciones PL/pgSQL y triggers para sincronización automática ETL desde tablas operacionales al warehouse (SCD Tipo 2) |
+
+**Nota**: El warehouse se mantiene actualizado automáticamente mediante triggers que capturan cambios en las tablas operacionales y los reflejan en las dimensiones y tablas de hechos.
+
 ## Reporte de Benchmark - Sistema Lakehouse Obras Públicas
 
 ---
