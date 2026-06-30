@@ -315,7 +315,7 @@ Se utilizaron tres enfoques complementarios para medir el sistema:
 
 Cualquier revisor o investigador puede reproducir estas métricas clonando el repositorio y ejecutando los scripts de benchmark contra su propia instancia local o contra la demo publicada:
 
-##BASH
+## BASH
 ### 1. Clonar y preparar entorno
 git clone https://github.com/Urigc/Obras_publicas.git
 cd Obras_publicas
