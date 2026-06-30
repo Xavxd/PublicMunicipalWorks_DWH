@@ -205,6 +205,71 @@ Usuarios de Prueba:
 | `poblador1`   | `poblador123` | Ciudadano / Poblador   |
 | `poblador2`   | `poblador123` | Ciudadano / Poblador   |
 
+------------
+
+# 🏗️ Sistema Lakehouse para Monitoreo de Obras Públicas Municipales
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)](https://www.postgresql.org/)
+[![Python](https://img.shields.io/badge/Python-3.10+-green.svg)](https://www.python.org/)
+
+Arquitectura **Lakehouse** para transparencia y auditoría en tiempo real de obras públicas. Integra Data Lake (Cloudflare R2) + Data Warehouse dimensional (PostgreSQL) bajo API REST única.
+
+## 📊 Data Warehouse Dimensional
+
+**Modelo dimensional en estrella** con:
+
+### Dimensiones (10 tablas)
+- `dim_tiempo` (SCD 0) - Período calendario
+- `dim_obra` (SCD 2) - Historial completo de obras
+- `dim_region` (SCD 2) - Comunidad/barrio
+- `dim_constructora` (SCD 2) - Empresas constructoras
+- `dim_personal` (SCD 2) - Personal DOP
+- `dim_presupuesto` (SCD 2) - Partidas presupuestales
+- `dim_poblador` (SCD 2) - Ciudadanos registrados
+- `dim_propuesta` (SCD 2) - Propuestas ciudadanas
+- `dim_fuente` (SCD 0) - Fuentes de financiamiento
+- `dim_tipo_evento` (SCD 0) - Catálogo 17 tipos de evento
+
+### Tablas de Hechos (2 tablas)
+- `fact_eventos_auditoria` - Eventos de auditoría particionados por año (2024-2026)
+- `fact_obra_mensual` - Snapshot mensual de obras
+
+**SCD Tipo 2:** Las dimensiones críticas mantienen historial mediante `fecha_efectiva`, `fecha_expiracion`, `es_actual`, permitiendo reconstruir el estado exacto de cualquier obra en cualquier momento.
+
+### Vistas Analíticas (5)
+- `v_obras_retraso` - Obras con retraso
+- `v_alertas_auditoria` - Alertas por severidad
+- `v_avance_comparativo` - Avance físico vs financiero
+- `v_participacion_ciudadana` - Votos y propuestas por región
+- `v_ejercicio_presupuestario` - Ejecución por fuente
+
+## 🗃️ Data Lake
+
+**Cloudflare R2** (S3-compatible) con estructura hive-partitioned:
+obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
+
+
+**Métricas:**
+- ~3,421 objetos almacenados (12.7 GB)
+- 78% imágenes (JPG/PNG), 22% documentos (PDF)
+- Crecimiento: ~287 objetos/mes
+
+**Integración bidireccional:** Metadatos sincronizados con warehouse en `imagenes_informe` (URL pública, tipo MIME, tamaño, fecha).
+
+## 🔄 Diagrama del esquema Warehouse
+<details>
+<summary>🖼️ Ver Diagrama</summary>
+
+| |
+|---|
+| <img src="https://github.com/user-attachments/assets/344539ce-9b3a-44cb-9ce9-7a986e456e57" alt="Login" width="800"/> |
+
+</details>
+
+
+
+
 <div align="center">
   <table>
     <tr>
