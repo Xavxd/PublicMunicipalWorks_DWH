@@ -277,11 +277,11 @@ Los datos fueron generados utilizando el script `scripts/generate_synthetic_data
 
 **Para regenerar los datos:**
 
-``bash
-# Instalar dependencias
+### BASH
+#### Instalar dependencias
 pip install faker psycopg2-binary
 
-# Ejecutar el script
+#### Ejecutar el script
 python scripts/generate_synthetic_data.py
 
 
