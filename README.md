@@ -349,6 +349,12 @@ pip install faker psycopg2-binary
 #### Ejecutar el script
 python scripts/generate_synthetic_data.py
 
+#### Generar dataset sintético de obras de Temascaltepec
+python scripts/evaluacion/generar_dataset_obras.py
+
+#### Ejecutar evaluación
+python scripts/evaluacion/eval_deteccion_anomalias.py
+
 ### 📦 Scripts de Carga de Datos
 
 El proyecto cuenta con **dos scripts de generación de datos sintéticos**, cada uno con un propósito específico:
