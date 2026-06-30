@@ -3,7 +3,6 @@
 > **Alumnos:** González Casiano Uriel  Maldonado Mejia Marco Tulio
 
 > **Docente:** Hurtado Avilés Gabriel · ESCOM · IPN  
-> **Materia:** Bases de Datos · Grupo 3CV2 · Turno Vespertino  
 > **Carrera:** Ingeniería en Sistemas Computacionales · Semestre 2026-1
 
 CASO DE ESTUDIO: 
@@ -350,6 +349,16 @@ pip install faker psycopg2-binary
 #### Ejecutar el script
 python scripts/generate_synthetic_data.py
 
+### 📦 Scripts de Carga de Datos
+
+El proyecto cuenta con **dos scripts de generación de datos sintéticos**, cada uno con un propósito específico:
+
+| Script | Propósito | Salida |
+|--------|-----------|--------|
+| `scripts/generate_synthetic_data.py` | **Poblado general del warehouse**: genera dimensiones, obras, eventos de auditoría y snapshots mensuales para pruebas de rendimiento y benchmarks del sistema completo. | Base de datos PostgreSQL poblada (~11,000 tuplas) |
+| `scripts/evaluacion/generar_dataset_obras.py` | **Dataset específico para evaluación del Cuadro 5**: genera ~1,247 obras con anomalías inyectadas (15%) para evaluar el módulo de detección contra Isolation Forest. | `datos_sinteticos/obras_temascaltepec.json` |
+
+**Nota**: Ambos scripts usan `Faker` con `seed=42` para garantizar reproducibilidad. Los datos son sintéticos y no representan información real del municipio.
 
 
 <div align="center">
