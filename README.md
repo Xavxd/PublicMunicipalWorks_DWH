@@ -268,9 +268,6 @@ obras/{id_obra}/reportes/{año}-{mes}/{timestamp}_{slug}.{ext}
 
 ## Reporte de Benchmark - Sistema Lakehouse Obras Públicas
 
-**Fecha de ejecución**: 2026-06-26  
-**Versión del sistema**: 1.0.0  
-
 ---
 
 ## 📊 Benchmark, Rendimiento y Reproducibilidad
@@ -339,6 +336,38 @@ psql -U postgres -d obras_publicas -f ../sql_benchmarks/test_triggers_scd2.sql
 ### Generación de Datos
 
 Los datos fueron generados utilizando el script `scripts/generate_synthetic_data.py` con la librería [Faker](https://faker.readthedocs.io/) para Python.
+
+### Método de Generación
+
+| Característica | Detalle |
+| :--- | :--- |
+| **Librería** | [Faker](https://github.com/joke2k/faker) para Python |
+| **Seed** | 42 (reproducible) |
+| **Script** | `scripts/generate_synthetic_data.py` |
+| **Locale** | `es_MX` (español de México) |
+
+---
+
+### Volumen de Datos Generados
+
+A continuación se detalla el desglose de registros generados por cada entidad del sistema, así como la estrategia o criterio utilizado para su población:
+
+| Entidad | Cantidad | Método / Criterio |
+| :--- | :--- | :--- |
+| **Obras públicas** | 1,247 | Nombres y descripciones generados con Faker. |
+| **Eventos de auditoría** | 8,934 | Distribuidos aleatoriamente entre obras. |
+| **Comunidades** | 55 | Basadas en comunidades reales de Temascaltepec. |
+| **Constructoras** | 10 | Nombres ficticios de empresas mexicanas. |
+| **Personal** | 50 | Nombres mexicanos generados con Faker. |
+| **Dimensiones temporales** | 731 días | Período 2024-2025. |
+| **Imágenes/documentos** | ~1,000 | Metadatos sintéticos (sin archivos reales). |
+
+---
+
+### Instrucciones de Uso
+
+1. **Garantizar la Reproducibilidad:** Al mantener el valor de la semilla (`Seed: 42`), cualquier ejecución posterior del script `generate_synthetic_data.py` producirá exactamente el mismo conjunto de registros.
+2. **Localización:** La configuración regional `es_MX` asegura que los nombres de personas, constructoras, formatos de fechas y textos descriptivos mantengan plena coherencia con el contexto mexicano.
 
 **Para regenerar los datos:**
 
