@@ -421,3 +421,9 @@ El proyecto cuenta con **dos scripts de generación de datos sintéticos**, cada
     </tr>
   </table>
 </div>
+
+---
+
+## 📄 Licencia
+
+Distribuido bajo la licencia **MIT**. Ver [`LICENSE`](LICENSE) para más información.
