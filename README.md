@@ -426,4 +426,4 @@ El proyecto cuenta con **dos scripts de generación de datos sintéticos**, cada
 
 ## 📄 Licencia
 
-Distribuido bajo la licencia **MIT**. Ver [`LICENSE`](LICENSE) para más información.
+Distribuido bajo la licencia **MIT**. Ver [`LICENSE`](LICENSE.md) para más información.
