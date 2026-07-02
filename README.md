@@ -11,6 +11,77 @@ H. Ayuntamiento de Temascaltepec, Estado de México
 Este sistema es una plataforma web robusta diseñada para la administración, supervisión y transparencia de la infraestructura pública. Permite el control total del ciclo de vida de una obra: desde la planeación presupuestal hasta la entrega final.
 
 ---
+## 🏗️ Arquitectura del Sistema
+
+Este proyecto está distribuido en **DOS repositorios independientes**:
+
+### 📦 Repositorio 1: Backend + API + Base de Datos + Frontend
+**URL**: https://github.com/Urigc/Obras_publicas
+
+**Contenido**: 
+- Backend Flask con 22 endpoints REST
+- Conexión en tiempo real a PostgreSQL (Supabase)
+- Data Lake en Cloudflare R2
+- DDL del warehouse, scripts ETL y triggers SCD Tipo 2
+- Autenticación JWT para administración
+
+**Despliegue dinámico**: [https://backend-obraspublicas.onrender.com  ](https://backend-obraspublicas.onrender.com)
+
+⚠️ **Nota**: Esta es la API REST que sirve los datos. No tiene interfaz visual, y esta misma es deplegada desde el propio Git que se encarga de todo el medio visual del proyecto apoyado de la sección siguiente.
+
+---
+
+### 📦 Repositorio 2: Frontend (Mapa Interactivo)
+**URL**: https://github.com/Urigc/mapa  
+**Contenido**:
+- Frontend React 18 + Leaflet.js
+- Dashboard analítico con Plotly
+- Módulo de participación ciudadana
+
+**Despliegue en Netlify**: https://polite-frangipane-c8c252.netlify.app/  
+✅ **Importante**: Esta versión **SÍ está conectada al backend de Render**.  
+Cuando consultas el mapa, se hacen peticiones HTTP en tiempo real a la API de Render que consulta PostgreSQL y retorna los datos actualizados.
+
+---
+
+### 📦 Versión Estática
+
+- [**Acceso a Versión Estática**](https://urigc.github.io/Obras_Pub/): Interactúa con la versión en vivo del proyecto y prueba las funcionalidades.
+
+**Propósito**: Demostración permanente que **NO requiere backend**.  
+Garantiza disponibilidad indefinida incluso si Render se suspende.
+
+
+#### Usuarios de Prueba: 
+
+| Usuario | Contraseña | Rol |
+| :--- | :--- | :---: |
+| `director`    | `admin123`    | Director de Obras      |
+| `supervisor`  | `admin123`    | Supervisor de Obra     |
+| `proyectista` | `admin123`    | Proyectista            |
+| `secretario`  | `admin123`    | Secretaría             |
+| `supervisor2` | `admin123`    | Supervisor (adicional) |
+| `poblador1`   | `poblador123` | Ciudadano / Poblador   |
+| `poblador2`   | `poblador123` | Ciudadano / Poblador   |
+
+---
+
+## 🔍 ¿Cómo funciona la arquitectura?
+
+### Flujo de datos en Netlify (dinámico):
+1. Usuario abre https://obras-publicas-map.netlify.app
+2. Frontend envía petición HTTP GET a `https://backend-obraspublicas.onrender.com/api/public/obras`
+3. Backend Flask ejecuta consulta SQL contra PostgreSQL (Supabase)
+4. PostgreSQL retorna resultados JSON
+5. Backend retorna respuesta HTTP al frontend
+6. Frontend renderiza los datos en el mapa
+
+### Flujo de datos en GitHub Pages (estático):
+1. Usuario abre https://urigc.github.io/obras-publicas-docs
+2. Frontend carga archivos JSON/GeoJSON desde el repositorio GitHub
+3. Frontend renderiza los datos directamente en el cliente
+4. **No hay peticiones HTTP a ningún backend**
+---
 
 ### 🛠️ Tecnologías
 * **Frontend:** HTML5, CSS3 (Custom Properties, Flexbox, Grid) y JavaScript Vanilla (ES6+)
@@ -186,24 +257,6 @@ Los resultados de las auditorías de rendimiento se generan automáticamente con
 
 &gt; **Última ejecución:** 2026-06-22  
 &gt; **Entorno:** Chrome 125, Mobile, 4G simulado
-
-### 🔗 Enlaces de versión static del proyecto: 
-A continuación, se detalla el enlace para esquemas de emulado del proyecto:
-
-- [**Entorno de Pruebas (Demo)**](https://urigc.github.io/Obras_Pub/): Interactúa con la versión en vivo del proyecto y prueba las funcionalidades.
-
-Usuarios de Prueba: 
-
-| Usuario | Contraseña | Rol |
-| :--- | :--- | :---: |
-| `director`    | `admin123`    | Director de Obras      |
-| `supervisor`  | `admin123`    | Supervisor de Obra     |
-| `proyectista` | `admin123`    | Proyectista            |
-| `secretario`  | `admin123`    | Secretaría             |
-| `supervisor2` | `admin123`    | Supervisor (adicional) |
-| `poblador1`   | `poblador123` | Ciudadano / Poblador   |
-| `poblador2`   | `poblador123` | Ciudadano / Poblador   |
-
 ------------
 
 # 🏗️ Sistema Lakehouse para Monitoreo de Obras Públicas Municipales
@@ -285,6 +338,13 @@ La carpeta `db/arquitectura/` contiene los scripts SQL que definen la arquitectu
 ## 📊 Benchmark, Rendimiento y Reproducibilidad
 
 Para garantizar la transparencia académica y la reproducibilidad de los resultados, las pruebas de rendimiento se documentan bajo un entorno controlado. 
+
+> **⚠️ ACLARACIÓN IMPORTANTE**: Las métricas de rendimiento reportadas en el Cuadro 2 del artículo fueron obtenidas contra el **backend Flask desplegado en Render** (https://backend-obraspublicas.onrender.com) conectado a PostgreSQL (Supabase) y Cloudflare R2.
+> 
+> **Estas métricas SON reproducibles** porque:
+> 1. El código del backend está publicado en [https://github.com/Urigc/Obras_publicas](https://github.com/Urigc/Obras_publicas)
+> 2. Los scripts de benchmark están en `scripts/load_testing/` y `scripts/sql_benchmarks/`
+> 3. Cualquier investigador puede clonar el repositorio, desplegar el backend y ejecutar las mismas pruebas
 
 > **⚠️ Nota sobre la naturaleza de los datos:** 
 > Coherente con las políticas de privacidad de datos gubernamentales, las métricas de este benchmark se obtuvieron utilizando un **dataset sintético** (generado vía `scripts/generate_synthetic_data.py` con `Faker` y `seed=42`). El volumen (~11,000 tuplas) y la estructura replican exactamente la carga real del municipio, permitiendo que cualquier investigador replique las pruebas sin comprometer datos sensibles.
