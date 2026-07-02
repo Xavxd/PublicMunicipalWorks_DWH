@@ -467,21 +467,6 @@ El proyecto cuenta con **dos scripts de generación de datos sintéticos**, cada
 
 **Nota**: Ambos scripts usan `Faker` con `seed=42` para garantizar reproducibilidad. Los datos son sintéticos y no representan información real del municipio.
 
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://ipn-683d754b.mintlify.app/" target="_blank">
-          <img src="https://img.shields.io/badge/ACCEDER_A_LA-DOCUMENTACIÓN-green?style=for-the-badge&logo=render&logoColor=white" />
-          <br>
-          <sub>Clic aquí para abrir la aplicación en una pestaña nueva</sub>
-        </a>
-      </td>
-    </tr>
-  </table>
-</div>
-
 ---
 
 ## 📄 Licencia
