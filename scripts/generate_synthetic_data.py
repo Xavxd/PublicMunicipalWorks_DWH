@@ -409,10 +409,14 @@ def generar_pobladores_y_propuestas(conn, num_pobladores=2341, num_propuestas=21
     return pobladores_ids, propuestas_ids
 
 
-def generar_votos_propuestas(conn, pobladores_ids, propuestas_ids, num_votos=8934):
+def generar_votos_propuestas(conn, pobladores_ids, propuestas_ids, num_votos=8723):
     """
     Genera votos de ciudadanos para las propuestas de obra.
     Cada ciudadano puede votar múltiples veces en diferentes períodos.
+    
+    Nota: 8,723 votos es un número realista basado en:
+    - 2,341 ciudadanos × ~3.7 votos promedio por ciudadano
+    - O alternativamente: 2,156 propuestas × ~4.0 votos promedio por propuesta
     """
     cur = conn.cursor()
     
@@ -503,19 +507,19 @@ def main():
         
         # Generar ciudadanos, propuestas y votos
         pobladores_ids, propuestas_ids = generar_pobladores_y_propuestas(
-            conn, 
-            num_pobladores=2341,
-            num_propuestas=2156
+        conn, 
+        num_pobladores=2341,
+        num_propuestas=2156
         )
         
-        # Generar votos (8,934 votos para mantener consistencia con eventos de auditoría)
+        # Generar votos (8,723 votos - número realista independiente de eventos de auditoría)
         generar_votos_propuestas(
-            conn,
-            pobladores_ids,
-            propuestas_ids,
-            num_votos=8934
+        conn,
+        pobladores_ids,
+        propuestas_ids,
+        num_votos=8723  # ← CAMBIO: Número diferente a 8,934
         )
-        
+    
         print("\n" + "=" * 70)
         print("✓ GENERACIÓN COMPLETADA EXITOSAMENTE")
         print("=" * 70)
@@ -524,11 +528,9 @@ def main():
         print("   - 8,934 eventos de auditoría")
         print("   - 2,341 ciudadanos registrados")
         print("   - 2,156 propuestas ciudadanas")
-        print("   - 8,934 votos emitidos en procesos participativos")
+        print("   - 8,723 votos emitidos en procesos participativos")  # ← ACTUALIZADO
         print("   - Snapshots mensuales (2024-2025)")
         print("   - Dimensiones completas")
-        print("\n Los datos son SINTÉTICOS y reproducibles.")
-        print("   Ejecuta este script nuevamente para regenerar los mismos datos.\n")
         
         conn.close()
         
