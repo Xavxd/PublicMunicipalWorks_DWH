@@ -82,20 +82,101 @@ Garantiza disponibilidad indefinida incluso si Render se suspende.
 3. **No hay peticiones HTTP a ningún backend**
 ---
 
-### 🛠️ Tecnologías
-* **Frontend:** HTML5, CSS3 (Custom Properties, Flexbox, Grid) y JavaScript Vanilla (ES6+)
-* **Persistencia:** SessionStorage para control de sesiones y LocalStorage para datos de usuario
-* **Diseño:** Estética Dark Mode con efectos Glassmorphism y sistema de partículas animadas (Canvas API)
-* **Deploy:** Configurado para contenedores Podman/Docker
+## 🛠️ Tecnologías
 
-## Stack tecnológico
- 
-| Capa | Tecnología |
-|---|---|
-| Lenguaje | Python 3.11 |
-| Framework | Flask 3.0 |
-| ORM | Flask-SQLAlchemy 3.1 / SQLAlchemy 2.0 |
-| Base de datos | PostgreSQL (Supabase) |
+### Arquitectura General
+
+El sistema sigue una arquitectura **Lakehouse** que integra:
+- **Backend API** (Flask/Python)
+- **Data Warehouse Dimensional** (PostgreSQL)
+- **Object Storage** (Cloudflare R2)
+- **Scripts ETL y de Benchmark**
+---
+
+### Backend API
+
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **Python** | 3.11.9 | Lenguaje de programación principal |
+| **Flask** | 3.0 | Framework web para API REST |
+| **Flask-SQLAlchemy** | 3.1 | ORM para PostgreSQL |
+| **SQLAlchemy** | 2.0 | Mapeo objeto-relacional |
+| **psycopg2-binary** | 2.9+ | Driver PostgreSQL para Python |
+| **PyJWT** | 2.8+ | Autenticación con JSON Web Tokens |
+| **bcrypt** | 4.1+ | Hash de contraseñas (PBKDF2-SHA256) |
+| **python-dotenv** | 1.0+ | Gestión de variables de entorno |
+
+---
+### Base de Datos - Data Warehouse
+
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **PostgreSQL** | 14+ | Motor de base de datos relacional |
+| **Supabase** | Cloud | Plataforma de hosting PostgreSQL |
+| **pg_partman** | 4.7+ | Particionamiento de tablas por rango |
+| **UUID-OSSP** | Native | Generación de UUIDs |
+
+**Esquema**:
+- 10 dimensiones (SCD Tipo 0/1/2)
+- 2 tablas de hechos particionadas por año (2024-2026)
+- 5 vistas analíticas materializadas
+- Triggers automáticos para sincronización ETL
+
+---
+### Object Storage
+
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **Cloudflare R2** | S3-Compatible | Almacenamiento de objetos |
+| **boto3** | 1.34+ | SDK de Python para S3/R2 |
+
+**Estructura**: Hive-partitioned (`obras/{id_obra}/reportes/{año}-{mes}/`)  
+**Volumen**: ~3,421 objetos (12.7 GB)  
+**Formatos**: JPG, PNG, PDF
+
+---
+
+### Generación de Datos Sintéticos
+
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **Faker** | 18.13+ | Generación de datos sintéticos realistas |
+| **NumPy** | 1.26+ | Cálculo numérico y estadístico |
+| **psycopg2** | 2.9+ | Conexión y carga a PostgreSQL |
+
+---
+### Testing y Benchmark
+
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **Locust** | 2.20+ | Pruebas de carga HTTP |
+| **scikit-learn** | 1.4+ | Evaluación de modelos (Isolation Forest) |
+| **SciPy** | 1.12+ | Estadística (Spearman, correlaciones) |
+| **Matplotlib** | 3.8+ | Visualización de resultados |
+
+---
+### Infraestructura de Despliegue
+
+| Servicio | Propósito | Plan |
+|----------|-----------|------|
+| **Render** | Backend API (Flask) | Free Tier |
+| **Supabase** | PostgreSQL Cloud | Free Tier (500 MB) |
+| **Cloudflare R2** | Data Lake (Object Storage) | Free Tier |
+| **GitHub** | Repositorio de código + versión estática | Public |
+
+**Nota**: El backend en Render puede suspenderse por inactividad (15 min). La versión estática en GitHub Pages garantiza permanencia indefinida.
+
+---
+### Herramientas de Desarrollo
+
+| Herramienta | Propósito |
+|-------------|-----------|
+| **Git** | Control de versiones |
+| **GitHub** | Hosting de repositorio |
+| **VS Code** | Editor de código |
+| **pgAdmin** | Administración de PostgreSQL |
+| **Postman** | Testing de endpoints API |
+| **Docker/Podman** | Contenerización (opcional) |
 
 ---
 
