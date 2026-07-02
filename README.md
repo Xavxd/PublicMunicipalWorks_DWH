@@ -78,9 +78,8 @@ Garantiza disponibilidad indefinida incluso si Render se suspende.
 
 ### Flujo de datos en GitHub Pages (estático):
 1. Usuario abre https://urigc.github.io/obras-publicas-docs
-2. Frontend carga archivos JSON/GeoJSON desde el repositorio GitHub
-3. Frontend renderiza los datos directamente en el cliente
-4. **No hay peticiones HTTP a ningún backend**
+2. Frontend renderiza los datos directamente en el cliente
+3. **No hay peticiones HTTP a ningún backend**
 ---
 
 ### 🛠️ Tecnologías
