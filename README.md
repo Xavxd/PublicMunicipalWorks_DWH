@@ -367,6 +367,16 @@ Se utilizaron tres enfoques complementarios para medir el sistema:
 *   **Consultas Analíticas (SQL):** Se utilizó **PostgreSQL `EXPLAIN ANALYZE`** y `psql \timing`. Se promediaron 10 ejecuciones consecutivas de las vistas materializadas con el caché de sesión limpio.
 *   **Triggers SCD Tipo 2:** Se midió el tiempo de transacción completo (`INSERT` en tabla operacional + disparo de trigger + cierre de versión histórica + registro en tabla de hechos) mediante bloques `DO` en PL/pgSQL (100 iteraciones).
 
+#### Scripts utilizados para obtener las métricas
+
+scripts/
+├── load_testing/
+│   ├── locustfile.py          # Pruebas de carga con Locust
+│   └── run_benchmarks.sh      # Script automatizado
+└── sql_benchmarks/
+    ├── test_views_performance.sql  # Medición de vistas
+    └── test_triggers_scd2.sql      # Medición de triggers
+
 ### 3. Resultados (Percentil 95)
 
 | Métrica Evaluada | Valor | Unidad |
