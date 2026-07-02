@@ -517,7 +517,11 @@ A continuación se detalla el desglose de registros generados por cada entidad d
 | Entidad | Cantidad | Método / Criterio |
 | :--- | :--- | :--- |
 | **Obras públicas** | 1,247 | Nombres y descripciones generados con Faker. |
+| **Ciudadanos** | 2,341 | Base de usuarios registrados. |
+| **Propuestas** | 2,156 | Propuestas registradas |
 | **Eventos de auditoría** | 8,934 | Distribuidos aleatoriamente entre obras. |
+| **Votos** | 8,723 | ~3.7 votos por ciudadano en promedio
+O ~4.0 votos por propuesta. |
 | **Comunidades** | 55 | Basadas en comunidades reales de Temascaltepec. |
 | **Constructoras** | 10 | Nombres ficticios de empresas mexicanas. |
 | **Personal** | 50 | Nombres mexicanos generados con Faker. |
