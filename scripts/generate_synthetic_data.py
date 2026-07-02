@@ -1,7 +1,7 @@
 """
 Generador de Datos Sintéticos para el Sistema de Obras Públicas
+Temascaltepec, Estado de México
 """
-
 import random
 import json
 from datetime import datetime, timedelta
@@ -26,6 +26,7 @@ DB_CONFIG = {
 # ============================================================
 # DATOS BASE REALISTAS DE TEMASCALTEPEC
 # ============================================================
+
 COMUNIDADES_TEMASCALTEPEC = [
     'Temascaltepec de González', 'San Juan de las Huertas', 'San José Ixtapan',
     'San Diego del Nichi', 'San Francisco Oxtotilpan', 'San Lucas',
@@ -351,6 +352,126 @@ def generar_snapshot_mensual(conn, obras_data):
     print("✓ Snapshots mensuales generados")
 
 
+def generar_pobladores_y_propuestas(conn, num_pobladores=2341, num_propuestas=2156):
+    """
+    Genera ciudadanos registrados (pobladores) y sus propuestas de obra.
+    Esto es necesario para generar votos posteriormente.
+    """
+    cur = conn.cursor()
+    
+    print(f"Generando {num_pobladores} ciudadanos registrados...")
+    
+    # Generar pobladores
+    pobladores_ids = []
+    for i in range(num_pobladores):
+        cur.execute("""
+            INSERT INTO public.pobladores (nombre, apellidos, comunidad, username, password_hash, curp)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (
+            fake.first_name(),
+            fake.last_name() + " " + fake.last_name(),
+            random.choice(COMUNIDADES_TEMASCALTEPEC),
+            f"poblador_{i+1}",
+            "$2b$12$LQv3c1yqBwMZTn1Zq3q3qO7q3q3q3q3q3q3q3q3q3q3q3q3q3q3q",  # Hash de "poblador123"
+            fake.rfc()[:18]  # CURP simulado
+        ))
+        poblador_id = cur.fetchone()[0]
+        pobladores_ids.append(poblador_id)
+    
+    print(f"✓ {num_pobladores} ciudadanos generados")
+    
+    print(f"Generando {num_propuestas} propuestas ciudadanas...")
+    
+    propuestas_ids = []
+    for i in range(num_propuestas):
+        poblador_id = random.choice(pobladores_ids)
+        cur.execute("""
+            INSERT INTO public.propuestas_obras 
+            (poblador_id, titulo, region, descripcion_obra, descripcion_beneficiados, pros_comunidad, anio_convocatoria)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (
+            poblador_id,
+            fake.sentence(nb_words=6),
+            random.choice(COMUNIDADES_TEMASCALTEPEC),
+            fake.paragraph(nb_sentences=3),
+            fake.paragraph(nb_sentences=2),
+            fake.paragraph(nb_sentences=2),
+            random.choice([2023, 2024, 2025])
+        ))
+        propuesta_id = cur.fetchone()[0]
+        propuestas_ids.append(propuesta_id)
+    
+    conn.commit()
+    print(f"✓ {num_propuestas} propuestas generadas")
+    
+    return pobladores_ids, propuestas_ids
+
+
+def generar_votos_propuestas(conn, pobladores_ids, propuestas_ids, num_votos=8934):
+    """
+    Genera votos de ciudadanos para las propuestas de obra.
+    Cada ciudadano puede votar múltiples veces en diferentes períodos.
+    """
+    cur = conn.cursor()
+    
+    print(f"Generando {num_votos} votos ciudadanos...")
+    
+    periodos_voto = ['2024-1', '2024-2', '2025-1', '2025-2']
+    votos_generados = 0
+    
+    # Combinaciones únicas de (poblador, propuesta, período)
+    combinaciones_usadas = set()
+    
+    while votos_generados < num_votos:
+        poblador_id = random.choice(pobladores_ids)
+        propuesta_id = random.choice(propuestas_ids)
+        periodo = random.choice(periodos_voto)
+        
+        # Evitar votos duplicados (un ciudadano no puede votar 2 veces por la misma propuesta en el mismo período)
+        combinacion = (poblador_id, propuesta_id, periodo)
+        if combinacion in combinaciones_usadas:
+            continue
+        
+        combinaciones_usadas.add(combinacion)
+        
+        cur.execute("""
+            INSERT INTO public.votos_propuestas (poblador_id, propuesta_id, periodo_voto)
+            VALUES (%s, %s, %s)
+        """, (poblador_id, propuesta_id, periodo))
+        
+        votos_generados += 1
+        
+        # Registrar evento de auditoría para cada voto
+        fecha_voto = fake.date_between(start_date=datetime(2024, 1, 1), end_date=datetime(2025, 12, 31))
+        tiempo_key = int(fecha_voto.strftime('%Y%m%d'))
+        
+        cur.execute("""
+            INSERT INTO warehouse.fact_eventos_auditoria
+            (tiempo_key, tipo_evento_key, obra_key, poblador_key, propuesta_key,
+             descripcion_evento, es_evento_inicial, es_evento_final)
+            VALUES (
+                %s,
+                (SELECT tipo_evento_key FROM warehouse.dim_tipo_evento WHERE codigo_evento = 'VOTO_EMITIDO'),
+                NULL,
+                %s,
+                %s,
+                %s,
+                FALSE,
+                FALSE
+            )
+        """, (
+            tiempo_key,
+            poblador_id,
+            propuesta_id,
+            f"Voto emitido por poblador {poblador_id} para propuesta {propuesta_id}"
+        ))
+    
+    conn.commit()
+    print(f"✓ {num_votos} votos generados")
+
+
 # ============================================================
 # EJECUCIÓN PRINCIPAL
 # ============================================================
@@ -380,12 +501,30 @@ def main():
         # Generar snapshots mensuales
         generar_snapshot_mensual(conn, obras_data)
         
+        # Generar ciudadanos, propuestas y votos
+        pobladores_ids, propuestas_ids = generar_pobladores_y_propuestas(
+            conn, 
+            num_pobladores=2341,
+            num_propuestas=2156
+        )
+        
+        # Generar votos (8,934 votos para mantener consistencia con eventos de auditoría)
+        generar_votos_propuestas(
+            conn,
+            pobladores_ids,
+            propuestas_ids,
+            num_votos=8934
+        )
+        
         print("\n" + "=" * 70)
         print("✓ GENERACIÓN COMPLETADA EXITOSAMENTE")
         print("=" * 70)
         print("\n📊 Resumen de datos generados:")
         print("   - 1,247 obras públicas")
         print("   - 8,934 eventos de auditoría")
+        print("   - 2,341 ciudadanos registrados")
+        print("   - 2,156 propuestas ciudadanas")
+        print("   - 8,934 votos emitidos en procesos participativos")
         print("   - Snapshots mensuales (2024-2025)")
         print("   - Dimensiones completas")
         print("\n Los datos son SINTÉTICOS y reproducibles.")
