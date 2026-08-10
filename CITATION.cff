@@ -9,12 +9,13 @@ abstract: >-
   and a serverless GitHub Pages demonstration whose credentials are published
   openly: it runs entirely from a synthetic dataset scoped to the visitor's own
   browser tab, so it has no shared state to protect. The demonstration is
-  bilingual (Spanish and English) and ships three colour themes, each with a
-  light and a dark mode.
+  bilingual (Spanish and English), ships two colour themes each with a light
+  and a dark mode, and includes a copy of the Smart Map geospatial viewer
+  that needs no backend.
 type: software
 license: MIT
-version: 1.1-icokg2026
-date-released: "2026-08-09"
+version: v1.2.0-icokg2026
+date-released: "2026-08-10"
 repository-code: "https://github.com/gabrielhuav/PublicMunicipalWorks_DWH"
 repository-artifact: "https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/"
 keywords:
