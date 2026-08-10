@@ -554,7 +554,8 @@ function updateObraCountBadge(count) {
 function formatDate(d) {
   if (!d) return '—';
   const dt = new Date(d + 'T00:00:00');
-  return dt.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  const locale = window.I18N ? window.I18N.locale() : 'es-MX';
+  return dt.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function escHtml(str) {
@@ -594,3 +595,15 @@ function showToast(msg, type = 'success') {
 
 // ---- INIT ----
 updateObraCountBadge();
+
+
+/* ------------------------------------------------------------------
+   Cambio de idioma. i18n.js traduce el texto ya presente, pero las
+   fechas y los importes se formatean con el locale activo, así que la
+   vista visible se vuelve a dibujar para que también cambien.
+   ------------------------------------------------------------------ */
+document.addEventListener('idiomacambiado', function () {
+  var activo = document.querySelector('.nav-item.active');
+  var panel = activo && activo.dataset ? activo.dataset.panel : null;
+  if (panel) showPanel(panel);
+});

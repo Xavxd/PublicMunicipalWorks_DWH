@@ -289,3 +289,15 @@ function showToast(msg, type = 'success') {
 
 // Init
 showPanel('seleccionar-obra');
+
+
+/* ------------------------------------------------------------------
+   Cambio de idioma. i18n.js traduce el texto ya presente, pero las
+   fechas y los importes se formatean con el locale activo, así que la
+   vista visible se vuelve a dibujar para que también cambien.
+   ------------------------------------------------------------------ */
+document.addEventListener('idiomacambiado', function () {
+  var activo = document.querySelector('.nav-item.active');
+  var panel = activo && activo.dataset ? activo.dataset.panel : null;
+  if (panel) showPanel(panel);
+});

@@ -35,10 +35,13 @@ if (cursor && follower) {
 }
 
 const dateEl = document.getElementById('current-date');
-if (dateEl) {
-  const d = new Date();
-  dateEl.textContent = d.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+function pintarFecha() {
+  if (!dateEl) return;
+  const locale = window.I18N ? window.I18N.locale() : 'es-MX';
+  dateEl.textContent = new Date().toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
 }
+pintarFecha();
+document.addEventListener('idiomacambiado', pintarFecha);
 
 const countEls = document.querySelectorAll('.stat-num[data-target]');
 const observer = new IntersectionObserver(entries => {

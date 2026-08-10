@@ -1,0 +1,359 @@
+/* =====================================================================
+   temas.css — tres temas de color, cada uno en claro y oscuro.
+
+   Dos ejes en <html>, fijados por js/theme.js:
+
+     data-tema = original | escom | guinda
+     data-modo = oscuro   | claro
+
+   El modo claro pone además data-theme="light", que es como main.css y
+   propuestas.css nombran su versión clara; así el tema original hereda la
+   suya sin que este archivo intervenga.
+
+   Por eso «original» no aparece aquí: es main.css sin tocar, y sigue
+   siendo byte a byte el del prototipo. Los otros dos reescriben el mismo
+   juego de variables. Las pocas reglas donde main.css escribió el azul a
+   mano se rehacen una sola vez, con el color tomado de --marca-rgb.
+   ===================================================================== */
+
+/* El estado activo de los controles lleva texto blanco sobre el color de
+   marca. Los acentos de los temas oscuros son claros por diseño, así que
+   para ese fondo se reserva un tono fuerte, el único que garantiza el
+   contraste del blanco en los seis casos. */
+:root { --accent-fuerte: #1d4ed8; }
+
+/* ---------------- AZUL ESCOM ---------------- */
+html[data-tema="escom"] {
+  --marca-rgb: 58,114,201;
+  --bg-void: #050d1c;
+  --bg-surface: #0b1830;
+  --bg-card: #0e1e3a;
+  --bg-card-hover: #14294c;
+  --bg-glass: rgba(11,24,48,0.72);
+  --text-primary: #e8eefa;
+  --text-secondary: #a8b8d0;
+  --text-muted: #62738d;
+  --border-subtle: rgba(195,213,240,0.08);
+  --border-medium: rgba(195,213,240,0.17);
+  --accent-director: #3a72c9;
+  --accent-director-glow: rgba(58,114,201,0.22);
+  --accent-supervisor: #2f9e8f;
+  --accent-supervisor-glow: rgba(47,158,143,0.2);
+  --accent-proyectista: #d4a017;
+  --accent-proyectista-glow: rgba(212,160,23,0.2);
+  --accent-secretaria: #7c6bd6;
+  --accent-secretaria-glow: rgba(124,107,214,0.2);
+  --accent: #3a72c9;
+  --accent-warm: #d4a017;
+  --shadow-card: 0 20px 60px rgba(2,8,20,0.55);
+  --shadow-glow-blue: 0 0 60px rgba(58,114,201,0.16);
+  --accent-fuerte: #1c52ad;
+  --pp-accent: #7fa9e8;
+  --pp-accent-strong: #3a72c9;
+  --pp-accent-warm: #d4a017;
+}
+
+html[data-tema="escom"][data-modo="claro"] {
+  --marca-rgb: 18,63,143;
+  --bg-void: #f8f9fc;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #eef2f8;
+  --bg-glass: rgba(255,255,255,0.88);
+  --text-primary: #0c1a2e;
+  --text-secondary: #3d4a5c;
+  --text-muted: #7686a0;
+  --border-subtle: rgba(12,26,46,0.09);
+  --border-medium: rgba(12,26,46,0.17);
+  --accent-director: #123f8f;
+  --accent-director-glow: rgba(18,63,143,0.12);
+  --accent-supervisor: #0f766e;
+  --accent-supervisor-glow: rgba(15,118,110,0.12);
+  --accent-proyectista: #a16207;
+  --accent-proyectista-glow: rgba(161,98,7,0.12);
+  --accent-secretaria: #5b4bc4;
+  --accent-secretaria-glow: rgba(91,75,196,0.12);
+  --accent: #123f8f;
+  --accent-warm: #a16207;
+  --shadow-card: 0 8px 32px rgba(7,31,77,0.10);
+  --shadow-glow-blue: 0 0 40px rgba(18,63,143,0.08);
+  --accent-fuerte: #0d2f6e;
+  --pp-accent: #123f8f;
+  --pp-accent-strong: #0d2f6e;
+  --pp-accent-warm: #a16207;
+}
+
+/* ---------------- GUINDA IPN ---------------- */
+html[data-tema="guinda"] {
+  --marca-rgb: 193,90,140;
+  --bg-void: #17070f;
+  --bg-surface: #23101a;
+  --bg-card: #2b1622;
+  --bg-card-hover: #3a1e2e;
+  --bg-glass: rgba(35,16,26,0.72);
+  --text-primary: #f6eaf0;
+  --text-secondary: #c6a8b6;
+  --text-muted: #8d7280;
+  --border-subtle: rgba(232,204,219,0.08);
+  --border-medium: rgba(232,204,219,0.18);
+  --accent-director: #c15a8c;
+  --accent-director-glow: rgba(193,90,140,0.22);
+  --accent-supervisor: #4fa87a;
+  --accent-supervisor-glow: rgba(79,168,122,0.2);
+  --accent-proyectista: #d8b45e;
+  --accent-proyectista-glow: rgba(216,180,94,0.2);
+  --accent-secretaria: #a17bd0;
+  --accent-secretaria-glow: rgba(161,123,208,0.2);
+  --accent: #c15a8c;
+  --accent-warm: #d8b45e;
+  --shadow-card: 0 20px 60px rgba(12,3,8,0.6);
+  --shadow-glow-blue: 0 0 60px rgba(193,90,140,0.16);
+  --accent-fuerte: #7a2450;
+  --pp-accent: #e0a2c1;
+  --pp-accent-strong: #c15a8c;
+  --pp-accent-warm: #d8b45e;
+}
+
+html[data-tema="guinda"][data-modo="claro"] {
+  --marca-rgb: 111,29,70;
+  --bg-void: #faf8f9;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f3edf0;
+  --bg-glass: rgba(255,255,255,0.88);
+  --text-primary: #241019;
+  --text-secondary: #513c46;
+  --text-muted: #7d6672;
+  --border-subtle: rgba(36,16,25,0.09);
+  --border-medium: rgba(36,16,25,0.18);
+  --accent-director: #6f1d46;
+  --accent-director-glow: rgba(111,29,70,0.12);
+  --accent-supervisor: #1a7a4c;
+  --accent-supervisor-glow: rgba(26,122,76,0.12);
+  --accent-proyectista: #8a6414;
+  --accent-proyectista-glow: rgba(138,100,20,0.12);
+  --accent-secretaria: #6d3f9c;
+  --accent-secretaria-glow: rgba(109,63,156,0.12);
+  --accent: #6f1d46;
+  --accent-warm: #8a6414;
+  --shadow-card: 0 8px 32px rgba(61,15,38,0.10);
+  --shadow-glow-blue: 0 0 40px rgba(111,29,70,0.08);
+  --accent-fuerte: #551636;
+  --pp-accent: #6f1d46;
+  --pp-accent-strong: #551636;
+  --pp-accent-warm: #8a6414;
+}
+
+/* ---------------------------------------------------------------------
+   Reglas donde main.css fijó el azul directamente. Se rehacen una sola
+   vez para cualquier tema de marca; el original no las ve.
+   --------------------------------------------------------------------- */
+html[data-tema="escom"] .cursor,
+html[data-tema="guinda"] .cursor { background: rgb(var(--marca-rgb)); }
+
+html[data-tema="escom"] .cursor-follower,
+html[data-tema="guinda"] .cursor-follower { border-color: rgba(var(--marca-rgb),0.5); }
+
+html[data-tema="escom"] .hero-orb-1,
+html[data-tema="guinda"] .hero-orb-1 {
+  background: radial-gradient(circle, rgba(var(--marca-rgb),0.12) 0%, transparent 70%);
+}
+
+html[data-tema="escom"] .hero-badge,
+html[data-tema="guinda"] .hero-badge {
+  background: rgba(var(--marca-rgb),0.1);
+  border-color: rgba(var(--marca-rgb),0.25);
+}
+
+html[data-tema="escom"] .accent-line,
+html[data-tema="guinda"] .accent-line { color: var(--accent); }
+
+html[data-tema="escom"] .hud-corner,
+html[data-tema="guinda"] .hud-corner { border-color: rgba(var(--marca-rgb),0.25); }
+
+html[data-tema="escom"] .scan-line,
+html[data-tema="guinda"] .scan-line {
+  background: linear-gradient(90deg, transparent, rgba(var(--marca-rgb),0.7),
+              rgba(var(--marca-rgb),0.35), transparent);
+  box-shadow: 0 0 24px rgba(var(--marca-rgb),0.35), 0 0 60px rgba(var(--marca-rgb),0.15);
+}
+
+html[data-tema="escom"] .particle,
+html[data-tema="guinda"] .particle { background: rgba(var(--marca-rgb),0.35); }
+
+html[data-tema="escom"] .role-card::after,
+html[data-tema="guinda"] .role-card::after {
+  background: linear-gradient(225deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 40%,
+              rgba(var(--marca-rgb),0.25) 60%, rgba(255,255,255,0) 100%);
+}
+
+html[data-tema="escom"] .role-card:hover,
+html[data-tema="guinda"] .role-card:hover {
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.45), 0 0 0 1px rgba(var(--marca-rgb),0.2),
+              inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+html[data-tema="escom"] .role-card[data-role="Director"]:hover,
+html[data-tema="guinda"] .role-card[data-role="Director"]:hover {
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.45), 0 0 30px -5px rgba(var(--marca-rgb),0.25),
+              0 0 0 1px rgba(var(--marca-rgb),0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+html[data-tema="escom"] .role-card[data-role="Director"] .role-btn:hover,
+html[data-tema="guinda"] .role-card[data-role="Director"] .role-btn:hover {
+  background: rgba(var(--marca-rgb),0.12);
+  border-color: rgba(var(--marca-rgb),0.3);
+}
+
+html[data-tema="escom"] .arch-strip::before,
+html[data-tema="guinda"] .arch-strip::before {
+  background: linear-gradient(90deg, rgba(var(--marca-rgb),0.06) 0%, transparent 30%),
+              linear-gradient(270deg, rgba(var(--marca-rgb),0.06) 0%, transparent 30%);
+}
+
+html[data-tema="escom"] .form-input:focus,
+html[data-tema="guinda"] .form-input:focus { background: rgba(var(--marca-rgb),0.05); }
+
+html[data-tema="escom"] .mapa-btn,
+html[data-tema="guinda"] .mapa-btn {
+  background: rgba(var(--marca-rgb),0.15);
+  border-color: rgba(var(--marca-rgb),0.4);
+  color: var(--text-primary);
+}
+
+html[data-tema="escom"] .mapa-btn:hover,
+html[data-tema="guinda"] .mapa-btn:hover {
+  background: rgba(var(--marca-rgb),0.3);
+  border-color: rgb(var(--marca-rgb));
+  box-shadow: 0 0 12px rgba(var(--marca-rgb),0.3);
+}
+
+/* ---------------------------------------------------------------------
+   Ajustes que sólo dependen del modo, no del tema.
+   --------------------------------------------------------------------- */
+
+/* Las tarjetas de vidrio del hero son blanco translúcido: sobre un fondo
+   claro desaparecerían, así que en modo claro se opacan y se apoyan en la
+   marca para el borde. */
+html[data-modo="claro"] .hc-card {
+  background: rgba(255,255,255,0.74);
+  border-color: rgba(var(--marca-rgb, 59,130,246),0.18);
+  box-shadow: 0 24px 48px -18px rgba(0,0,0,0.22), inset 0 1px 1px rgba(255,255,255,0.6);
+}
+
+/* El velo de ruido está pensado para superficies oscuras. */
+html[data-modo="claro"] .noise-overlay { opacity: 0.25; }
+
+
+/* ---------------------------------------------------------------------
+   Módulo de participación con los temas de marca.
+
+   propuestas.css pinta sus botones de acción con un degradado del acento y
+   les pone el texto en un azul casi negro (#03121f), lo que funciona
+   mientras el acento sea el celeste claro del diseño original. Con los
+   temas institucionales el acento es el color de la marca, y ese texto se
+   pierde. Para esos dos temas el botón pasa al tono fuerte con etiqueta
+   blanca, el mismo par que ya usan los controles de la cabecera.
+   --------------------------------------------------------------------- */
+html[data-tema="escom"] .pp-launcher,
+html[data-tema="guinda"] .pp-launcher,
+html[data-tema="escom"] .pp-cta,
+html[data-tema="guinda"] .pp-cta,
+html[data-tema="escom"] .pp-cta--vote,
+html[data-tema="guinda"] .pp-cta--vote,
+html[data-tema="escom"] .pp-user__avatar,
+html[data-tema="guinda"] .pp-user__avatar,
+html[data-tema="escom"] .pp-card__btn--vote,
+html[data-tema="guinda"] .pp-card__btn--vote,
+html[data-tema="escom"] .pp-fab,
+html[data-tema="guinda"] .pp-fab {
+  background: var(--accent-fuerte);
+  color: #fff;
+}
+
+/* El recuento de votos venía en el acento cálido, que sobre una tarjeta
+   blanca queda por debajo del contraste mínimo en cualquier tema. */
+html[data-modo="claro"] .pp-card__votes { color: var(--text-secondary); }
+
+/* =====================================================================
+   CONTROLES DE CABECERA — tema · idioma · modo
+   ===================================================================== */
+.ui-controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.segmentado {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 2px;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 999px;
+}
+
+.segmentado button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  transition: background 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.segmentado button:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+.segmentado button[aria-pressed="true"] {
+  background: var(--accent-fuerte);
+  color: #fff;
+}
+
+.tema-btn i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.35);
+}
+
+.modo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.modo-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* En pantallas estrechas el nombre del tema estorba: queda el punto de
+   color, que ya distingue las tres opciones. */
+@media (max-width: 1100px) {
+  .tema-btn__texto { display: none; }
+  .tema-btn { padding: 5px 8px; }
+}

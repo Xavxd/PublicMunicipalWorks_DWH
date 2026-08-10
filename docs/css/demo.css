@@ -84,14 +84,19 @@
   color: var(--text-primary);
 }
 
+/* El texto va en el color primario, no en el de acento: son las
+   credenciales, tienen que leerse en los seis temas, y el acento sobre la
+   superficie de la ficha se queda corto de contraste en los oscuros. El
+   borde es quien lleva la marca. */
 .open-access__cred {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
   padding: 3px 9px;
   border-radius: 6px;
-  color: var(--accent);
+  color: var(--text-primary);
   background: var(--bg-card-hover);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-medium);
+  border-left: 2px solid var(--accent);
   user-select: all;
   white-space: nowrap;
 }

@@ -8,7 +8,9 @@ abstract: >-
   triggers, seeded synthetic-data generators, the detection evaluation protocol,
   and a serverless GitHub Pages demonstration whose credentials are published
   openly: it runs entirely from a synthetic dataset scoped to the visitor's own
-  browser tab, so it has no shared state to protect.
+  browser tab, so it has no shared state to protect. The demonstration is
+  bilingual (Spanish and English) and ships three colour themes, each with a
+  light and a dark mode.
 type: software
 license: MIT
 version: 1.1-icokg2026

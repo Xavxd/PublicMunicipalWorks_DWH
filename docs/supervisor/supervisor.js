@@ -572,7 +572,10 @@ function formatDate(d) {
   // Soporta ISO (2026-03-15) y formatos locales
   const parts = d.split('T')[0].split('-');
   if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    // El orden de día y mes cambia con el idioma, así que lo decide el locale.
+    const locale = window.I18N ? window.I18N.locale() : 'es-MX';
+    return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T00:00:00`)
+      .toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
   return d;
 }
@@ -598,3 +601,15 @@ function showToast(msg, type = 'success') {
 
 // Cargar panel inicial
 showPanel('mis-obras');
+
+
+/* ------------------------------------------------------------------
+   Cambio de idioma. i18n.js traduce el texto ya presente, pero las
+   fechas y los importes se formatean con el locale activo, así que la
+   vista visible se vuelve a dibujar para que también cambien.
+   ------------------------------------------------------------------ */
+document.addEventListener('idiomacambiado', function () {
+  var activo = document.querySelector('.nav-item.active');
+  var panel = activo && activo.dataset ? activo.dataset.panel : null;
+  if (panel) showPanel(panel);
+});

@@ -12,6 +12,16 @@ It is a deliberately **static** demonstration. It deploys the same HTML/CSS/Java
 
 It does **not** use Flask, Python, Render, Supabase, Cloudflare R2, or a live API. Thus it remains available even when no backend deployment exists. The geographic locations are illustrative, and every displayed record is synthetic.
 
+### Languages and themes
+
+The header carries the same three controls as the companion water-warehouse artefact ([`gabrielhuav/Data_Warehouse_static`](https://github.com/gabrielhuav/Data_Warehouse_static)), and the preference is remembered across the landing page and the four role workspaces.
+
+- **Language** — Spanish and English, both complete: interface, form help, validation messages and the synthetic records themselves. Spanish is the source language; Temascaltepec place names and legal company names stay untranslated because they are proper nouns.
+- **Theme** — `Original` (default), `Azul ESCOM` and `Guinda IPN`, on the `data-tema` axis.
+- **Mode** — light and dark for each of the three themes, on the `data-modo` axis.
+
+`Original` in dark mode is the prototype exactly as it was, which is why `docs/css/main.css` is still byte-identical to `css/main.css`. The two institutional palettes live in [`docs/css/temas.css`](docs/css/temas.css) and only rewrite design tokens, so no component knows which theme is active.
+
 ### Open access, on purpose
 
 The demonstration credentials are printed on the landing page, and the sign-in form also accepts any value — including an empty one. That is safe because the published artefact has nothing to protect and nothing shared to damage:
@@ -33,7 +43,7 @@ The same four accounts exist in the Flask reference API under `backend/`, create
 
 | Component | Location | Status |
 |---|---|---|
-| Static public artefact | `docs/` | Visual interface preserved from the original prototype; the four role workspaces and the participation module run against `docs/js/static_backend.js`, an in-tab stand-in for the API |
+| Static public artefact | `docs/` | Visual interface preserved from the original prototype; the four role workspaces and the participation module run against `docs/js/static_backend.js`, an in-tab stand-in for the API. Bilingual (`docs/js/i18n.js`), three themes in light and dark (`docs/css/temas.css`, `docs/js/theme.js`) |
 | Deployment workflow | `.github/workflows/deploy-pages.yml` | Publishes `docs/` after pushes to `TestDefinitivo` |
 | Operational reference API | `backend/` | Flask/Python reference implementation; **not used by Pages** |
 | Dimensional warehouse | `db/arquitectura/` | 10 dimensions, 2 fact tables, SCD Type 2 triggers and 5 views |

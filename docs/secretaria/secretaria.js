@@ -6,7 +6,10 @@ if (userRole !== 'Secretario') {
   window.location.href = '../index.html';
 }
 
-document.documentElement.style.setProperty('--accent', '#8b5cf6');
+/* El prototipo fijaba aquí el violeta de Secretaría. Publicado hay tres
+   temas, así que el acento del rol se toma del token, que sí cambia con
+   el tema y con el modo. */
+document.documentElement.style.setProperty('--accent', 'var(--accent-secretaria)');
 
 // ── Cliente HTTP ─────────────────────────────────────────────────
 // En la versión publicada no hay servidor: las mismas rutas las resuelve
@@ -799,3 +802,15 @@ if (cursor && follower) {
 
 // ── ARRANQUE ─────────────────────────────────────────────────────
 init();
+
+
+/* ------------------------------------------------------------------
+   Cambio de idioma: i18n.js se encarga del texto; aquí sólo se repintan
+   las listas, que se generan desde JavaScript.
+   ------------------------------------------------------------------ */
+document.addEventListener('idiomacambiado', function () {
+  renderPermisosList();
+  renderActasList();
+  renderConcursosList();
+  renderPersonalList();
+});
