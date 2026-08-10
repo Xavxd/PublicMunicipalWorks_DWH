@@ -44,9 +44,30 @@ class ShadowVault:
         return cls._URL
 
 
+def _resolve_database_url():
+    """Devuelve la cadena de conexión.
+
+    DATABASE_URL tiene prioridad: es lo que permite levantar esta API contra
+    una base local —el compose de `docker/` lo hace— sin necesitar la clave
+    privada de la bóveda. Sin esa variable se recurre a ShadowVault, que es
+    como corre el despliegue gestionado.
+
+    Antes no había alternativa: init_db() llamaba a ShadowVault.get_url()
+    siempre, así que cualquiera que clonara el repositorio se topaba con
+    «Bóveda sellada» y la implementación de referencia no se podía ejecutar.
+    """
+    url = os.getenv("DATABASE_URL")
+    if url:
+        # SQLAlchemy 2.x ya no acepta el esquema postgres:// heredado.
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        return url
+    return ShadowVault.get_url()
+
+
 def init_db(app):
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = ShadowVault.get_url()
+    app.config['SQLALCHEMY_DATABASE_URI'] = _resolve_database_url()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {

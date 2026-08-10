@@ -46,15 +46,22 @@ from werkzeug.security import generate_password_hash
 
 # ---------------------------------------------------------------------------
 #  The single set of demonstration credentials documented in the README.
-#  Roles must match the strings accepted by @require_auth in routes/:
-#  director | supervisor | proyectista | secretario
+#
+#  Roles are stored capitalised. This script used to write them in lower
+#  case, which broke twice over: `public.personal` carries a CHECK that only
+#  admits 'Director', 'Supervisor', 'Secretario' and 'Proyectista', so the
+#  insert failed outright; and `POST /api/auth/login` matches `rol` against
+#  the value the front end sends, which is also capitalised. The lower-case
+#  form the old comment appealed to belongs to @require_auth, and that
+#  decorator lower-cases the request header before comparing, so it accepts
+#  either.
 # ---------------------------------------------------------------------------
 DEMO_USERS = [
     # codigo_personal, nombre,   ap_paterno,  ap_materno, username,      rol,           password
-    ("DEMO-DIR-001", "Demo", "Director",    "ICOKG", "demo_director",    "director",    "Icokg2026-Dir"),
-    ("DEMO-SUP-001", "Demo", "Supervisor",  "ICOKG", "demo_supervisor",  "supervisor",  "Icokg2026-Sup"),
-    ("DEMO-PRY-001", "Demo", "Proyectista", "ICOKG", "demo_proyectista", "proyectista", "Icokg2026-Pry"),
-    ("DEMO-SEC-001", "Demo", "Secretario",  "ICOKG", "demo_secretario",  "secretario",  "Icokg2026-Sec"),
+    ("DEMO-DIR-001", "Demo", "Director",    "ICOKG", "demo_director",    "Director",    "Icokg2026-Dir"),
+    ("DEMO-SUP-001", "Demo", "Supervisor",  "ICOKG", "demo_supervisor",  "Supervisor",  "Icokg2026-Sup"),
+    ("DEMO-PRY-001", "Demo", "Proyectista", "ICOKG", "demo_proyectista", "Proyectista", "Icokg2026-Pry"),
+    ("DEMO-SEC-001", "Demo", "Secretario",  "ICOKG", "demo_secretario",  "Secretario",  "Icokg2026-Sec"),
 ]
 
 UPSERT = """

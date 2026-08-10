@@ -1,0 +1,78 @@
+# =====================================================================
+#  Implementación de referencia, ejecutable en local
+#
+#  El capítulo describe una API REST Flask sobre PostgreSQL. El sitio
+#  publicado no la usa —es estático a propósito— pero la afirmación sólo es
+#  comprobable si cualquiera puede levantarla. Esto la levanta:
+#
+#      docker compose -f docker/compose.yml up -d --build
+#      curl http://localhost:5000/api/health
+#
+#  El esquema y los disparadores se cargan solos desde db/ al crear el
+#  volumen. Para poblarla:
+#
+#      docker compose -f docker/compose.yml run --rm seed
+#
+#  Nada de esto toca el despliegue gestionado ni la bóveda de credenciales:
+#  la API toma DATABASE_URL cuando existe (véase backend/app/database.py).
+# =====================================================================
+name: obras-publicas
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: obras_publicas
+      POSTGRES_USER: obras
+      POSTGRES_PASSWORD: obras_local
+    ports:
+      - "55432:5432"
+    volumes:
+      - datos:/var/lib/postgresql/data
+      # El orden alfabético es el orden de carga: primero el esquema
+      # operacional, después el almacén y sus disparadores.
+      - ../db/DDLBASEObPub.sql:/docker-entrypoint-initdb.d/01_operacional.sql:ro
+      - ../db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql:/docker-entrypoint-initdb.d/02_warehouse.sql:ro
+      - ../db/arquitectura/FUNCIONES Y TRIGGERS.sql:/docker-entrypoint-initdb.d/03_triggers.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U obras -d obras_publicas"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://obras:obras_local@db:5432/obras_publicas
+      SECRET_KEY: clave-local-de-pruebas
+      FLASK_ENV: production
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Poblado: cuentas de demostración y conjunto sintético. Se ejecuta a
+  # demanda, no al arrancar, porque tarda y sólo hace falta una vez.
+  seed:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://obras:obras_local@db:5432/obras_publicas
+    volumes:
+      - ../scripts:/scripts:ro
+    working_dir: /scripts
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["tools"]
+    command: >
+      sh -c "pip install --quiet faker &&
+             python seed_demo_users.py &&
+             python generate_synthetic_data.py"
+
+volumes:
+  datos:

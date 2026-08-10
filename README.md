@@ -87,7 +87,7 @@ Expected protocol population: 1,421 work–period records and 214 independently 
 
 ## Checking the repository against the paper
 
-The population the chapter reports for the seeded scenario — 1,247 works across 55 communities, $127.4 M in budget, 8,934 audit events, 3,421 photographic pieces of evidence, 2,156 citizen proposals and 8,723 votes — is declared as constants at the top of [`scripts/generate_synthetic_data.py`](scripts/generate_synthetic_data.py) and met **by construction**: budgets are drawn with a lognormal shape and then scaled in integer cents so the portfolio totals exactly the reported figure, and the evidence count is allocated across the work–month rows rather than left to chance. The figures can therefore be checked without a database, and without PostgreSQL running:
+The population the chapter reports for the seeded scenario — 1,247 works across 55 communities, $127.4 M in budget, 8,934 seeded audit events, 3,421 photographic pieces of evidence, 2,156 citizen proposals and 8,723 votes — is declared as constants at the top of [`scripts/generate_synthetic_data.py`](scripts/generate_synthetic_data.py) and met **by construction**: budgets are drawn with a lognormal shape and then scaled in integer cents so the portfolio totals exactly the reported figure, and the evidence count is allocated across the work–month rows rather than left to chance. The figures can therefore be checked without a database, and without PostgreSQL running:
 
 ```bash
 python scripts/generate_synthetic_data.py --verificar
@@ -111,6 +111,31 @@ Last run 10 August 2026 — Lighthouse 12.8.2, headless Chrome 151, emulated mob
 | Map | 2.6 s | 5.4 s | 3.0 s | 80 ms | 0.006 | 76 | 96 | 93 | 100 |
 
 The two pages are limited by different things: the landing page by render-blocking web fonts and a CDN animation library, the map by its 533 kB bundle. Both are delivery traits of the inherited prototype front end, not properties of the warehouse design.
+
+
+## Running the reference API
+
+The chapter describes a Flask/PostgreSQL REST API. The published site does not use it — it is static on purpose — but the claim is only checkable if anyone can run it. `docker/` does that:
+
+```bash
+docker compose -f docker/compose.yml up -d --build     # PostgreSQL + API
+docker compose -f docker/compose.yml --profile tools run --rm seed
+curl http://localhost:5000/api/health
+```
+
+The schema, the warehouse and its triggers load automatically from `db/` on first start; `seed` creates the four demonstration accounts and the synthetic population. Verified against that container:
+
+| Claim in the chapter | Measured in the container |
+|---|---|
+| 1,247 works across 55 communities | 1,247 works, 55 communities, 165 regions |
+| $127.4 M budget | `$127,400,000.00` exactly |
+| 3,421 pieces of photographic evidence | 3,421 |
+| 2,156 proposals, 8,723 votes | 2,156 / 8,723 |
+| Ten dimensions, two facts, five views | 10 / 2 / 5 |
+| Five public read-only routes | 5 |
+| `DEMO-` accounts cannot write | `POST /api/constructoras` → **HTTP 403** |
+
+Getting there required fixing several things that had never been exercised against a clean database — see the commit history for `db/`, `scripts/` and `backend/app/database.py`.
 
 
 ## Data model

@@ -343,7 +343,10 @@ BEGIN
         tiempo_key, tipo_evento_key, obra_key, region_key,
         personal_key, constructora_key,
         monto_presupuesto, monto_costo,
-        porcentaje_avance_fisico, porcentaje_avance_pres,
+        -- La columna del hecho se llama porcentaje_avance_presup en
+        -- ESQUEMA DEL DATA WAREHOUSE.sql; aquí figuraba truncada, así que
+        -- este INSERT habría fallado en cada evento de auditoría.
+        porcentaje_avance_fisico, porcentaje_avance_presup,
         descripcion_evento, documento_referencia, url_evidencia
     ) VALUES (
         v_tiempo_key, v_tipo_evento_key, v_obra_key, v_region_key,
@@ -507,6 +510,11 @@ RETURNS TABLE(
     monto_total_ejercido NUMERIC
 ) AS $$
 DECLARE
+    -- La variable del FOR ... IN SELECT tiene que declararse como RECORD;
+    -- sin esta línea PostgreSQL rechaza la función al crearla ("loop
+    -- variable of loop over rows must be a record variable"), y con ella
+    -- fallaba la carga completa del archivo de disparadores.
+    rec RECORD;
     v_tiempo_key INTEGER;
     v_obras_procesadas INTEGER := 0;
     v_obras_retraso INTEGER := 0;
@@ -628,7 +636,7 @@ SELECT
     fea.monto_presupuesto,
     fea.monto_costo,
     fea.porcentaje_avance_fisico,
-    fea.porcentaje_avance_pres,
+    fea.porcentaje_avance_presup,
     fea.documento_referencia,
     fea.url_evidencia,
     per.nombre_completo as ejecutor

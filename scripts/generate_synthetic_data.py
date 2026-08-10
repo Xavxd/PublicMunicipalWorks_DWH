@@ -2,6 +2,7 @@
 Generador de Datos Sintéticos para el Sistema de Obras Públicas
 Temascaltepec, Estado de México
 """
+import os
 import random
 import sys
 import json
@@ -210,25 +211,33 @@ def generar_dimensiones(conn):
     
     print("Generando dim_region...")
     # Generar dim_region
-    for comunidad in COMUNIDADES_TEMASCALTEPEC:
-        for barrio in random.sample(BARRIOS, 3):  # 3 barrios por comunidad
-            region_id = f"REG-{comunidad[:3].upper()}-{barrio[:3].upper()}"
+    # El identificador se construía con las tres primeras letras de la
+    # comunidad y del barrio: 'San Juan', 'San José', 'San Lucas' y otras
+    # veinte colapsaban en REG-SAN-…, así que de las 55 comunidades sólo
+    # llegaban 14 a la base y el artículo hablaba de 55. Se numera para que
+    # el identificador sea único por comunidad y barrio.
+    for ic, comunidad in enumerate(COMUNIDADES_TEMASCALTEPEC, 1):
+        for ib, barrio in enumerate(random.sample(BARRIOS, 3), 1):  # 3 barrios por comunidad
+            region_id = f"REG-{ic:03d}-{ib}"
             cur.execute("""
                 INSERT INTO warehouse.dim_region (region_id, comunidad, barrio)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (region_id) DO NOTHING
-            """, (region_id, comunidad, barrio))
+                SELECT %s, %s, %s
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM warehouse.dim_region
+                    WHERE region_id = %s AND es_actual = TRUE)
+            """, (region_id, comunidad, barrio, region_id))
     
     print("Generando dim_constructora...")
     # Generar dim_constructora
     for i, nombre in enumerate(CONSTRUCTORAS, 1):
         constructora_id = f"CONST-{i:03d}"
         cur.execute("""
-            INSERT INTO warehouse.dim_constructora 
-            (constructora_id, rfc, nombre_const, tipo_ejecutor)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (constructora_id) DO NOTHING
-        """, (constructora_id, fake.rfc(), nombre, random.choice(['Privada', 'Pública'])))
+            INSERT INTO warehouse.dim_constructora (constructora_id, rfc, nombre_const, tipo_ejecutor)
+            SELECT %s, %s, %s, %s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM warehouse.dim_constructora
+                WHERE constructora_id = %s AND es_actual = TRUE)
+        """, (constructora_id, fake.rfc(), nombre, random.choice(['Privada', 'Pública']), constructora_id))
     
     print("Generando dim_personal...")
     # Generar dim_personal
@@ -236,10 +245,11 @@ def generar_dimensiones(conn):
         personal_id = f"PER-{i+1:03d}"
         rol = random.choice(ROLES_PERSONAL)
         cur.execute("""
-            INSERT INTO warehouse.dim_personal 
-            (personal_id, nombre_completo, rol, es_supervisor, es_proyectista, es_director, es_secretario)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (personal_id) DO NOTHING
+            INSERT INTO warehouse.dim_personal (personal_id, nombre_completo, rol, es_supervisor, es_proyectista, es_director, es_secretario)
+            SELECT %s, %s, %s, %s, %s, %s, %s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM warehouse.dim_personal
+                WHERE personal_id = %s AND es_actual = TRUE)
         """, (
             personal_id,
             fake.name(),
@@ -247,7 +257,8 @@ def generar_dimensiones(conn):
             rol == 'Supervisor',
             rol == 'Proyectista',
             rol == 'Director',
-            rol == 'Secretario'
+            rol == 'Secretario',
+            personal_id
         ))
     
     print("Generando dim_fuente...")
@@ -268,6 +279,64 @@ def generar_dimensiones(conn):
     
     conn.commit()
     print("✓ Dimensiones generadas correctamente")
+
+
+def generar_operacional(conn):
+    """Puebla el esquema operacional a partir de las dimensiones.
+
+    Falta esta pieza y nada más funciona: public.obra tiene claves foráneas
+    a public.constructora, public.region y public.supervisor, y el generador
+    sólo llenaba las dimensiones del almacén. La primera obra fallaba con
+    «Key (id_constructora)=(CONST-002) is not present in table
+    "constructora"» y el conjunto sintético no llegaba a existir.
+
+    Se copian los identificadores desde las dimensiones para que ambos
+    esquemas hablen de las mismas entidades, que es justo lo que los
+    disparadores de sincronización suponen.
+    """
+    cur = conn.cursor()
+    print("Poblando el esquema operacional...")
+
+    cur.execute("""
+        INSERT INTO public.constructora (id_constructora, rfc, nombre_const, tipo_ejecutor)
+        SELECT constructora_id, rfc, nombre_const, tipo_ejecutor
+        FROM warehouse.dim_constructora WHERE es_actual = TRUE
+        ON CONFLICT (id_constructora) DO NOTHING
+    """)
+
+    cur.execute("""
+        INSERT INTO public.region (id_region, comunidad, barrio)
+        SELECT region_id, comunidad, barrio
+        FROM warehouse.dim_region WHERE es_actual = TRUE
+        ON CONFLICT (id_region) DO NOTHING
+    """)
+
+    # `personal` exige nombre y apellido por separado; la dimensión guarda el
+    # nombre completo, así que se parte por el primer espacio.
+    cur.execute("""
+        INSERT INTO public.personal
+            (codigo_personal, nombre, apellido_paterno, apellido_materno, username, rol)
+        SELECT personal_id,
+               split_part(nombre_completo, ' ', 1),
+               COALESCE(NULLIF(split_part(nombre_completo, ' ', 2), ''), 'N'),
+               NULLIF(split_part(nombre_completo, ' ', 3), ''),
+               lower(personal_id),
+               rol
+        FROM warehouse.dim_personal WHERE es_actual = TRUE
+        ON CONFLICT (codigo_personal) DO NOTHING
+    """)
+
+    cur.execute("""
+        INSERT INTO public.supervisor (codigo_personal, telefono)
+        SELECT codigo_personal, '722-000-0000'
+        FROM public.personal WHERE rol = 'Supervisor'
+        ON CONFLICT (codigo_personal) DO NOTHING
+    """)
+
+    conn.commit()
+    for tabla in ("constructora", "region", "personal", "supervisor"):
+        cur.execute(f"SELECT COUNT(*) FROM public.{tabla}")
+        print(f"  public.{tabla}: {cur.fetchone()[0]}")
 
 
 def generar_obras(conn, num_obras=TOTAL_OBRAS):
@@ -299,6 +368,7 @@ def generar_obras(conn, num_obras=TOTAL_OBRAS):
         codigo_expediente = f"EXP-{2024}-{i:04d}"
         nombre_obra = f"{random.choice(NOMBRES_OBRAS)} #{i}"
         descripcion = fake.paragraph(nb_sentences=2)
+        beneficiarios = f"{random.randint(80, 3200):,} habitantes"
         etapa = random.randint(1, 5)
         estado = random.random() > 0.15  # 85% activas
         
@@ -314,18 +384,22 @@ def generar_obras(conn, num_obras=TOTAL_OBRAS):
         
         # Insertar en tabla operacional (simulada)
         cur.execute("""
-            INSERT INTO public.obra 
-            (id_obra, codigo_expediente, nombre_obra, descripcion, etapa, estado,
-             fecha_inicio, fecha_final, id_region, id_constructora, codigo_supervisor)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 
+            INSERT INTO public.obra
+            (id_obra, codigo_expediente, nombre_obra, descripcion, beneficiarios,
+             etapa, estado, fecha_inicio, fecha_final,
+             id_region, id_constructora, codigo_supervisor)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
                     (SELECT region_id FROM warehouse.dim_region WHERE region_key = %s),
                     (SELECT constructora_id FROM warehouse.dim_constructora WHERE constructora_key = %s),
                     (SELECT personal_id FROM warehouse.dim_personal WHERE personal_key = %s))
             ON CONFLICT (id_obra) DO NOTHING
             RETURNING id_obra
         """, (
-            obra_id, codigo_expediente, nombre_obra, descripcion, etapa, estado,
-            fecha_inicio, fecha_final, region_key, constructora_key, supervisor_key
+            # public.obra.beneficiarios es NOT NULL y este INSERT no lo
+            # incluía, así que ninguna obra llegaba a grabarse.
+            obra_id, codigo_expediente, nombre_obra, descripcion, beneficiarios,
+            etapa, estado, fecha_inicio, fecha_final,
+            region_key, constructora_key, supervisor_key
         ))
         
         if cur.fetchone():
@@ -591,11 +665,19 @@ def main():
     try:
         # Conectar a la base de datos
         print("Conectando a la base de datos...")
-        conn = psycopg2.connect(**DB_CONFIG)
+        # DATABASE_URL tiene prioridad, igual que en la API: es lo que
+        # permite ejecutar esto contra el contenedor de docker/compose.yml
+        # sin editar DB_CONFIG a mano.
+        dsn = os.getenv("DATABASE_URL")
+        conn = psycopg2.connect(dsn) if dsn else psycopg2.connect(**DB_CONFIG)
         print("✓ Conexión establecida\n")
         
         # Generar dimensiones
         generar_dimensiones(conn)
+
+        # Sin el esquema operacional poblado, las obras no pasan sus claves
+        # foráneas; tiene que ir entre las dimensiones y las obras.
+        generar_operacional(conn)
         
         # Generar obras
         obras_data = generar_obras(conn, num_obras=TOTAL_OBRAS)
