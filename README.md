@@ -14,6 +14,8 @@ It does **not** use Flask, Python, Render, Supabase, Cloudflare R2, or a live AP
 
 The six sample works include galleries of five **AI-generated illustrative images** each. They are not photographs of real public works; their role is to make the static interface and its image-gallery behaviour reproducible without publishing municipal evidence.
 
+Every one of them carries the legend `ILUSTRATIVO` burned into the file, not drawn in CSS, so it survives being downloaded or reused outside this site. The generator was asked for it and produced it on seventeen of thirty images, in varying positions, sizes and colours — image models are not reliable at rendering text, and here the legend is the only thing separating an illustration from evidence. [`scripts/marcar_ilustrativo.py`](scripts/marcar_ilustrativo.py) composites it deterministically instead, over a band that also covers whatever the generator had left there.
+
 ### Smart Map
 
 The landing page's **Mapa Ciudadano** button opens a copy of the *Mapa Inteligente* geospatial viewer, served from this same site at `/mapa/`:
