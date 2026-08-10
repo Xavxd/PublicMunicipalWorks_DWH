@@ -116,7 +116,7 @@ RQ1 is addressed by the architecture and warehouse design (Sections~\ref{sec:arq
 
 The main contribution is threefold: (1)~a reference architecture centered on a dimensional \emph{Data Warehouse} with slowly changing dimensions (SCD 0/1/2), complemented with S3-compatible object storage for unstructured evidence and exposed through a public/private REST API \rev{(RQ1)}; (2)~an interactive geospatial map that acts as a graph-like exploration interface, linking public works, communities, budgets, supervisors, construction companies, and citizen proposals \rev{(RQ2)}; and (3)~\rev{a reproducible, non-circular evaluation of the analytical detection module against an independently injected ground truth, together with a failure analysis by anomaly class (RQ3)}.
 
-Over a seeded test scenario, the prototype organizes 1,247 simulated public works with an accumulated budget of \$127.4~million pesos, 8,934 simulated audit events, and 3,421 georeferenced photographic pieces of evidence. \rev{All figures reported in this article were obtained over synthetic data generated with a fixed seed; they characterise the behaviour of the system, not the municipality of Temascaltepec, and no claim about real public-works execution in that municipality is made or implied.}
+Over a seeded test scenario, the prototype organizes 1,247 simulated public works with an accumulated budget of \$127.4~million pesos (Section~\ref{sec:resultados} details the full population). \rev{All figures reported in this article were obtained over synthetic data generated with a fixed seed; they characterise the behaviour of the system, not the municipality of Temascaltepec, and no claim about real public-works execution in that municipality is made or implied.}
 
 The remainder of the article is organized as follows: Section~\ref{sec:trabajo-relacionado} reviews related work \rev{and contrasts the proposal with comparable systems}; Section~\ref{sec:arquitectura} describes the architecture; Section~\ref{sec:warehouse} details the warehouse; Section~\ref{sec:datalake} describes the object storage layer; Section~\ref{sec:grafo} presents the geospatial map; Section~\ref{sec:resultados} reports results; and Section~\ref{sec:conclusiones} concludes.
 
@@ -450,7 +450,7 @@ Figure~\ref{fig:mapa_interfaz} shows the main interface, with georeferenced mark
 \subsection{\rev{Scope of the Evaluation}}
 \label{sec:alcance}
 \begingroup\revcol
-Measured results, design targets and projections are kept strictly apart in what follows. We label every figure in this section as \textbf{measured} (obtained by executing published code and reproducible by a third party: Section~\ref{sec:eval-deteccion}), \textbf{target} (derived from architectural sizing and spot measurements of individual components, never from an end-to-end benchmark of a deployed system: Table~\ref{tab:rendimiento} in its entirety), or \textbf{projected} (an expected operational outcome not yet observed in any deployment: Section~\ref{sec:impacto-social}). No number in this article is a measurement taken on real municipal data.
+Measured results, design targets and projections are kept strictly apart in what follows. We label every figure in this section as \textbf{measured} (obtained by executing published code or auditing the published artefact, and reproducible by a third party: Sections~\ref{sec:lighthouse} and~\ref{sec:eval-deteccion}), \textbf{target} (derived from architectural sizing and spot measurements of individual components, never from an end-to-end benchmark of a deployed system: Table~\ref{tab:rendimiento} in its entirety), or \textbf{projected} (an expected operational outcome not yet observed in any deployment: Section~\ref{sec:impacto-social}). No number in this article is a measurement taken on real municipal data.
 \endgroup
 
 \subsection{Performance Targets (Design, not Measured)}
@@ -476,6 +476,36 @@ Read latency from object layer (R2) & 112 ms \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{\rev{Evaluation of the Published Frontend (Measured)}}
+\label{sec:lighthouse}
+\begingroup\revcol
+The static artefact, unlike the backend, is permanently online, so its delivery can be audited by anyone against a public URL. Table~\ref{tab:lighthouse} reports Google Lighthouse over the two entry points: the landing page and the vendored geospatial viewer. These are measurements in the sense of Section~\ref{sec:alcance}, not targets.
+
+\begin{table}[tb]
+\centering
+\revcol
+\caption{\rev{Lighthouse audit of the published artefact (median of three runs for the landing page). Reproducible over the public URL.}}
+\label{tab:lighthouse}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{lrrrrr rrrr}
+\toprule
+& \multicolumn{5}{c}{\textbf{Core Web Vitals}} & \multicolumn{4}{c}{\textbf{Scores (0--100)}} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-10}
+\textbf{Page} & FCP & LCP & SI & TBT & CLS & Perf. & A11y & B.P. & SEO \\
+\midrule
+Landing & 3.2 s & 3.2 s & 4.9 s & 0 ms  & 0.082 & 83 & 90 & 96 & 90 \\
+Map     & 2.6 s & 5.4 s & 3.0 s & 80 ms & 0.006 & 76 & 96 & 93 & 100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two pages fail in opposite ways. The landing page is delayed by render-blocking web fonts and a CDN animation library, yet leaves the main thread idle (0~ms blocking); the map barely delays first paint but pays for a 533~kB bundle with a 5.4~s largest element. Neither is a property of the warehouse: both are delivery traits of an unoptimised prototype front end, remediable (self-hosted fonts, code splitting) without touching the architecture. Lighthouse audits \emph{page delivery}, not query latency; the latter is Table~\ref{tab:rendimiento} and needs the deployed backend.
+
+Conditions: Lighthouse 12.8.2, headless Chrome 151, emulated mobile device (412$\times$823, DPR 1.75), simulated throttling, 10 August 2026. Since the artefact is static and versioned, re-running the audit yields the same page that produced these figures.
+\endgroup
 
 \subsection{Evaluation of the Delay/Alert Detection Module (Measured)}
 \label{sec:eval-deteccion}
@@ -545,7 +575,7 @@ The proposal shows that it is possible to build a transparency system with analy
 \subsection{Availability}
 \label{sec:disponibilidad}
 \begingroup\revcol
-The warehouse DDL, SCD~2 triggers, seeded generators, load-testing scripts and the evaluation script are archived at {\small\url{https://github.com/gabrielhuav/PublicMunicipalWorks_DWH}}. A permanently deployable static demonstration is published through GitHub Pages at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/}}. It preserves the HTML/CSS/JavaScript interface of the original public-works prototype---its role-access, budgeting, supervision, records and citizen-participation views---replacing remote authentication and write operations with synthetic in-browser behaviour, and adds Spanish/English switching and three colour themes (original, ESCOM blue, IPN crimson) in light and dark mode. It therefore makes no request to Flask, Python, Render, Supabase or a live API. Access is open by construction: the credentials are printed on the landing page and the form accepts any value, including an empty one. Every screen is served from a synthetic dataset held in the visitor's own browser tab, so no input can affect another visitor, and closing the tab restores the seeded state. The Flask implementation in \texttt{backend/} remains the operational reference, where the same \texttt{DEMO-} accounts are constrained to read-only access. Table~\ref{tab:eval-deteccion-anomalias} is reproduced by running \texttt{generar\_dataset\_obras.py} and \texttt{eval\_deteccion\_v2.py} from \texttt{scripts/evaluacion/}, both with seed 42. \rev{The population figures of Section~\ref{sec:resultados} are constants in \texttt{scripts/generate\_synthetic\_data.py}, met by construction; its \texttt{-{}-verificar} flag checks them without a database.}
+The warehouse DDL, SCD~2 triggers, seeded generators, load-testing scripts and the evaluation script are archived at {\small\url{https://github.com/gabrielhuav/PublicMunicipalWorks_DWH}}. A permanently deployable static demonstration is published through GitHub Pages at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/}}. It preserves the HTML/CSS/JavaScript interface of the original public-works prototype---its role-access, budgeting, supervision, records and citizen-participation views---replacing remote authentication and write operations with synthetic in-browser behaviour, and adds Spanish/English switching and two colour themes (the original blue and IPN crimson), each in light and dark mode. It therefore makes no request to Flask, Python, Render, Supabase or a live API. Access is open by construction: the credentials are printed on the landing page and the form accepts any value, including an empty one. Every screen is served from a synthetic dataset held in the visitor's own browser tab, so no input can affect another visitor, and closing the tab restores the seeded state. The Flask implementation in \texttt{backend/} remains the operational reference, where the same \texttt{DEMO-} accounts are constrained to read-only access. Table~\ref{tab:eval-deteccion-anomalias} is reproduced by running \texttt{generar\_dataset\_obras.py} and \texttt{eval\_deteccion\_v2.py} from \texttt{scripts/evaluacion/}, both with seed 42. \rev{The population figures of Section~\ref{sec:resultados} are constants in \texttt{scripts/generate\_synthetic\_data.py}, met by construction; its \texttt{-{}-verificar} flag checks them without a database.}
 \endgroup
 
 % =====================================================================

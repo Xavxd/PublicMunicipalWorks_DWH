@@ -26,13 +26,13 @@ The map carries the same theme, mode and language controls as the rest of the si
 
 ### Languages and themes
 
-The header carries the same three controls as the companion water-warehouse artefact ([`gabrielhuav/Data_Warehouse_static`](https://github.com/gabrielhuav/Data_Warehouse_static)), and the preference is remembered across the landing page and the four role workspaces.
+The header carries the same controls as the companion water-warehouse artefact ([`gabrielhuav/Data_Warehouse_static`](https://github.com/gabrielhuav/Data_Warehouse_static)), and the preference is remembered across the landing page and the four role workspaces.
 
 - **Language** — Spanish and English, both complete: interface, form help, validation messages and the synthetic records themselves. Spanish is the source language; Temascaltepec place names and legal company names stay untranslated because they are proper nouns.
-- **Theme** — `Original` (default), `Azul ESCOM` and `Guinda IPN`, on the `data-tema` axis.
-- **Mode** — light and dark for each of the three themes, on the `data-modo` axis.
+- **Theme** — `Original` (the prototype's blue, default) and `Guinda IPN`, on the `data-tema` axis. The ESCOM institutional blue was dropped: it and the prototype's blue were nearly the same hue, so the choice was not visible.
+- **Mode** — light and dark for each theme, on the `data-modo` axis.
 
-`Original` in dark mode is the prototype exactly as it was, which is why `docs/css/main.css` is still byte-identical to `css/main.css`. The two institutional palettes live in [`docs/css/temas.css`](docs/css/temas.css) and only rewrite design tokens, so no component knows which theme is active.
+`Original` in dark mode is the prototype exactly as it was, which is why `docs/css/main.css` is still byte-identical to `css/main.css`. The crimson palette lives in [`docs/css/temas.css`](docs/css/temas.css) and only rewrites design tokens, so no component knows which theme is active.
 
 ### Open access, on purpose
 
@@ -55,7 +55,7 @@ The same four accounts exist in the Flask reference API under `backend/`, create
 
 | Component | Location | Status |
 |---|---|---|
-| Static public artefact | `docs/` | Visual interface preserved from the original prototype; the four role workspaces and the participation module run against `docs/js/static_backend.js`, an in-tab stand-in for the API. Bilingual (`docs/js/i18n.js`), three themes in light and dark (`docs/css/temas.css`, `docs/js/theme.js`) |
+| Static public artefact | `docs/` | Visual interface preserved from the original prototype; the four role workspaces and the participation module run against `docs/js/static_backend.js`, an in-tab stand-in for the API. Bilingual (`docs/js/i18n.js`), two themes in light and dark (`docs/css/temas.css`, `docs/js/theme.js`) |
 | Deployment workflow | `.github/workflows/deploy-pages.yml` | Publishes `docs/` after pushes to `TestDefinitivo` |
 | Operational reference API | `backend/` | Flask/Python reference implementation; **not used by Pages** |
 | Dimensional warehouse | `db/arquitectura/` | 10 dimensions, 2 fact tables, SCD Type 2 triggers and 5 views |
@@ -85,6 +85,24 @@ python scripts/generate_synthetic_data.py --verificar
 ```
 
 The rest of the paper's structural claims are readable straight from the source: ten dimensions and two fact tables in [`db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql`](db/arquitectura/), five analytical views and twelve triggers (eight dimension-synchronising, four audit-emitting) in `FUNCIONES Y TRIGGERS.sql`, and 54 REST routes across eight blueprints — five of them public and read-only — under [`backend/routes/`](backend/routes/).
+
+## Auditing the published site (Lighthouse)
+
+Table 5 of the chapter reports a Lighthouse audit of the two entry points. Because the artefact is static and versioned, the audit is reproducible over the public URL:
+
+```bash
+npx lighthouse@12 https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/ --only-categories=performance,accessibility,best-practices,seo --chrome-flags="--headless=new"
+```
+
+Last run 10 August 2026 — Lighthouse 12.8.2, headless Chrome 151, emulated mobile device (412×823, DPR 1.75), simulated throttling. Landing page figures are the median of three runs:
+
+| Page | FCP | LCP | SI | TBT | CLS | Perf. | A11y | Best pract. | SEO |
+|---|---|---|---|---|---|---|---|---|---|
+| Landing | 3.2 s | 3.2 s | 4.9 s | 0 ms | 0.082 | 83 | 90 | 96 | 90 |
+| Map | 2.6 s | 5.4 s | 3.0 s | 80 ms | 0.006 | 76 | 96 | 93 | 100 |
+
+The two pages are limited by different things: the landing page by render-blocking web fonts and a CDN animation library, the map by its 533 kB bundle. Both are delivery traits of the inherited prototype front end, not properties of the warehouse design.
+
 
 ## Data model
 
