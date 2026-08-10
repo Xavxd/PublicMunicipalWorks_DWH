@@ -22,14 +22,23 @@ The viewer is authored by Uriel González Casiano ([`Urigc/mapa`](https://github
 
 Provenance, the exact upstream commit, the build command and the two source patches are recorded in [`docs/mapa/PROCEDENCIA.md`](docs/mapa/PROCEDENCIA.md).
 
-The map carries the same theme, mode and language controls as the rest of the site: switching to light mode also switches the basemap (CARTO Dark Matter ↔ Positron) and the panel palette. Its base tiles come from CARTO over OpenStreetMap data, and are the only network request the published artefact makes; that is inherent to any web map and is not an application API.
+The map carries the system navigation bar — brand, the four role workspaces, and the theme, mode and language controls — so that entering it is not a dead end and the whole thing reads as one system rather than two similar sites. Switching to light mode also switches the basemap (CARTO Dark Matter ↔ Positron) and the panel palette.
+
+Appearance can be fixed from the URL, which is how the chapter's Figure 3 cites a view that a reader can reproduce exactly:
+
+```text
+…/mapa/?modo=claro            light mode
+…/?tema=guinda&idioma=en      crimson theme, English
+```
+
+`tema`, `modo` and `idioma` work on every page and the choice is remembered afterwards. Its base tiles come from CARTO over OpenStreetMap data, and are the only network request the published artefact makes; that is inherent to any web map and is not an application API.
 
 ### Languages and themes
 
 The header carries the same controls as the companion water-warehouse artefact ([`gabrielhuav/Data_Warehouse_static`](https://github.com/gabrielhuav/Data_Warehouse_static)), and the preference is remembered across the landing page and the four role workspaces.
 
 - **Language** — Spanish and English, both complete: interface, form help, validation messages and the synthetic records themselves. Spanish is the source language; Temascaltepec place names and legal company names stay untranslated because they are proper nouns.
-- **Theme** — `Original` (the prototype's blue, default) and `Guinda IPN`, on the `data-tema` axis. The ESCOM institutional blue was dropped: it and the prototype's blue were nearly the same hue, so the choice was not visible.
+- **Theme** — `Original` (the prototype's blue, default) and `Guinda`, on the `data-tema` axis. The ESCOM institutional blue was dropped: it and the prototype's blue were nearly the same hue, so the choice was not visible.
 - **Mode** — light and dark for each theme, on the `data-modo` axis.
 
 `Original` in dark mode is the prototype exactly as it was, which is why `docs/css/main.css` is still byte-identical to `css/main.css`. The crimson palette lives in [`docs/css/temas.css`](docs/css/temas.css) and only rewrites design tokens, so no component knows which theme is active.

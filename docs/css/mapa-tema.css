@@ -102,32 +102,140 @@ html[data-modo="claro"] .marker-cluster-custom > div {
 }
 
 /* =====================================================================
-   CONTROLES
-   theme.js los inserta en .header-meta; el mapa no tiene esa cabecera, así
-   que su página aporta un contenedor propio y aquí se posiciona sobre el
-   lienzo, sin desplazar nada del diseño original.
+   BARRA DEL SISTEMA
+   El visor es una aplicación aparte servida bajo /mapa/. Sin esta barra se
+   entra y no hay salida: parecerían dos sitios distintos. La construye
+   js/nav.js y dentro de ella theme.js coloca sus controles.
+
+   El lienzo del mapa es `position:absolute; inset:0`, de modo que no lo
+   desplaza ningún margen: se posiciona #root y el mapa queda dentro.
    ===================================================================== */
-.mapa-controles {
+:root { --navsis-alto: 52px; }
+
+.navsis {
   position: fixed;
-  top: 56px;          /* bajo la barra del visor, sin taparla */
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 1200;
+  height: var(--navsis-alto);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: var(--glass-bg, rgba(11, 15, 21, 0.75));
-  border: 1px solid var(--glass-border, rgba(59, 130, 246, 0.15));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  gap: 1rem;
+  padding: 0 1rem;
+  background: var(--glass-bg, rgba(11, 15, 21, 0.86));
+  border-bottom: 1px solid var(--glass-border, rgba(59, 130, 246, 0.15));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: 'DM Sans', sans-serif;
 }
 
+#root {
+  position: relative;
+  top: var(--navsis-alto);
+  height: calc(100vh - var(--navsis-alto));
+}
+
+/* La cabecera del visor es `fixed`, así que ignora el desplazamiento de
+   #root y quedaría debajo de la barra; se baja lo que la barra mide. Su
+   envoltura pide 100vh, que con el desplazamiento se saldría de la
+   pantalla, así que también se le descuenta. El visor no se toca: sólo se
+   le deja sitio desde fuera. */
+#root .fixed.top-0 { top: var(--navsis-alto) !important; }
+#root .h-screen { height: calc(100vh - var(--navsis-alto)) !important; }
+
+.navsis__marca {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: var(--text-primary);
+  flex: none;
+}
+
+.navsis__emblema {
+  width: 26px;
+  height: 26px;
+  display: block;
+  color: rgb(var(--mapa-marca));
+}
+
+.navsis__emblema svg { width: 100%; height: 100%; display: block; }
+
+.navsis__texto { display: flex; flex-direction: column; line-height: 1.15; }
+.navsis__texto strong {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.navsis__texto small { font-size: 0.62rem; color: var(--text-muted); }
+
+.navsis__menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0.5rem;
+  /* Una sola fila siempre: si envolviera, la barra crecería de alto y
+     taparía la cabecera del propio visor. Cuando no cabe, se desplaza. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+.navsis__menu::-webkit-scrollbar { display: none; }
+
+.navsis__enlace {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.navsis__enlace:hover {
+  color: var(--text-primary);
+  background: rgba(var(--mapa-marca), 0.14);
+}
+
+.navsis__enlace--actual {
+  color: var(--text-primary);
+  background: rgba(var(--mapa-marca), 0.18);
+  cursor: default;
+}
+
+.navsis__controles { margin-left: auto; flex: none; }
+
+/* Estrecho: la marca se reduce a su emblema para dejar sitio al menú. */
+@media (max-width: 1150px) {
+  .navsis { gap: 0.6rem; padding: 0 0.7rem; }
+  .navsis__texto { display: none; }
+  .navsis__enlace { padding: 6px 8px; font-size: 0.72rem; }
+}
+
+@media (max-width: 720px) {
+  :root { --navsis-alto: 46px; }
+}
+
+/* =====================================================================
+   CONTROLES
+   theme.js los inserta en .header-meta o, aquí, en [data-controles], que
+   nav.js coloca al final de la barra del sistema.
+   ===================================================================== */
 /* Los estilos de .segmentado, .tema-btn y .modo-btn los aporta temas.css,
    que esta página también carga. El mapa no carga main.css, así que aquí
    se declaran los tokens de los que esos componentes dependen. */
-.mapa-controles {
+.navsis__controles {
   --bg-card: var(--glass-bg, rgba(11, 15, 21, 0.75));
   --bg-card-hover: rgba(var(--mapa-marca), 0.16);
   --border-medium: rgba(var(--mapa-marca), 0.28);
@@ -136,15 +244,6 @@ html[data-modo="claro"] .marker-cluster-custom > div {
   --font-body: 'DM Sans', sans-serif;
 }
 
-html[data-tema="guinda"] .mapa-controles { --accent-fuerte: #7a2450; }
-html[data-tema="original"] .mapa-controles { --accent-fuerte: #1d4ed8; }
+html[data-tema="guinda"] .navsis__controles { --accent-fuerte: #7a2450; }
+html[data-tema="original"] .navsis__controles { --accent-fuerte: #1d4ed8; }
 
-@media (max-width: 780px) {
-  .mapa-controles {
-    top: auto;
-    bottom: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: calc(100vw - 24px);
-  }
-}

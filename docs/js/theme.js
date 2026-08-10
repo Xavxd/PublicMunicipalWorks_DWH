@@ -40,12 +40,20 @@
   function leer(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
   function guardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
-  var tema = leer(K_TEMA, 'original');
+  /* La URL manda sobre lo guardado: ?tema=guinda&modo=claro fija la
+     apariencia al abrir. Sirve para citar el artefacto en una figura o en
+     un artículo y que quien siga el enlace vea exactamente lo mismo. La
+     elección se guarda, de modo que navegar por el sitio la conserva. */
+  var params = new URLSearchParams(window.location.search);
+
+  var tema = params.get('tema') || leer(K_TEMA, 'original');
   if (!TEMAS.some(function (t) { return t.id === tema; })) tema = 'original';
+  if (params.get('tema')) guardar(K_TEMA, tema);
 
   /* El prototipo nace oscuro; ése sigue siendo el punto de partida. */
-  var modo = leer(K_MODO, 'oscuro');
+  var modo = params.get('modo') || leer(K_MODO, 'oscuro');
   if (modo !== 'claro' && modo !== 'oscuro') modo = 'oscuro';
+  if (params.get('modo')) guardar(K_MODO, modo);
 
   var raiz = document.documentElement;
 

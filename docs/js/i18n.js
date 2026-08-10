@@ -46,7 +46,7 @@
       'barra.tema': 'Tema de color',
       'barra.idioma': 'Idioma',
       'tema.original': 'Original',
-      'tema.guinda': 'Guinda IPN',
+      'tema.guinda': 'Guinda',
       'modo.claro': 'Modo claro',
       'modo.oscuro': 'Modo oscuro',
       'modo.cambiar': '{modo} — clic para cambiar',
@@ -62,7 +62,7 @@
       'barra.tema': 'Colour theme',
       'barra.idioma': 'Language',
       'tema.original': 'Original',
-      'tema.guinda': 'IPN Crimson',
+      'tema.guinda': 'Guinda',
       'modo.claro': 'Light mode',
       'modo.oscuro': 'Dark mode',
       'modo.cambiar': '{modo} — click to change',
@@ -741,6 +741,8 @@
        y sin tocar su código. Los rótulos vienen sin acentos en el original y
        así se conservan como clave.
        ------------------------------------------------------------------ */
+    'Portada': 'Home',
+    'Mapa Ciudadano': 'Citizen Map',
     'Mapa Inteligente — Obras Publicas': 'Smart Map — Public Works',
     'Temascaltepec de Gonzalez, Edo. Mex.': 'Temascaltepec de González, State of Mexico',
     'Obras Activas': 'Active works',
@@ -903,8 +905,12 @@
   function guardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function valido(id) { return IDIOMAS.some(function (l) { return l.id === id; }); }
 
-  var idioma = leer(K_IDIOMA, 'es');
+  /* Igual que el tema y el modo (véase js/theme.js), la URL manda:
+     ?idioma=en abre el sitio en inglés y deja la elección guardada. */
+  var paramIdioma = new URLSearchParams(window.location.search).get('idioma');
+  var idioma = paramIdioma || leer(K_IDIOMA, 'es');
   if (!valido(idioma)) idioma = 'es';
+  if (paramIdioma && valido(paramIdioma)) guardar(K_IDIOMA, idioma);
 
   var pagina = (document.documentElement.getAttribute('data-pagina') || 'index');
 
