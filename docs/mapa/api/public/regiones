@@ -1,0 +1,36 @@
+{
+ "success": true,
+ "data": [
+  {
+   "id": "REG-001",
+   "comunidad": "Cabecera Municipal",
+   "barrio": "Centro",
+   "colonia": null
+  },
+  {
+   "id": "REG-004",
+   "comunidad": "Real de Arriba",
+   "barrio": "La Mina",
+   "colonia": null
+  },
+  {
+   "id": "REG-002",
+   "comunidad": "San Francisco Oxtotilpan",
+   "barrio": "Barrio de Guadalupe",
+   "colonia": null
+  },
+  {
+   "id": "REG-003",
+   "comunidad": "San Martín Tequesquipan",
+   "barrio": "Barrio Alto",
+   "colonia": null
+  },
+  {
+   "id": "REG-005",
+   "comunidad": "San Mateo Almomoloa",
+   "barrio": "Barrio del Puente",
+   "colonia": null
+  }
+ ],
+ "message": ""
+}

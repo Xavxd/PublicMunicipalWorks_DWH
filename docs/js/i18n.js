@@ -42,6 +42,7 @@
       'titulo.supervisor': 'Supervisor — Informes de Obra',
       'titulo.proyectista': 'Proyectista — Presupuesto de Obra',
       'titulo.secretaria': 'Secretaría — Obras Públicas Temascaltepec',
+      'titulo.mapa': 'Mapa Inteligente de Obras Públicas — H. Ayuntamiento de Temascaltepec',
       'barra.tema': 'Tema de color',
       'barra.idioma': 'Idioma',
       'tema.original': 'Original',
@@ -58,6 +59,7 @@
       'titulo.supervisor': 'Supervisor — Works Reports',
       'titulo.proyectista': 'Budget Planner — Works Budget',
       'titulo.secretaria': 'Records Office — Temascaltepec Public Works',
+      'titulo.mapa': 'Smart Map of Public Works — Municipality of Temascaltepec',
       'barra.tema': 'Colour theme',
       'barra.idioma': 'Language',
       'tema.original': 'Original',
@@ -413,7 +415,6 @@
     'Elaborar Presupuesto': 'Prepare budget',
     'Ver Resumen': 'View summary',
     '✓ Presupuesto elaborado': '✓ Budget prepared',
-    'Error al cargar obras.': 'Error loading works.',
     'Error al cargar presupuesto.': 'Error loading the budget.',
     'Presupuesto guardado exitosamente.': 'Budget saved successfully.',
     'Error al guardar presupuesto.': 'Error saving the budget.',
@@ -735,6 +736,29 @@
     'Norte': 'North',
     'Sur': 'South',
     'Centro': 'Centre',
+
+    /* ------------------------------------------------------------------
+       Mapa Inteligente. Es una aplicación React aparte (Urigc/mapa), servida
+       desde docs/mapa/; su interfaz se traduce igual que el resto, por frase
+       y sin tocar su código. Los rótulos vienen sin acentos en el original y
+       así se conservan como clave.
+       ------------------------------------------------------------------ */
+    'Mapa Inteligente — Obras Publicas': 'Smart Map — Public Works',
+    'Temascaltepec de Gonzalez, Edo. Mex.': 'Temascaltepec de González, State of Mexico',
+    'Obras Activas': 'Active works',
+    'Completadas': 'Completed',
+    'En Progreso': 'In progress',
+    'Retrasadas': 'Delayed',
+    'Inversion Total': 'Total investment',
+    'Completada': 'Completed',
+    'Retrasada': 'Delayed',
+    'Desconocido': 'Unknown',
+    'Avance Fisico': 'Physical progress',
+    'Beneficiarios': 'Beneficiaries',
+    'Fin': 'End',
+    'Cargando mapa inteligente...': 'Loading the smart map…',
+    'Conectando con el servidor': 'Connecting to the server',
+    'Error de conexion': 'Connection error',
 
     /* ---------------- textos de ayuda de los formularios ---------------- */
     'Ej. FONDO DE INFRAESTRUCTURA SOCIAL MUNICIPAL':

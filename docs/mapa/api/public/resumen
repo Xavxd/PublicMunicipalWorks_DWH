@@ -1,0 +1,112 @@
+{
+ "success": true,
+ "data": {
+  "obrasActivas": 6,
+  "obrasCompletadas": 1,
+  "obrasRetrasadas": 2,
+  "inversionTotal": 23940000,
+  "avancePromedio": 46,
+  "comunidadesImpactadas": 5,
+  "presupuestoPorRegion": [
+   {
+    "region": "REG-001",
+    "comunidad": "Cabecera Municipal",
+    "total": 9590000
+   },
+   {
+    "region": "REG-002",
+    "comunidad": "San Francisco Oxtotilpan",
+    "total": 6800000
+   },
+   {
+    "region": "REG-003",
+    "comunidad": "San Martín Tequesquipan",
+    "total": 1950000
+   },
+   {
+    "region": "REG-004",
+    "comunidad": "Real de Arriba",
+    "total": 3120000
+   },
+   {
+    "region": "REG-005",
+    "comunidad": "San Mateo Almomoloa",
+    "total": 2480000
+   }
+  ],
+  "obrasPorStatus": [
+   {
+    "status": "completada",
+    "count": 1
+   },
+   {
+    "status": "en_progreso",
+    "count": 3
+   },
+   {
+    "status": "retrasada",
+    "count": 2
+   }
+  ],
+  "obrasRecientes": [
+   {
+    "id": "OBR-006",
+    "nombre": "Techumbre de la plaza cívica, Cabecera Municipal",
+    "fechaInicio": "2025-05-02",
+    "status": "en_progreso",
+    "avanceFisico": 0
+   },
+   {
+    "id": "OBR-005",
+    "nombre": "Alumbrado público con luminarias LED, San Mateo Almomoloa",
+    "fechaInicio": "2025-04-14",
+    "status": "en_progreso",
+    "avanceFisico": 24
+   },
+   {
+    "id": "OBR-002",
+    "nombre": "Rehabilitación de la red de agua potable, San Francisco Oxtotilpan",
+    "fechaInicio": "2025-03-10",
+    "status": "en_progreso",
+    "avanceFisico": 29
+   },
+   {
+    "id": "OBR-001",
+    "nombre": "Pavimentación de la calle Morelos, primera etapa",
+    "fechaInicio": "2025-02-03",
+    "status": "retrasada",
+    "avanceFisico": 67
+   },
+   {
+    "id": "OBR-003",
+    "nombre": "Construcción de aula didáctica, San Martín Tequesquipan",
+    "fechaInicio": "2025-01-20",
+    "status": "retrasada",
+    "avanceFisico": 55
+   },
+   {
+    "id": "OBR-004",
+    "nombre": "Muro de contención sobre el camino a Real de Arriba",
+    "fechaInicio": "2024-08-05",
+    "status": "completada",
+    "avanceFisico": 100
+   }
+  ],
+  "promedioDuracionDias": 180,
+  "topConstructoras": [
+   {
+    "nombre": "Constructora Nevado de Toluca S.A. de C.V.",
+    "obrasCount": 2
+   },
+   {
+    "nombre": "Ingeniería Civil Tequesquipan S.C.",
+    "obrasCount": 2
+   },
+   {
+    "nombre": "Dirección de Obra Municipal",
+    "obrasCount": 2
+   }
+  ]
+ },
+ "message": ""
+}

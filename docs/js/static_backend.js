@@ -26,7 +26,7 @@
   "use strict";
 
   const STORE_KEY = "op_static_db";
-  const SEED_VERSION = 3;
+  const SEED_VERSION = 4;
 
   // ── Synthetic seed ────────────────────────────────────────────────────────
   // Illustrative records for Temascaltepec, State of Mexico. No real municipal,
@@ -135,6 +135,9 @@
         { id: "INF-0004", obraId: "OBR-002", anio: 2025, mes: 4, avanceFisico: 12, avanceFinanciero: 20, descripcion: "Excavación de cepa y suministro de tubería para el primer kilómetro.", documento: "", fechaRegistro: "2025-04-30", supervisorNombre: "Demo Supervisor" },
         { id: "INF-0005", obraId: "OBR-002", anio: 2025, mes: 5, avanceFisico: 29, avanceFinanciero: 33, descripcion: "Tendido e interconexión de 1.1 km de línea de conducción.", documento: "", fechaRegistro: "2025-05-31", supervisorNombre: "Demo Supervisor" },
         { id: "INF-0006", obraId: "OBR-005", anio: 2025, mes: 5, avanceFisico: 24, avanceFinanciero: 22, descripcion: "Retiro de 64 luminarias y montaje de 58 equipos LED en el circuito norte.", documento: "", fechaRegistro: "2025-05-31", supervisorNombre: "Demo Supervisor" },
+        { id: "INF-0007", obraId: "OBR-004", anio: 2024, mes: 11, avanceFisico: 58, avanceFinanciero: 55, descripcion: "Cimentación y primeros 80 metros de mampostería del muro.", documento: "", fechaRegistro: "2024-11-30", supervisorNombre: "Supervisión Zona Sur" },
+        { id: "INF-0008", obraId: "OBR-004", anio: 2025, mes: 1, avanceFisico: 100, avanceFinanciero: 97, descripcion: "Muro concluido, drenaje pluvial probado y señalización colocada.", documento: "", fechaRegistro: "2025-01-31", supervisorNombre: "Supervisión Zona Sur" },
+        { id: "INF-0009", obraId: "OBR-003", anio: 2025, mes: 5, avanceFisico: 55, avanceFinanciero: 51, descripcion: "Muros levantados y castillos colados; pendiente la cubierta y la rampa.", documento: "", fechaRegistro: "2025-05-31", supervisorNombre: "Supervisión Zona Norte" },
       ],
       imagenes: [],
       presupuestos: {
@@ -198,7 +201,7 @@
         { id: 1, username: "ciudadano_demo", nombre: "Ciudadanía", apellidos: "de Demostración", nombre_completo: "Ciudadanía de Demostración", comunidad: "Cabecera Municipal", curp: "DEMO900101HMCXXX01", creditos_totales: 3, creditos_usados: 0 },
       ],
       votos: [],
-      counters: { constructora: 3, region: 5, obra: 6, informe: 6, permiso: 3, acta: 1, concurso: 2, personal: 6, propuesta: 5, poblador: 1, imagen: 0 },
+      counters: { constructora: 3, region: 5, obra: 6, informe: 9, permiso: 3, acta: 1, concurso: 2, personal: 6, propuesta: 5, poblador: 1, imagen: 0 },
     };
   }
 
