@@ -44,7 +44,7 @@ recompilar con `VITE_API_URL=https://…`.
 
 ## Cambios aplicados al fuente
 
-Tres, todos anotados aquí para que la compilación sea auditable:
+Cinco, todos anotados aquí para que la compilación sea auditable:
 
 1. **`app/tailwind.config.js`** — el archivo usaba `require("tailwindcss-animate")`
    dentro de un paquete declarado `"type": "module"`, lo que impide compilar con
@@ -54,7 +54,16 @@ Tres, todos anotados aquí para que la compilación sea auditable:
    y las cifras estaban fijados a `'es-MX'`. Como el sitio que ahora aloja el
    mapa es bilingüe, el locale pasa a seguir el idioma del documento
    (`document.documentElement.lang`).
-3. **`app/src/App.tsx`** — el visor era sólo oscuro: teselas `dark_all` de CARTO
+3. **`app/src/App.tsx`** — al pinchar un marcador no aparecía nada. El popup
+   se renderizaba con `{isSelected && <Popup/>}`, es decir, se montaba después
+   de que Leaflet ya había atendido el clic; nacía cerrado y nadie lo abría.
+   Montado siempre, Leaflet lo enlaza con `bindPopup` y lo abre él mismo.
+4. **`app/src/utils/coordinates.ts` y `App.tsx`** — las posiciones se derivaban
+   de un hash del nombre de la comunidad dentro de la caja del municipio. Ahora
+   se usa la coordenada real de la comunidad cuando la fuente la aporta, con un
+   desplazamiento determinista de hasta 150 m para que dos obras de la misma
+   comunidad no se encimen; el hash queda como respaldo.
+5. **`app/src/App.tsx`** — el visor era sólo oscuro: teselas `dark_all` de CARTO
    y lienzo `#080c0f`, ambos escritos a mano. Se añadió el hook `useModo()`, que
    lee `data-modo` de `<html>` y escucha el evento `temacambiado` que emite
    `theme.js`; el juego de teselas y el color del lienzo pasan a depender de él.
