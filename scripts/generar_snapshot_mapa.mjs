@@ -98,6 +98,7 @@ function proyectarObras(db) {
   return db.obras.map((o) => {
     const inf = ultimoInforme(db, o.id);
     const supervisor = db.personal.find((p) => p.id === o.supervisorId);
+    const region = db.regiones.find((r) => r.id === o.regionId);
     return {
       id: o.id,
       expediente: o.expediente,
@@ -118,6 +119,10 @@ function proyectarObras(db) {
       supervisorNombre: supervisor
         ? `${supervisor.nombre} ${supervisor.apellidoPaterno}`.trim()
         : '',
+      // Coordenada real de la comunidad, para que el visor no tenga que
+      // derivarla de un hash. Véase la nota en docs/js/static_backend.js.
+      lat: region ? region.lat : null,
+      lng: region ? region.lng : null,
       totalInformes: inf.totalInformes,
       ultimoInformeFecha: inf.ultimoInformeFecha,
     };
@@ -126,7 +131,8 @@ function proyectarObras(db) {
 
 function proyectarRegiones(db) {
   return db.regiones
-    .map((r) => ({ id: r.id, comunidad: r.comunidad, barrio: r.barrio, colonia: r.colonia ?? null }))
+    .map((r) => ({ id: r.id, comunidad: r.comunidad, barrio: r.barrio,
+                   colonia: r.colonia ?? null, lat: r.lat, lng: r.lng }))
     .sort((a, b) => a.comunidad.localeCompare(b.comunidad) || a.barrio.localeCompare(b.barrio));
 }
 

@@ -19,6 +19,8 @@
    "constructoraNombre": "Constructora Nevado de Toluca S.A. de C.V.",
    "constructoraTipo": "Empresa Externa",
    "supervisorNombre": "Demo Supervisor",
+   "lat": 19.0433733,
+   "lng": -100.0414301,
    "totalInformes": 3,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -40,6 +42,8 @@
    "constructoraNombre": "Ingeniería Civil Tequesquipan S.C.",
    "constructoraTipo": "Cooperativa Local",
    "supervisorNombre": "Demo Supervisor",
+   "lat": 19.1687972,
+   "lng": -99.9019799,
    "totalInformes": 2,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -61,6 +65,8 @@
    "constructoraNombre": "Dirección de Obra Municipal",
    "constructoraTipo": "Gobierno Municipal",
    "supervisorNombre": "Supervisión Zona",
+   "lat": 19.0579275,
+   "lng": -99.9466364,
    "totalInformes": 1,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -82,6 +88,8 @@
    "constructoraNombre": "Constructora Nevado de Toluca S.A. de C.V.",
    "constructoraTipo": "Empresa Externa",
    "supervisorNombre": "Supervisión Zona",
+   "lat": 19.0404106,
+   "lng": -100.004805,
    "totalInformes": 2,
    "ultimoInformeFecha": "2025-01-01"
   },
@@ -103,6 +111,8 @@
    "constructoraNombre": "Ingeniería Civil Tequesquipan S.C.",
    "constructoraTipo": "Cooperativa Local",
    "supervisorNombre": "Demo Supervisor",
+   "lat": 19.1473118,
+   "lng": -99.9266991,
    "totalInformes": 1,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -124,6 +134,8 @@
    "constructoraNombre": "Dirección de Obra Municipal",
    "constructoraTipo": "Gobierno Municipal",
    "supervisorNombre": "Supervisión Zona",
+   "lat": 19.0433733,
+   "lng": -100.0414301,
    "totalInformes": 0,
    "ultimoInformeFecha": null
   }

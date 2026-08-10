@@ -416,7 +416,7 @@ Ingestion is direct from the web form: the supervisor attaches images or PDFs wh
 
 The geospatial display is an \emph{implicit} graph at the interface level ---the relationships are derived from the foreign keys of the dimensional model--- and not a formal knowledge graph with an ontology or an RDF triple store; publishing the schema as a linked vocabulary is addressed in future work.
 
-Figure~\ref{fig:mapa_interfaz} shows the main interface, with markers color-coded by the state of the work and the technical-card popup that displays physical and financial progress indicators when a node is selected. \rev{It is part of the released artefact, reachable from the navigation bar of every page. The warehouse holds no surveyed coordinates, so each marker sits at a deterministic position hashed from its community and work identifier inside the municipal bounding box: stable across reloads, but not the real location of anything.}
+Figure~\ref{fig:mapa_interfaz} shows the main interface, with markers color-coded by the state of the work and the technical-card popup that displays physical and financial progress indicators when a node is selected. \rev{It is part of the released artefact, reachable from the navigation bar of every page. Each marker sits at the real coordinates of its community, resolved from OpenStreetMap, with a deterministic offset of at most 150~m so that two works in the same community do not overlap. The community is therefore real; the exact site within it is not surveyed.}
 
 \begin{figure}[tb]
 \centering

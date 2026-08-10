@@ -39,12 +39,16 @@
         { id: "CONS-002", nombre: "Ingeniería Civil Tequesquipan S.C.", rfc: "ICT050817QP2", tipo: "Cooperativa Local" },
         { id: "CONS-003", nombre: "Dirección de Obra Municipal", rfc: "TEM850101AB1", tipo: "Gobierno Municipal" },
       ],
+      // Coordenadas reales de cada comunidad, resueltas con Nominatim sobre
+      // OpenStreetMap. El visor las usa tal cual: los marcadores caen en la
+      // comunidad que les corresponde y no en una posición derivada de un
+      // hash, que es como venía el prototipo.
       regiones: [
-        { id: "REG-001", comunidad: "Cabecera Municipal", barrio: "Centro", colonia: null },
-        { id: "REG-002", comunidad: "San Francisco Oxtotilpan", barrio: "Barrio de Guadalupe", colonia: null },
-        { id: "REG-003", comunidad: "San Martín Tequesquipan", barrio: "Barrio Alto", colonia: null },
-        { id: "REG-004", comunidad: "Real de Arriba", barrio: "La Mina", colonia: null },
-        { id: "REG-005", comunidad: "San Mateo Almomoloa", barrio: "Barrio del Puente", colonia: null },
+        { id: "REG-001", comunidad: "Cabecera Municipal", barrio: "Centro", colonia: null, lat: 19.0433733, lng: -100.0414301 },
+        { id: "REG-002", comunidad: "San Francisco Oxtotilpan", barrio: "Barrio de Guadalupe", colonia: null, lat: 19.1687972, lng: -99.9019799 },
+        { id: "REG-003", comunidad: "San Martín Tequesquipan", barrio: "Barrio Alto", colonia: null, lat: 19.0579275, lng: -99.9466364 },
+        { id: "REG-004", comunidad: "Real de Arriba", barrio: "La Mina", colonia: null, lat: 19.0404106, lng: -100.004805 },
+        { id: "REG-005", comunidad: "San Mateo Almomoloa", barrio: "Barrio del Puente", colonia: null, lat: 19.1473118, lng: -99.9266991 },
       ],
       fuentes: [
         { id: "FTE-FED-001", nivel: "FEDERAL", programa: "FAIS - FONDO DE INFRAESTRUCTURA SOCIAL MUNICIPAL" },
