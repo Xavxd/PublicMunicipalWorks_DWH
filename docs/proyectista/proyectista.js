@@ -60,6 +60,7 @@ async function renderObraSelect() {
   if (!grid) return;
   try {
     projects = await getProjects();
+    window.__obrasGaleria = projects;
   } catch (err) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📐</div><p>Error al cargar obras.</p></div>`;
     return;
@@ -70,6 +71,7 @@ async function renderObraSelect() {
   }
   grid.innerHTML = projects.map(o => `
     <div class="obra-select-card ${currentObraId === o.id ? 'selected' : ''}">
+      ${window.ObraGallery ? window.ObraGallery.thumbnail(o, 'obra-thumb--card') : ''}
       <div class="osc-tag">${o.expediente}</div>
       <div class="osc-nombre">${o.nombre}</div>
       <div class="osc-region">📍 ${o.regionComunidad || o.region || '—'}</div>

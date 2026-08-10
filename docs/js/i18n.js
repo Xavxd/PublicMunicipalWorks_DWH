@@ -50,7 +50,14 @@
       'modo.claro': 'Modo claro',
       'modo.oscuro': 'Modo oscuro',
       'modo.cambiar': '{modo} — clic para cambiar',
-      'idioma.cambiar': 'Ver el sitio en {nombre}'
+      'idioma.cambiar': 'Ver el sitio en {nombre}',
+      'galeria.foto': 'Foto {numero} de {total}',
+      'galeria.anterior': 'Anterior',
+      'galeria.siguiente': 'Siguiente',
+      'galeria.cerrar': 'Cerrar',
+      'galeria.abrir': 'Abrir galería de {titulo}',
+      'galeria.alt': 'Foto {numero} de {total} de {titulo}',
+      'galeria.noDisponible': 'Imagen no disponible'
     },
     en: {
       'titulo.index': 'Public Works System — Temascaltepec Municipality',
@@ -66,7 +73,14 @@
       'modo.claro': 'Light mode',
       'modo.oscuro': 'Dark mode',
       'modo.cambiar': '{modo} — click to change',
-      'idioma.cambiar': 'View this site in {nombre}'
+      'idioma.cambiar': 'View this site in {nombre}',
+      'galeria.foto': 'Photo {numero} of {total}',
+      'galeria.anterior': 'Previous',
+      'galeria.siguiente': 'Next',
+      'galeria.cerrar': 'Close',
+      'galeria.abrir': 'Open gallery for {titulo}',
+      'galeria.alt': 'Photo {numero} of {total} of {titulo}',
+      'galeria.noDisponible': 'Image unavailable'
     }
   };
 
@@ -79,6 +93,10 @@
   var FRASES = {
     /* ---------------- portada: cabecera y hero ---------------- */
     'Obras Públicas': 'Public Works',
+    'Anterior': 'Previous',
+    'Siguiente': 'Next',
+    'Cerrar': 'Close',
+    'Imagen no disponible': 'Image unavailable',
     'H. Ayuntamiento de Temascaltepec': 'Municipality of Temascaltepec',
     'H. Ayuntamiento de Temascaltepec · Estado de México': 'Municipality of Temascaltepec · State of Mexico',
     'Sistema en línea': 'System online',
@@ -834,6 +852,7 @@
     [/^(\d+) votos$/, function (m) { return m[1] + ' votes'; }],
     [/^(\d+) \/ (\d+) votos$/, function (m) { return m[1] + ' / ' + m[2] + ' votes'; }],
     [/^Periodo (.+)$/, function (m) { return 'Period ' + m[1]; }],
+    [/^Foto (\d+) de (\d+)(: )?(.+)?$/, function (m) { return 'Photo ' + m[1] + ' of ' + m[2] + (m[3] || '') + (m[4] || ''); }],
     [/^\$(.+) asignados$/, function (m) { return '$' + m[1] + ' allocated'; }],
     [/^Presupuesto asignado: (.+)$/, function (m) { return 'Allocated budget: ' + m[1]; }],
     [/^Subieron? (\d+) imagen/, function (m) { return 'Uploading ' + m[1] + ' image(s)…'; }],

@@ -21,6 +21,13 @@
    "supervisorNombre": "Demo Supervisor",
    "lat": 19.0433733,
    "lng": -100.0414301,
+   "imagenes": [
+    "img/obras/obr-001-1.webp",
+    "img/obras/obr-001-2.webp",
+    "img/obras/obr-001-3.webp",
+    "img/obras/obr-001-4.webp",
+    "img/obras/obr-001-5.webp"
+   ],
    "totalInformes": 3,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -44,6 +51,13 @@
    "supervisorNombre": "Demo Supervisor",
    "lat": 19.1687972,
    "lng": -99.9019799,
+   "imagenes": [
+    "img/obras/obr-002-1.webp",
+    "img/obras/obr-002-2.webp",
+    "img/obras/obr-002-3.webp",
+    "img/obras/obr-002-4.webp",
+    "img/obras/obr-002-5.webp"
+   ],
    "totalInformes": 2,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -67,6 +81,13 @@
    "supervisorNombre": "Supervisión Zona",
    "lat": 19.0579275,
    "lng": -99.9466364,
+   "imagenes": [
+    "img/obras/obr-003-1.webp",
+    "img/obras/obr-003-2.webp",
+    "img/obras/obr-003-3.webp",
+    "img/obras/obr-003-4.webp",
+    "img/obras/obr-003-5.webp"
+   ],
    "totalInformes": 1,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -90,6 +111,13 @@
    "supervisorNombre": "Supervisión Zona",
    "lat": 19.0404106,
    "lng": -100.004805,
+   "imagenes": [
+    "img/obras/obr-004-1.webp",
+    "img/obras/obr-004-2.webp",
+    "img/obras/obr-004-3.webp",
+    "img/obras/obr-004-4.webp",
+    "img/obras/obr-004-5.webp"
+   ],
    "totalInformes": 2,
    "ultimoInformeFecha": "2025-01-01"
   },
@@ -113,6 +141,13 @@
    "supervisorNombre": "Demo Supervisor",
    "lat": 19.1473118,
    "lng": -99.9266991,
+   "imagenes": [
+    "img/obras/obr-005-1.webp",
+    "img/obras/obr-005-2.webp",
+    "img/obras/obr-005-3.webp",
+    "img/obras/obr-005-4.webp",
+    "img/obras/obr-005-5.webp"
+   ],
    "totalInformes": 1,
    "ultimoInformeFecha": "2025-05-01"
   },
@@ -136,6 +171,13 @@
    "supervisorNombre": "Supervisión Zona",
    "lat": 19.0433733,
    "lng": -100.0414301,
+   "imagenes": [
+    "img/obras/obr-006-1.webp",
+    "img/obras/obr-006-2.webp",
+    "img/obras/obr-006-3.webp",
+    "img/obras/obr-006-4.webp",
+    "img/obras/obr-006-5.webp"
+   ],
    "totalInformes": 0,
    "ultimoInformeFecha": null
   }

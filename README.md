@@ -12,6 +12,8 @@ It is a deliberately **static** demonstration. It deploys the same HTML/CSS/Java
 
 It does **not** use Flask, Python, Render, Supabase, Cloudflare R2, or a live API. Thus it remains available even when no backend deployment exists — as of this writing the original Netlify map returns HTTP 500 because that API is down, while the copy published here keeps working. The geographic locations are illustrative, and every displayed record is synthetic.
 
+The six sample works include galleries of five **AI-generated illustrative images** each. They are not photographs of real public works; their role is to make the static interface and its image-gallery behaviour reproducible without publishing municipal evidence.
+
 ### Smart Map
 
 The landing page's **Mapa Ciudadano** button opens a copy of the *Mapa Inteligente* geospatial viewer, served from this same site at `/mapa/`:

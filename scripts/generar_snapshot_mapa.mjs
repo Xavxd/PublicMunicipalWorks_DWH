@@ -123,6 +123,7 @@ function proyectarObras(db) {
       // derivarla de un hash. Véase la nota en docs/js/static_backend.js.
       lat: region ? region.lat : null,
       lng: region ? region.lng : null,
+      imagenes: Array.isArray(o.imagenes) ? o.imagenes : [],
       totalInformes: inf.totalInformes,
       ultimoInformeFecha: inf.ultimoInformeFecha,
     };

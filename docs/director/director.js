@@ -376,7 +376,7 @@ let currentTextFilter = '';
 async function renderObrasTable(params = {}) {
   const tbody = document.getElementById('obras-tbody');
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="8" class="loading-row">
+  tbody.innerHTML = `<tr><td colspan="9" class="loading-row">
     <div class="loading-spinner"></div> Cargando obras…
   </td></tr>`;
 
@@ -388,11 +388,12 @@ async function renderObrasTable(params = {}) {
 
   try {
     const obras  = await fetchObras(fetchParams);
+    window.__obrasGaleria = obras;
 
     updateObraCountBadge(obras.length);
 
     if (!obras.length) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="8">
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="9">
         <div class="empty-state">
           <div class="empty-icon">🏗️</div>
           <p>No hay obras registradas.</p>
@@ -407,6 +408,7 @@ async function renderObrasTable(params = {}) {
     tbody.innerHTML = obras.map(o => `
       <tr>
         <td><code style="font-size:0.78rem;color:var(--text-muted)">${o.expediente}</code></td>
+        <td>${window.ObraGallery ? window.ObraGallery.thumbnail(o, 'obra-thumb--table') : ''}</td>
         <td class="obra-name">${o.nombre}</td>
         <td>
           <div style="font-size:0.83rem">${o.regionComunidad}</div>
@@ -427,7 +429,7 @@ async function renderObrasTable(params = {}) {
       </tr>`).join('');
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="8">
+    tbody.innerHTML = `<tr><td colspan="9">
       <div class="empty-state">
         <div class="empty-icon">⚠️</div>
         <p style="color:#ef4444">${err.message || 'Error al conectar con el servidor.'}</p>
