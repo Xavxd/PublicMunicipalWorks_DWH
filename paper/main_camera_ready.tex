@@ -545,7 +545,7 @@ The proposal shows that it is possible to build a transparency system with analy
 \subsection{Availability}
 \label{sec:disponibilidad}
 \begingroup\revcol
-The warehouse DDL, SCD~2 triggers, seeded generators, load-testing scripts and the evaluation script are archived at {\small\url{https://github.com/gabrielhuav/PublicMunicipalWorks_DWH}}. A permanently deployable static demonstration is published through GitHub Pages at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/}}. It preserves the HTML/CSS/JavaScript interface of the original public-works prototype---its role-access, budgeting, supervision, records and citizen-participation views---replacing remote authentication and write operations with synthetic in-browser behaviour, and adds Spanish/English switching and three colour themes (original, ESCOM blue, IPN crimson) in light and dark mode. It therefore makes no request to Flask, Python, Render, Supabase or a live API. Access is open by construction: the credentials are printed on the landing page and the form accepts any value, including an empty one. Every screen is served from a synthetic dataset held in the visitor's own browser tab, so no input can affect another visitor, and closing the tab restores the seeded state. The Flask implementation in \texttt{backend/} remains the operational reference, where the same \texttt{DEMO-} accounts are constrained to read-only access. Table~\ref{tab:eval-deteccion-anomalias} is reproduced by running \texttt{generar\_dataset\_obras.py} and \texttt{eval\_deteccion\_v2.py} from \texttt{scripts/evaluacion/}, both with seed 42.
+The warehouse DDL, SCD~2 triggers, seeded generators, load-testing scripts and the evaluation script are archived at {\small\url{https://github.com/gabrielhuav/PublicMunicipalWorks_DWH}}. A permanently deployable static demonstration is published through GitHub Pages at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/}}. It preserves the HTML/CSS/JavaScript interface of the original public-works prototype---its role-access, budgeting, supervision, records and citizen-participation views---replacing remote authentication and write operations with synthetic in-browser behaviour, and adds Spanish/English switching and three colour themes (original, ESCOM blue, IPN crimson) in light and dark mode. It therefore makes no request to Flask, Python, Render, Supabase or a live API. Access is open by construction: the credentials are printed on the landing page and the form accepts any value, including an empty one. Every screen is served from a synthetic dataset held in the visitor's own browser tab, so no input can affect another visitor, and closing the tab restores the seeded state. The Flask implementation in \texttt{backend/} remains the operational reference, where the same \texttt{DEMO-} accounts are constrained to read-only access. Table~\ref{tab:eval-deteccion-anomalias} is reproduced by running \texttt{generar\_dataset\_obras.py} and \texttt{eval\_deteccion\_v2.py} from \texttt{scripts/evaluacion/}, both with seed 42. \rev{The population figures of Section~\ref{sec:resultados} are constants in \texttt{scripts/generate\_synthetic\_data.py}, met by construction; its \texttt{-{}-verificar} flag checks them without a database.}
 \endgroup
 
 % =====================================================================
@@ -565,7 +565,7 @@ of this article.
 
 % =====================================================================
 \begingroup\scriptsize\setlength{\parskip}{0pt}
-\begin{thebibliography}{14}
+\begin{thebibliography}{11}
 
 \bibitem{Zaharia2021}
 Zaharia, M., et al.: Lakehouse: a new generation of open platforms that unify data warehousing and advanced analytics. In: Proceedings of the 11th Conference on Innovative Data Systems Research (CIDR 2021). Online (2021)
@@ -592,7 +592,7 @@ Louren\c{c}o, R.P.: An analysis of open government portals: a perspective of tra
 Rajabi, E., Midha, R., de Souza, J.F.: Constructing a knowledge graph for open government data: the case of Nova Scotia disease datasets. J. Biomed. Semant. \textbf{14}, 4 (2023). \url{https://doi.org/10.1186/s13326-023-00284-w}
 
 \bibitem{Armbrust2020}
-Armbrust, M., Das, T., Sun, L., Yavuz, B., Zhu, S., Murthy, M., Torres, J., van Hovell, H., Ionescu, A., \L{}uszczak, A., \'Switakowski, M., Szafra\'nski, M., Li, X., Ueshin, T., Mokhtar, M., Boncz, P., Ghodsi, A., Paranjpye, S., Senster, P., Xin, R., Zaharia, M.: Delta Lake: high-performance ACID table storage over cloud object stores. Proc. VLDB Endow. \textbf{13}(12), 3411--3424 (2020). \url{https://doi.org/10.14778/3415478.3415560}
+Armbrust, M., et al.: Delta Lake: high-performance ACID table storage over cloud object stores. Proc. VLDB Endow. \textbf{13}(12), 3411--3424 (2020). \url{https://doi.org/10.14778/3415478.3415560}
 
 \bibitem{OC4IDS}
 Open Contracting Partnership, CoST --- the Infrastructure Transparency Initiative: Open Contracting for Infrastructure Data Standard (OC4IDS). \url{https://standard.open-contracting.org/infrastructure/latest/en/}. Last accessed 1 Aug 2026

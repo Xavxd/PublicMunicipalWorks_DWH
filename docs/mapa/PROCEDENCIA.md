@@ -44,7 +44,7 @@ recompilar con `VITE_API_URL=https://…`.
 
 ## Cambios aplicados al fuente
 
-Sólo dos, ambos anotados aquí para que la compilación sea auditable:
+Tres, todos anotados aquí para que la compilación sea auditable:
 
 1. **`app/tailwind.config.js`** — el archivo usaba `require("tailwindcss-animate")`
    dentro de un paquete declarado `"type": "module"`, lo que impide compilar con
@@ -54,10 +54,23 @@ Sólo dos, ambos anotados aquí para que la compilación sea auditable:
    y las cifras estaban fijados a `'es-MX'`. Como el sitio que ahora aloja el
    mapa es bilingüe, el locale pasa a seguir el idioma del documento
    (`document.documentElement.lang`).
+3. **`app/src/App.tsx`** — el visor era sólo oscuro: teselas `dark_all` de CARTO
+   y lienzo `#080c0f`, ambos escritos a mano. Se añadió el hook `useModo()`, que
+   lee `data-modo` de `<html>` y escucha el evento `temacambiado` que emite
+   `theme.js`; el juego de teselas y el color del lienzo pasan a depender de él.
+   Es el único cambio que el CSS no podía hacer desde fuera, porque la URL de las
+   teselas es una prop de React.
 
-La interfaz del mapa se traduce sin tocar su código: `docs/mapa/index.html`
-carga `../js/i18n.js`, el mismo motor de traducción por frase del resto del
-sitio, que actúa sobre el DOM que React genera.
+El resto de la adaptación no toca el código del visor:
+
+- **Idioma** — `docs/mapa/index.html` carga `../js/i18n.js`, el mismo motor de
+  traducción por frase del resto del sitio, que actúa sobre el DOM que React
+  genera.
+- **Temas** — [`docs/css/mapa-tema.css`](../css/mapa-tema.css) reescribe desde
+  fuera las variables que el visor sí declara (`--text-*`, `--glass-*`) y las
+  pocas reglas donde el color quedó fijo, siguiendo los mismos dos ejes que el
+  resto del sitio. Con el tema «original» en oscuro el visor se ve exactamente
+  como el de Uriel.
 
 ## Datos y servicios externos
 

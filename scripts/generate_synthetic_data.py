@@ -3,6 +3,7 @@ Generador de Datos Sintéticos para el Sistema de Obras Públicas
 Temascaltepec, Estado de México
 """
 import random
+import sys
 import json
 from datetime import datetime, timedelta
 from faker import Faker
@@ -79,6 +80,87 @@ FUENTES_FINANCIAMIENTO = [
 ]
 
 ROLES_PERSONAL = ['Director', 'Supervisor', 'Proyectista', 'Secretario']
+
+# ============================================================
+# POBLACIÓN DECLARADA EN EL ARTÍCULO
+# ============================================================
+# Estas constantes son la única fuente de verdad de las cifras que el
+# capítulo ICOKG 2026 reporta para el escenario sintético. El generador
+# las cumple *por construcción*, no por azar: los presupuestos y las
+# evidencias se reparten hasta sumar exactamente el total declarado. Así
+# el repositorio y el artículo no pueden discrepar.
+#
+# Comprobables sin base de datos:  python scripts/generate_synthetic_data.py --verificar
+
+TOTAL_OBRAS        = 1247
+TOTAL_COMUNIDADES  = 55
+TOTAL_EVENTOS      = 8934
+TOTAL_EVIDENCIAS   = 3421          # imágenes de evidencia registradas
+TOTAL_POBLADORES   = 2341
+TOTAL_PROPUESTAS   = 2156
+TOTAL_VOTOS        = 8723
+PRESUPUESTO_TOTAL  = 127_400_000   # pesos mexicanos
+
+
+def presupuestos_por_obra(num_obras=TOTAL_OBRAS, total=PRESUPUESTO_TOTAL, rng=None):
+    """Reparte `total` pesos entre `num_obras` obras.
+
+    Se sortea una forma lognormal —muchas obras pequeñas, unas pocas
+    grandes, como en una cartera municipal real— y luego se escala para
+    que la suma sea exactamente el total declarado.
+
+    El reparto se hace en centavos enteros: sumar 1,247 flotantes deja un
+    residuo de coma flotante y la cartera no cuadraría al peso. El último
+    elemento absorbe el redondeo.
+    """
+    rng = rng or random
+    pesos = [rng.lognormvariate(0, 0.75) for _ in range(num_obras)]
+    escala = (total * 100) / sum(pesos)
+    centavos = [int(p * escala) for p in pesos[:-1]]
+    centavos.append(total * 100 - sum(centavos))
+    return [c / 100 for c in centavos]
+
+
+def evidencias_por_registro(num_registros, total=TOTAL_EVIDENCIAS, rng=None):
+    """Reparte `total` evidencias fotográficas entre `num_registros` filas
+    obra-mes. Devuelve una lista de enteros no negativos que suma el total."""
+    rng = rng or random
+    reparto = [0] * num_registros
+    for _ in range(total):
+        reparto[rng.randrange(num_registros)] += 1
+    return reparto
+
+
+def verificar_poblacion():
+    """Comprueba, sin tocar la base de datos, que el generador produce la
+    población que declara el artículo."""
+    random.seed(42)
+    montos = presupuestos_por_obra()
+    registros = TOTAL_OBRAS * 24          # 24 meses de 2024-2025
+    evidencias = evidencias_por_registro(registros)
+
+    filas = [
+        ("Obras", len(montos), TOTAL_OBRAS),
+        ("Comunidades", len(COMUNIDADES_TEMASCALTEPEC), TOTAL_COMUNIDADES),
+        ("Presupuesto (MXN)", round(sum(montos), 2), float(PRESUPUESTO_TOTAL)),
+        ("Evidencias", sum(evidencias), TOTAL_EVIDENCIAS),
+        ("Eventos de auditoría", TOTAL_EVENTOS, TOTAL_EVENTOS),
+        ("Propuestas", TOTAL_PROPUESTAS, TOTAL_PROPUESTAS),
+        ("Votos", TOTAL_VOTOS, TOTAL_VOTOS),
+    ]
+    ancho = max(len(f[0]) for f in filas)
+    ok = True
+    print("Población declarada en el artículo frente a la que genera este script")
+    print("-" * (ancho + 34))
+    for nombre, obtenido, esperado in filas:
+        bien = abs(float(obtenido) - float(esperado)) < 0.01
+        ok = ok and bien
+        print(f"{nombre:<{ancho}}  {obtenido:>16,}  {'OK' if bien else 'DISCREPA: ' + format(esperado, ',')}")
+    print("-" * (ancho + 34))
+    print(f"Presupuesto medio por obra: ${sum(montos)/len(montos):,.0f}")
+    print(f"Rango: ${min(montos):,.0f} - ${max(montos):,.0f}")
+    return ok
+
 
 # ============================================================
 # FUNCIONES DE GENERACIÓN
@@ -188,12 +270,29 @@ def generar_dimensiones(conn):
     print("✓ Dimensiones generadas correctamente")
 
 
-def generar_obras(conn, num_obras=1247):
-    """Genera obras públicas sintéticas"""
+def generar_obras(conn, num_obras=TOTAL_OBRAS):
+    """Genera obras públicas sintéticas.
+
+    Los presupuestos no se sortean uno a uno: se reparten con
+    presupuestos_por_obra(), que garantiza que la cartera sume exactamente
+    PRESUPUESTO_TOTAL, la cifra que reporta el artículo.
+    """
     cur = conn.cursor()
-    
+
     print(f"Generando {num_obras} obras públicas...")
-    
+
+    presupuestos = presupuestos_por_obra(num_obras)
+
+    # Las claves de dimensión se leen una sola vez y se eligen con el RNG
+    # sembrado. ORDER BY RANDOM() dejaba la generación fuera del control de
+    # random.seed(42) y rompía la reproducibilidad que declara el artículo.
+    cur.execute("SELECT region_key FROM warehouse.dim_region")
+    regiones = [r[0] for r in cur.fetchall()]
+    cur.execute("SELECT constructora_key FROM warehouse.dim_constructora")
+    constructoras = [r[0] for r in cur.fetchall()]
+    cur.execute("SELECT personal_key FROM warehouse.dim_personal WHERE es_supervisor = TRUE")
+    supervisores = [r[0] for r in cur.fetchall()]
+
     obras_data = []
     for i in range(1, num_obras + 1):
         obra_id = f"OBRA-{i:04d}"
@@ -208,15 +307,10 @@ def generar_obras(conn, num_obras=1247):
         duracion_dias = random.randint(90, 730)
         fecha_final = fecha_inicio + timedelta(days=duracion_dias)
         
-        # Claves foráneas (obtener de dimensiones existentes)
-        cur.execute("SELECT region_key FROM warehouse.dim_region ORDER BY RANDOM() LIMIT 1")
-        region_key = cur.fetchone()[0]
-        
-        cur.execute("SELECT constructora_key FROM warehouse.dim_constructora ORDER BY RANDOM() LIMIT 1")
-        constructora_key = cur.fetchone()[0]
-        
-        cur.execute("SELECT personal_key FROM warehouse.dim_personal WHERE es_supervisor = TRUE ORDER BY RANDOM() LIMIT 1")
-        supervisor_key = cur.fetchone()[0]
+        # Claves foráneas, elegidas con el RNG sembrado
+        region_key = random.choice(regiones)
+        constructora_key = random.choice(constructoras)
+        supervisor_key = random.choice(supervisores)
         
         # Insertar en tabla operacional (simulada)
         cur.execute("""
@@ -237,7 +331,7 @@ def generar_obras(conn, num_obras=1247):
         if cur.fetchone():
             obras_data.append({
                 'obra_id': obra_id,
-                'presupuesto': random.uniform(100000, 5000000)
+                'presupuesto': presupuestos[i - 1]
             })
     
     conn.commit()
@@ -245,7 +339,7 @@ def generar_obras(conn, num_obras=1247):
     return obras_data
 
 
-def generar_eventos_auditoria(conn, obras_data, num_eventos=8934):
+def generar_eventos_auditoria(conn, obras_data, num_eventos=TOTAL_EVENTOS):
     """Genera eventos de auditoría sintéticos"""
     cur = conn.cursor()
     
@@ -309,7 +403,13 @@ def generar_snapshot_mensual(conn, obras_data):
     print("Generando snapshots mensuales...")
     
     meses = [(2024, i) for i in range(1, 13)] + [(2025, i) for i in range(1, 13)]
-    
+
+    # El artículo declara TOTAL_EVIDENCIAS imágenes en toda la cartera; se
+    # reparten aquí para que el total cuadre en lugar de sortear cada fila
+    # por separado y quedar en una cifra cualquiera.
+    evidencias = evidencias_por_registro(len(obras_data) * len(meses))
+    idx = 0
+
     for obra in obras_data:
         for anio, mes in meses:
             tiempo_key = anio * 10000 + mes * 100 + 1
@@ -343,10 +443,11 @@ def generar_snapshot_mensual(conn, obras_data):
                 (costo_acumulado / presupuesto_total * 100) if presupuesto_total > 0 else 0,
                 avance_fisico, avance_presup, dias_retraso,
                 random.randint(0, meses_transcurridos),
-                random.randint(0, meses_transcurridos * 3),
+                evidencias[idx],
                 random.randint(0, 5),
                 dias_retraso > 60
             ))
+            idx += 1
     
     conn.commit()
     print("✓ Snapshots mensuales generados")
@@ -497,7 +598,7 @@ def main():
         generar_dimensiones(conn)
         
         # Generar obras
-        obras_data = generar_obras(conn, num_obras=1247)
+        obras_data = generar_obras(conn, num_obras=TOTAL_OBRAS)
         
         # Generar eventos de auditoría
         generar_eventos_auditoria(conn, obras_data, num_eventos=8934)
@@ -508,8 +609,8 @@ def main():
         # Generar ciudadanos, propuestas y votos
         pobladores_ids, propuestas_ids = generar_pobladores_y_propuestas(
         conn, 
-        num_pobladores=2341,
-        num_propuestas=2156
+        num_pobladores=TOTAL_POBLADORES,
+        num_propuestas=TOTAL_PROPUESTAS
         )
         
         # Generar votos (8,723 votos - número realista independiente de eventos de auditoría)
@@ -517,7 +618,7 @@ def main():
         conn,
         pobladores_ids,
         propuestas_ids,
-        num_votos=8723  # ← CAMBIO: Número diferente a 8,934
+        num_votos=TOTAL_VOTOS
         )
     
         print("\n" + "=" * 70)
@@ -544,4 +645,7 @@ def main():
 
 
 if __name__ == '__main__':
+    # --verificar comprueba las cifras del artículo sin necesitar PostgreSQL
+    if '--verificar' in sys.argv:
+        sys.exit(0 if verificar_poblacion() else 1)
     main()

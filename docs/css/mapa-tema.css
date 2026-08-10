@@ -1,0 +1,158 @@
+/* =====================================================================
+   mapa-tema.css — el Mapa Inteligente bajo los temas del sitio.
+
+   El visor viene del prototipo con una paleta oscura fija: fondo #080c0f,
+   paneles de vidrio sobre rgba(11,15,21,·) y acentos en el azul
+   rgba(59,130,246,·). Aquí no se toca su código: se reescriben desde fuera
+   las variables que sí declara (--text-*, --glass-*) y las pocas reglas
+   donde el color quedó escrito a mano, siguiendo los mismos dos ejes que
+   el resto del sitio:
+
+     data-tema = original | escom | guinda
+     data-modo = oscuro   | claro
+
+   El juego de teselas lo cambia la propia aplicación (dark_all/light_all
+   de CARTO), porque es una prop de React y no algo que el CSS alcance.
+   ===================================================================== */
+
+/* Acento de marca. En «original» es el azul del prototipo, de modo que sin
+   elegir tema nada cambia respecto de la versión de Uriel. */
+html { --mapa-marca: 59, 130, 246; }
+html[data-tema="escom"]  { --mapa-marca: 58, 114, 201; }
+html[data-tema="guinda"] { --mapa-marca: 193, 90, 140; }
+
+html[data-tema="escom"][data-modo="claro"]  { --mapa-marca: 18, 63, 143; }
+html[data-tema="guinda"][data-modo="claro"] { --mapa-marca: 111, 29, 70; }
+
+/* ---------------- Acento sobre el tema oscuro ---------------- */
+html[data-tema="escom"] .glass-panel,
+html[data-tema="guinda"] .glass-panel,
+html[data-tema="escom"] .dark-popup .leaflet-popup-content-wrapper,
+html[data-tema="guinda"] .dark-popup .leaflet-popup-content-wrapper,
+html[data-tema="escom"] .dark-popup .leaflet-popup-tip,
+html[data-tema="guinda"] .dark-popup .leaflet-popup-tip {
+  border-color: rgba(var(--mapa-marca), 0.22) !important;
+}
+
+html[data-tema="escom"] .leaflet-control-zoom a,
+html[data-tema="guinda"] .leaflet-control-zoom a {
+  border-color: rgba(var(--mapa-marca), 0.18) !important;
+}
+
+html[data-tema="escom"] .leaflet-control-zoom a:hover,
+html[data-tema="guinda"] .leaflet-control-zoom a:hover {
+  background: rgba(var(--mapa-marca), 0.2) !important;
+}
+
+/* =====================================================================
+   MODO CLARO
+   El visor no tenía versión clara; ésta la añade el artefacto publicado.
+   ===================================================================== */
+html[data-modo="claro"] {
+  --text-primary: #1a2332;
+  --text-secondary: #4a5568;
+  --text-muted: #6b7a8d;
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(var(--mapa-marca), 0.22);
+}
+
+html[data-modo="claro"] body,
+html[data-modo="claro"] .leaflet-container {
+  background: #eef1f5 !important;
+  color: var(--text-primary);
+}
+
+html[data-modo="claro"] .glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(var(--mapa-marca), 0.22);
+  box-shadow:
+    0 2px 10px rgba(15, 25, 40, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-modo="claro"] .dark-popup .leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(var(--mapa-marca), 0.24) !important;
+  color: var(--text-primary) !important;
+  box-shadow:
+    0 4px 24px rgba(15, 25, 40, 0.14),
+    0 0 20px rgba(var(--mapa-marca), 0.06) !important;
+}
+
+html[data-modo="claro"] .dark-popup .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(var(--mapa-marca), 0.24) !important;
+}
+
+html[data-modo="claro"] .leaflet-control-zoom a {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-secondary) !important;
+  border-color: rgba(var(--mapa-marca), 0.2) !important;
+}
+
+html[data-modo="claro"] .leaflet-control-zoom a:hover {
+  background: rgba(var(--mapa-marca), 0.14) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-modo="claro"] .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #5c6a7d !important;
+}
+
+html[data-modo="claro"] .leaflet-control-attribution a { color: #5c6a7d !important; }
+
+/* Los cúmulos llevan texto blanco sobre el color de estado; en claro el
+   halo exterior necesita apoyarse en algo, o se pierden sobre el mapa. */
+html[data-modo="claro"] .marker-cluster-custom > div {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 2px 10px rgba(15, 25, 40, 0.25) !important;
+}
+
+/* =====================================================================
+   CONTROLES
+   theme.js los inserta en .header-meta; el mapa no tiene esa cabecera, así
+   que su página aporta un contenedor propio y aquí se posiciona sobre el
+   lienzo, sin desplazar nada del diseño original.
+   ===================================================================== */
+.mapa-controles {
+  position: fixed;
+  top: 56px;          /* bajo la barra del visor, sin taparla */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--glass-bg, rgba(11, 15, 21, 0.75));
+  border: 1px solid var(--glass-border, rgba(59, 130, 246, 0.15));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Los estilos de .segmentado, .tema-btn y .modo-btn los aporta temas.css,
+   que esta página también carga. El mapa no carga main.css, así que aquí
+   se declaran los tokens de los que esos componentes dependen. */
+.mapa-controles {
+  --bg-card: var(--glass-bg, rgba(11, 15, 21, 0.75));
+  --bg-card-hover: rgba(var(--mapa-marca), 0.16);
+  --border-medium: rgba(var(--mapa-marca), 0.28);
+  --accent: rgb(var(--mapa-marca));
+  --accent-fuerte: rgb(var(--mapa-marca));
+  --font-body: 'DM Sans', sans-serif;
+}
+
+html[data-tema="escom"] .mapa-controles  { --accent-fuerte: #1c52ad; }
+html[data-tema="guinda"] .mapa-controles { --accent-fuerte: #7a2450; }
+html[data-tema="original"] .mapa-controles { --accent-fuerte: #1d4ed8; }
+
+@media (max-width: 780px) {
+  .mapa-controles {
+    top: auto;
+    bottom: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 24px);
+  }
+}

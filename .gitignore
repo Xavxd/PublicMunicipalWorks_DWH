@@ -47,3 +47,8 @@ desktop.ini
 *.log
 *.tmp
 *.bak
+
+# ── Datos regenerables ───────────────────────────────────────
+# El dataset de evaluación se reconstruye con
+#   python scripts/evaluacion/generar_dataset_obras.py
+datos_sinteticos/

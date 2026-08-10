@@ -90,7 +90,10 @@
      portada como en las cuatro vistas de rol.
      ------------------------------------------------------------------ */
   function construirControles() {
-    var destino = document.querySelector('.header-meta');
+    /* La portada y las vistas de rol tienen .header-meta; el Mapa
+       Inteligente no comparte esa cabecera, así que su página declara un
+       contenedor propio con [data-controles]. */
+    var destino = document.querySelector('.header-meta, [data-controles]');
     if (!destino || destino.querySelector('.ui-controles')) return;
 
     var caja = document.createElement('div');

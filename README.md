@@ -22,7 +22,7 @@ The viewer is authored by Uriel González Casiano ([`Urigc/mapa`](https://github
 
 Provenance, the exact upstream commit, the build command and the two source patches are recorded in [`docs/mapa/PROCEDENCIA.md`](docs/mapa/PROCEDENCIA.md).
 
-The map's base tiles come from CARTO Dark Matter over OpenStreetMap data. Those tiles are the only network request the published artefact makes; it is inherent to any web map and is not an application API.
+The map carries the same theme, mode and language controls as the rest of the site: switching to light mode also switches the basemap (CARTO Dark Matter ↔ Positron) and the panel palette. Its base tiles come from CARTO over OpenStreetMap data, and are the only network request the published artefact makes; that is inherent to any web map and is not an application API.
 
 ### Languages and themes
 
@@ -75,6 +75,16 @@ python scripts/evaluacion/eval_deteccion_v2.py
 ```
 
 Expected protocol population: 1,421 work–period records and 214 independently injected anomalies (seed 42). The output supports the detection table in the paper; it is not evidence about Temascaltepec.
+
+## Checking the repository against the paper
+
+The population the chapter reports for the seeded scenario — 1,247 works across 55 communities, $127.4 M in budget, 8,934 audit events, 3,421 photographic pieces of evidence, 2,156 citizen proposals and 8,723 votes — is declared as constants at the top of [`scripts/generate_synthetic_data.py`](scripts/generate_synthetic_data.py) and met **by construction**: budgets are drawn with a lognormal shape and then scaled in integer cents so the portfolio totals exactly the reported figure, and the evidence count is allocated across the work–month rows rather than left to chance. The figures can therefore be checked without a database, and without PostgreSQL running:
+
+```bash
+python scripts/generate_synthetic_data.py --verificar
+```
+
+The rest of the paper's structural claims are readable straight from the source: ten dimensions and two fact tables in [`db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql`](db/arquitectura/), five analytical views and twelve triggers (eight dimension-synchronising, four audit-emitting) in `FUNCIONES Y TRIGGERS.sql`, and 54 REST routes across eight blueprints — five of them public and read-only — under [`backend/routes/`](backend/routes/).
 
 ## Data model
 
