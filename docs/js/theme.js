@@ -4,13 +4,13 @@
  * Dos ejes independientes en <html>, como en el artefacto del almacén de
  * agua (github.com/gabrielhuav/Data_Warehouse_static):
  *
- *   data-tema = "original" | "escom" | "guinda"   color institucional
+ *   data-tema = "original" | "guinda"             color institucional
  *   data-modo = "oscuro"   | "claro"              luminosidad
  *
  * El tema «original» es el del prototipo y es el predeterminado, de modo
  * que quien llega por primera vez ve exactamente la página de siempre.
- * «escom» (azul) y «guinda» (IPN) reescriben las variables de marca desde
- * css/demo.css; ningún componente sabe qué tema está activo.
+ * «guinda» (IPN) reescribe las variables de marca desde css/temas.css;
+ * ningún componente sabe qué tema está activo.
  *
  * Compatibilidad: css/main.css expresa su versión clara con el selector
  * html[data-theme="light"], así que el modo claro sigue poniendo también
@@ -28,9 +28,12 @@
   var K_TEMA = 'obras-tema';
   var K_MODO = 'obras-modo';
 
+  /* Dos temas. El azul institucional de la ESCOM y el azul del prototipo
+     eran prácticamente el mismo color, así que se conserva uno solo:
+     «original», el del prototipo. Quien tuviera 'escom' guardado de una
+     visita anterior cae en 'original' por la validación de abajo. */
   var TEMAS = [
     { id: 'original', clave: 'tema.original', muestra: '#3b82f6' },
-    { id: 'escom',    clave: 'tema.escom',    muestra: '#123f8f' },
     { id: 'guinda',   clave: 'tema.guinda',   muestra: '#6f1d46' }
   ];
 
