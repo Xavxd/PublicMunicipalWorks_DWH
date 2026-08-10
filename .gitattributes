@@ -1,0 +1,12 @@
+# Normalise line endings so that Windows checkouts (GitHub Desktop) do not
+# produce whole-file diffs. Without this, a checkout on Windows rewrote all
+# 57 tracked text files to CRLF, yielding a 19,718-line diff with no real
+# change in it.
+* text=auto eol=lf
+
+# Binary files: never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.ico binary

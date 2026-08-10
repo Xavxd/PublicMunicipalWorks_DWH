@@ -4,6 +4,7 @@ Generador de Dataset Sintético para Evaluación de Detección de Anomalías en 
 """
 
 import json
+import os
 import random
 import numpy as np
 from datetime import datetime, timedelta
@@ -243,6 +244,9 @@ def main():
     print()
     
     # Guardar dataset
+    # (crear el directorio si no existe: sin esto el script aborta con
+    #  FileNotFoundError en un clon limpio del repositorio)
+    os.makedirs('datos_sinteticos', exist_ok=True)
     with open('datos_sinteticos/obras_temascaltepec.json', 'w', encoding='utf-8') as f:
         json.dump(dataset, f, indent=2, ensure_ascii=False)
     

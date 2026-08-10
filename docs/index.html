@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Obras Públicas — H. Ayuntamiento Temascaltepec</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/propuestas.css" />
+  <script src="js/theme.js"></script>
+</head>
+<body>
+
+<!-- CURSOR CUSTOM -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follower" id="cursor-follower"></div>
+
+<!-- NOISE OVERLAY -->
+<div class="noise-overlay" style="pointer-events: none;"></div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-block">
+      <div class="logo-emblem">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="24,4 44,14 44,34 24,44 4,34 4,14" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <polygon points="24,10 38,17 38,31 24,38 10,31 10,17" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.4"/>
+          <circle cx="24" cy="24" r="4" fill="currentColor"/>
+          <line x1="24" y1="10" x2="24" y2="17" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="24" y1="31" x2="24" y2="38" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="10" y1="17" x2="16" y2="20.5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="32" y1="27.5" x2="38" y2="31" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="38" y1="17" x2="32" y2="20.5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="16" y1="27.5" x2="10" y2="31" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-main">Obras Públicas</span>
+        <span class="logo-sub">H. Ayuntamiento de Temascaltepec</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="header-year" id="current-date"></span>
+      <div class="status-dot">
+        <span class="dot-pulse"></span>
+        Sistema en línea
+      </div>
+      <a href="https://polite-frangipane-c8c252.netlify.app/" target="_self" class="mapa-btn">🗺️ Mapa Ciudadano</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <!-- FUTURISTIC HUD -->
+  <div class="hud-corner hud-corner--tl"></div>
+  <div class="hud-corner hud-corner--tr"></div>
+  <div class="hud-corner hud-corner--bl"></div>
+  <div class="hud-corner hud-corner--br"></div>
+  <div class="scan-line"></div>
+  <div class="hero-particles" id="hero-particles"></div>
+
+  <div class="hero-bg-grid"></div>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-orb hero-orb-3"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Sistema Integral de Gestión
+    </div>
+    <h1 class="hero-title">
+  <span class="title-line" data-index="0">Dirección de</span>
+  <span class="title-line accent-line" data-index="1">Obras Públicas</span>
+  <span class="title-line thin-line" data-index="2">Estado de México</span>
+</h1>
+
+      <!-- Floating glass cards — positioned around the title -->
+      <div class="hero-cards-cluster" id="hero-cards-cluster" aria-hidden="true">
+
+        <!-- Card 1: Plano técnico / Blueprint -->
+        <div class="hc-card hc-card--1" style="--card-rot:-8deg;">
+          <div class="hc-card__inner">
+            <div class="hc-card__img hc-card__img--blueprint">
+              <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="120" fill="#0a1628"/>
+                <defs>
+                  <pattern id="bp-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+                    <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(59,130,246,0.18)" stroke-width="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width="160" height="120" fill="url(#bp-grid)"/>
+                <rect x="32" y="28" width="96" height="72" stroke="rgba(59,130,246,0.9)" stroke-width="1.2" fill="none"/>
+                <rect x="44" y="28" width="72" height="16" stroke="rgba(59,130,246,0.7)" stroke-width="1" fill="none"/>
+                <rect x="58" y="12" width="44" height="16" stroke="rgba(59,130,246,0.5)" stroke-width="1" fill="none"/>
+                <line x1="32" y1="60" x2="128" y2="60" stroke="rgba(59,130,246,0.4)" stroke-width="0.8" stroke-dasharray="4,3"/>
+                <line x1="32" y1="76" x2="128" y2="76" stroke="rgba(59,130,246,0.4)" stroke-width="0.8" stroke-dasharray="4,3"/>
+                <rect x="40" y="36" width="10" height="8" stroke="rgba(96,165,250,0.8)" stroke-width="0.8" fill="rgba(59,130,246,0.15)"/>
+                <rect x="56" y="36" width="10" height="8" stroke="rgba(96,165,250,0.8)" stroke-width="0.8" fill="rgba(59,130,246,0.15)"/>
+                <rect x="94" y="36" width="10" height="8" stroke="rgba(96,165,250,0.8)" stroke-width="0.8" fill="rgba(59,130,246,0.15)"/>
+                <rect x="110" y="36" width="10" height="8" stroke="rgba(96,165,250,0.8)" stroke-width="0.8" fill="rgba(59,130,246,0.15)"/>
+                <rect x="40" y="64" width="10" height="8" stroke="rgba(96,165,250,0.6)" stroke-width="0.8" fill="rgba(59,130,246,0.1)"/>
+                <rect x="56" y="64" width="10" height="8" stroke="rgba(96,165,250,0.6)" stroke-width="0.8" fill="rgba(59,130,246,0.1)"/>
+                <rect x="94" y="64" width="10" height="8" stroke="rgba(96,165,250,0.6)" stroke-width="0.8" fill="rgba(59,130,246,0.1)"/>
+                <rect x="110" y="64" width="10" height="8" stroke="rgba(96,165,250,0.6)" stroke-width="0.8" fill="rgba(59,130,246,0.1)"/>
+                <rect x="72" y="82" width="16" height="18" stroke="rgba(59,130,246,0.8)" stroke-width="0.8" fill="rgba(59,130,246,0.08)"/>
+                <line x1="128" y1="100" x2="128" y2="30" stroke="rgba(245,158,11,0.7)" stroke-width="1.2"/>
+                <line x1="100" y1="32" x2="136" y2="32" stroke="rgba(245,158,11,0.7)" stroke-width="1.2"/>
+                <line x1="112" y1="32" x2="112" y2="50" stroke="rgba(245,158,11,0.4)" stroke-width="0.8" stroke-dasharray="2,2"/>
+                <line x1="32" y1="108" x2="128" y2="108" stroke="rgba(59,130,246,0.5)" stroke-width="0.7"/>
+                <line x1="32" y1="106" x2="32" y2="110" stroke="rgba(59,130,246,0.5)" stroke-width="0.7"/>
+                <line x1="128" y1="106" x2="128" y2="110" stroke="rgba(59,130,246,0.5)" stroke-width="0.7"/>
+                <rect x="68" y="104" width="24" height="8" fill="#0a1628"/>
+                <rect x="70" y="106" width="20" height="4" fill="rgba(59,130,246,0.6)" rx="1"/>
+              </svg>
+            </div>
+            <div class="hc-card__label">
+              <span class="hc-card__tag">Planos</span>
+              <span class="hc-card__title">Proyecto Arquitectónico</span>
+            </div>
+          </div>
+          <div class="hc-card__shine"></div>
+        </div>
+
+        <!-- Card 2: Dashboard de obra / métricas -->
+        <div class="hc-card hc-card--2" style="--card-rot:5deg;">
+          <div class="hc-card__inner">
+            <div class="hc-card__img hc-card__img--dashboard">
+              <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="120" fill="#060d1a"/>
+                <rect x="0" y="0" width="160" height="22" fill="rgba(15,30,55,0.9)"/>
+                <circle cx="12" cy="11" r="4" fill="rgba(59,130,246,0.7)"/>
+                <rect x="22" y="7" width="40" height="3" rx="1.5" fill="rgba(255,255,255,0.25)"/>
+                <rect x="130" y="7" width="22" height="8" rx="4" fill="rgba(59,130,246,0.3)" stroke="rgba(59,130,246,0.4)" stroke-width="0.5"/>
+                <rect x="12" y="32" width="136" height="6" rx="3" fill="rgba(255,255,255,0.05)"/>
+                <rect x="12" y="32" width="98" height="6" rx="3" fill="rgba(59,130,246,0.7)"/>
+                <rect x="12" y="44" width="136" height="6" rx="3" fill="rgba(255,255,255,0.05)"/>
+                <rect x="12" y="44" width="60" height="6" rx="3" fill="rgba(16,185,129,0.7)"/>
+                <rect x="12" y="56" width="136" height="6" rx="3" fill="rgba(255,255,255,0.05)"/>
+                <rect x="12" y="56" width="115" height="6" rx="3" fill="rgba(245,158,11,0.7)"/>
+                <rect x="12" y="70" width="40" height="36" rx="4" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.2)" stroke-width="0.5"/>
+                <rect x="60" y="70" width="40" height="36" rx="4" fill="rgba(16,185,129,0.1)" stroke="rgba(16,185,129,0.2)" stroke-width="0.5"/>
+                <rect x="108" y="70" width="40" height="36" rx="4" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.2)" stroke-width="0.5"/>
+                <rect x="18" y="77" width="18" height="10" rx="2" fill="rgba(59,130,246,0.6)"/>
+                <rect x="18" y="91" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.15)"/>
+                <rect x="66" y="77" width="18" height="10" rx="2" fill="rgba(16,185,129,0.6)"/>
+                <rect x="66" y="91" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.15)"/>
+                <rect x="114" y="77" width="18" height="10" rx="2" fill="rgba(245,158,11,0.6)"/>
+                <rect x="114" y="91" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.15)"/>
+                <polyline points="12,28 28,22 44,25 60,18 76,21 92,15 108,19 124,14 140,16 148,20" stroke="rgba(59,130,246,0.5)" stroke-width="1" fill="none"/>
+              </svg>
+            </div>
+            <div class="hc-card__label">
+              <span class="hc-card__tag">Sistema</span>
+              <span class="hc-card__title">Panel de Control</span>
+            </div>
+          </div>
+          <div class="hc-card__shine"></div>
+        </div>
+
+        <!-- Card 3: Obra / construcción física -->
+        <div class="hc-card hc-card--3" style="--card-rot:-4deg;">
+          <div class="hc-card__inner">
+            <div class="hc-card__img hc-card__img--obra">
+              <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="120" fill="#07111e"/>
+                <rect x="0" y="0" width="160" height="70" fill="url(#skyg)"/>
+                <defs>
+                  <linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#0a1628"/>
+                    <stop offset="100%" stop-color="#0d1e35"/>
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="88" width="160" height="32" fill="rgba(8,16,28,0.8)"/>
+                <line x1="0" y1="88" x2="160" y2="88" stroke="rgba(59,130,246,0.2)" stroke-width="0.8" stroke-dasharray="6,4"/>
+                <rect x="10" y="42" width="38" height="46" fill="rgba(15,30,55,0.9)"/>
+                <rect x="10" y="36" width="38" height="8" fill="rgba(20,40,68,0.9)"/>
+                <rect x="16" y="44" width="6" height="5" fill="rgba(59,130,246,0.4)" rx="0.5"/>
+                <rect x="26" y="44" width="6" height="5" fill="rgba(59,130,246,0.25)" rx="0.5"/>
+                <rect x="36" y="44" width="6" height="5" fill="rgba(59,130,246,0.5)" rx="0.5"/>
+                <rect x="16" y="54" width="6" height="5" fill="rgba(59,130,246,0.2)" rx="0.5"/>
+                <rect x="26" y="54" width="6" height="5" fill="rgba(245,158,11,0.4)" rx="0.5"/>
+                <rect x="36" y="54" width="6" height="5" fill="rgba(59,130,246,0.3)" rx="0.5"/>
+                <rect x="16" y="64" width="6" height="5" fill="rgba(59,130,246,0.35)" rx="0.5"/>
+                <rect x="26" y="64" width="6" height="5" fill="rgba(59,130,246,0.2)" rx="0.5"/>
+                <rect x="36" y="64" width="6" height="5" fill="rgba(59,130,246,0.45)" rx="0.5"/>
+                <rect x="54" y="24" width="52" height="64" fill="rgba(18,35,62,0.95)"/>
+                <rect x="62" y="16" width="36" height="10" fill="rgba(22,44,76,0.9)"/>
+                <rect x="72" y="8" width="16" height="10" fill="rgba(26,50,86,0.9)"/>
+                <rect x="60" y="30" width="8" height="7" fill="rgba(59,130,246,0.45)" rx="0.5"/>
+                <rect x="72" y="30" width="8" height="7" fill="rgba(59,130,246,0.3)" rx="0.5"/>
+                <rect x="84" y="30" width="8" height="7" fill="rgba(59,130,246,0.5)" rx="0.5"/>
+                <rect x="96" y="30" width="8" height="7" fill="rgba(245,158,11,0.35)" rx="0.5"/>
+                <rect x="60" y="42" width="8" height="7" fill="rgba(59,130,246,0.25)" rx="0.5"/>
+                <rect x="72" y="42" width="8" height="7" fill="rgba(59,130,246,0.45)" rx="0.5"/>
+                <rect x="84" y="42" width="8" height="7" fill="rgba(59,130,246,0.2)" rx="0.5"/>
+                <rect x="96" y="42" width="8" height="7" fill="rgba(59,130,246,0.4)" rx="0.5"/>
+                <rect x="60" y="54" width="8" height="7" fill="rgba(59,130,246,0.4)" rx="0.5"/>
+                <rect x="72" y="54" width="8" height="7" fill="rgba(245,158,11,0.3)" rx="0.5"/>
+                <rect x="84" y="54" width="8" height="7" fill="rgba(59,130,246,0.35)" rx="0.5"/>
+                <rect x="96" y="54" width="8" height="7" fill="rgba(59,130,246,0.25)" rx="0.5"/>
+                <line x1="80" y1="8" x2="80" y2="2" stroke="rgba(200,210,225,0.6)" stroke-width="0.8"/>
+                <rect x="80" y="2" width="10" height="2" fill="#006847" opacity="0.9"/>
+                <rect x="80" y="4" width="10" height="2" fill="#f0f0f0" opacity="0.9"/>
+                <rect x="80" y="6" width="10" height="2" fill="#ce1126" opacity="0.9"/>
+                <line x1="118" y1="88" x2="118" y2="28" stroke="rgba(245,158,11,0.6)" stroke-width="1.2"/>
+                <line x1="88" y1="30" x2="126" y2="30" stroke="rgba(245,158,11,0.6)" stroke-width="1.2"/>
+                <line x1="104" y1="30" x2="104" y2="50" stroke="rgba(245,158,11,0.35)" stroke-width="0.8" stroke-dasharray="2,2"/>
+                <rect x="112" y="50" width="36" height="38" fill="rgba(14,28,50,0.9)"/>
+                <rect x="118" y="54" width="6" height="5" fill="rgba(59,130,246,0.35)" rx="0.5"/>
+                <rect x="128" y="54" width="6" height="5" fill="rgba(59,130,246,0.2)" rx="0.5"/>
+                <rect x="138" y="54" width="6" height="5" fill="rgba(59,130,246,0.45)" rx="0.5"/>
+                <rect x="118" y="64" width="6" height="5" fill="rgba(245,158,11,0.3)" rx="0.5"/>
+                <rect x="128" y="64" width="6" height="5" fill="rgba(59,130,246,0.4)" rx="0.5"/>
+                <rect x="138" y="64" width="6" height="5" fill="rgba(59,130,246,0.25)" rx="0.5"/>
+                <circle cx="140" cy="18" r="9" fill="rgba(200,215,255,0.06)" stroke="rgba(200,215,255,0.1)" stroke-width="0.5"/>
+                <circle cx="143" cy="16" r="7" fill="#07111e"/>
+                <circle cx="20" cy="12" r="0.8" fill="rgba(255,255,255,0.5)"/>
+                <circle cx="38" cy="6" r="0.6" fill="rgba(255,255,255,0.35)"/>
+                <circle cx="115" cy="8" r="0.7" fill="rgba(255,255,255,0.4)"/>
+              </svg>
+            </div>
+            <div class="hc-card__label">
+              <span class="hc-card__tag">En progreso</span>
+              <span class="hc-card__title">Obra Temascaltepec</span>
+            </div>
+          </div>
+          <div class="hc-card__shine"></div>
+        </div>
+
+        <!-- Card 4: Documento / acta oficial -->
+        <div class="hc-card hc-card--4" style="--card-rot:7deg;">
+          <div class="hc-card__inner">
+            <div class="hc-card__img hc-card__img--doc">
+              <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="120" fill="#080e1c"/>
+                <rect x="24" y="10" width="112" height="100" rx="4" fill="rgba(12,22,44,0.95)" stroke="rgba(59,130,246,0.15)" stroke-width="0.8"/>
+                <rect x="24" y="10" width="112" height="22" rx="4" fill="rgba(59,130,246,0.12)"/>
+                <circle cx="44" cy="21" r="8" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.3)" stroke-width="0.8"/>
+                <path d="M44 14 L44 28 M38 17 L50 25 M50 17 L38 25" stroke="rgba(59,130,246,0.6)" stroke-width="0.8" stroke-linecap="round"/>
+                <rect x="58" y="16" width="48" height="4" rx="2" fill="rgba(255,255,255,0.4)"/>
+                <rect x="58" y="23" width="32" height="3" rx="1.5" fill="rgba(255,255,255,0.2)"/>
+                <rect x="34" y="40" width="92" height="2.5" rx="1.2" fill="rgba(255,255,255,0.15)"/>
+                <rect x="34" y="47" width="80" height="2.5" rx="1.2" fill="rgba(255,255,255,0.12)"/>
+                <rect x="34" y="54" width="88" height="2.5" rx="1.2" fill="rgba(255,255,255,0.15)"/>
+                <rect x="34" y="61" width="60" height="2.5" rx="1.2" fill="rgba(255,255,255,0.1)"/>
+                <line x1="34" y1="72" x2="126" y2="72" stroke="rgba(59,130,246,0.15)" stroke-width="0.5"/>
+                <rect x="34" y="80" width="34" height="18" rx="2" fill="rgba(59,130,246,0.06)" stroke="rgba(59,130,246,0.12)" stroke-width="0.5"/>
+                <rect x="63" y="92" width="28" height="2" rx="1" fill="rgba(255,255,255,0.1)"/>
+                <rect x="92" y="80" width="34" height="18" rx="2" fill="rgba(59,130,246,0.06)" stroke="rgba(59,130,246,0.12)" stroke-width="0.5"/>
+                <rect x="94" y="92" width="28" height="2" rx="1" fill="rgba(255,255,255,0.1)"/>
+                <circle cx="80" cy="104" r="8" fill="none" stroke="rgba(59,130,246,0.3)" stroke-width="0.8" stroke-dasharray="2,1"/>
+                <circle cx="80" cy="104" r="4" fill="rgba(59,130,246,0.15)"/>
+                <path d="M77 104 L79.5 106.5 L84 101.5" stroke="rgba(16,185,129,0.8)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="hc-card__label">
+              <span class="hc-card__tag">Acta oficial</span>
+              <span class="hc-card__title">Documentación Pública</span>
+            </div>
+          </div>
+          <div class="hc-card__shine"></div>
+        </div>
+
+      </div>
+    </h1>
+    <p class="hero-desc">
+      Plataforma digital para la administración, supervisión y transparencia de la<br/>
+      infraestructura pública de las comunidades de Temascaltepec.
+    </p>
+
+    <!-- CTA: entrada al modulo Presupuesto Participativo (controlada por js/propuestas.js) -->
+    <div class="hero-cta-row">
+      <button id="pp-launcher-btn" type="button" class="pp-launcher">
+        <span class="pp-launcher__spark" aria-hidden="true"></span>
+        Propuestas de la Comunidad
+      </button>
+    </div>
+    <!-- Canvas: efecto cables/luz animada -->
+    <div class="hero-cable-bg" id="hero-cable-bg">
+      <canvas id="cable-canvas"></canvas>
+    </div>
+
+    <div class="hero-bottom-fade"></div>
+  </div>
+</section>
+
+<!-- ROLES SECTION -->
+<section class="roles-section">
+  <div class="section-header">
+    <div class="section-label">
+      <span class="label-line"></span>
+      Acceso por Rol
+      <span class="label-line"></span>
+    </div>
+    <h2 class="section-title">Selecciona tu perfil<br/><em>de trabajo</em></h2>
+    <p class="section-desc">Cada rol cuenta con permisos específicos que garantizan la integridad y trazabilidad de la información pública.</p>
+  </div>
+
+  <div class="roles-grid">
+
+    <!-- ROL: DIRECTOR -->
+    <div class="role-card" data-role="Director" data-index="0">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="13" r="6" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M6 34c0-7.18 6.268-13 14-13s14 5.82 14 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M28 8l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Directivo</div>
+        <h3 class="role-name">Director de Obras</h3>
+        <p class="role-desc">Registro y gestión completa de obras públicas, asignación de constructoras y supervisión general del sistema.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Registrar obras</span>
+          <span class="perm perm-write">✦ Asignar constructoras</span>
+          <span class="perm perm-read">◈ Ver todos los datos</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('Director')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">01</div>
+    </div>
+
+    <!-- ROL: SUPERVISOR -->
+    <div class="role-card" data-role="Supervisor" data-index="1">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <rect x="8" y="10" width="24" height="20" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M14 18h12M14 22h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="30" cy="10" r="5" fill="var(--accent-supervisor)" opacity="0.9"/>
+              <path d="M28 10l1.5 1.5L32 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Operativo</div>
+        <h3 class="role-name">Supervisor</h3>
+        <p class="role-desc">Generación de informes de avance mensual, registro de avances físicos y financieros de las obras asignadas.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Crear informes</span>
+          <span class="perm perm-read">◈ Ver obra asignada</span>
+          <span class="perm perm-write">✦ Registrar avances</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('Supervisor')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">02</div>
+    </div>
+
+    <!-- ROL: PROYECTISTA -->
+    <div class="role-card" data-role="Proyectista" data-index="2">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <rect x="7" y="7" width="26" height="26" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M13 14h14M13 19h10M13 24h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="29" cy="27" r="5" fill="var(--accent-proyectista)" opacity="0.9"/>
+              <path d="M27 27h4M29 25v4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Técnico</div>
+        <h3 class="role-name">Proyectista</h3>
+        <p class="role-desc">Elaboración detallada del presupuesto de obra, desglose de costos por categoría con herramientas de cálculo integradas.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Crear presupuestos</span>
+          <span class="perm perm-write">✦ Gestionar costos</span>
+          <span class="perm perm-read">◈ Ver obras activas</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('Proyectista')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">03</div>
+    </div>
+
+    <!-- ROL: SECRETARIA -->
+    <div class="role-card" data-role="Secretario" data-index="3">
+      <div class="role-card-bg"></div>
+      <div class="role-card-glow"></div>
+      <div class="role-card-inner">
+        <div class="role-icon-wrap">
+          <div class="role-icon">
+            <svg viewBox="0 0 40 40" fill="none">
+              <path d="M10 8h20v24H10z" stroke="currentColor" stroke-width="1.8" rx="2"/>
+              <path d="M15 14h10M15 18h10M15 22h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M26 28l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="role-tag">Nivel Administrativo</div>
+        <h3 class="role-name">Secretaría</h3>
+        <p class="role-desc">Registro de oficios de permisos institucionales y generación del Acta de Entrega con firma de todos los involucrados.</p>
+        <div class="role-perms">
+          <span class="perm perm-write">✦ Oficios de permisos</span>
+          <span class="perm perm-write">✦ Acta de entrega</span>
+          <span class="perm perm-read">◈ Gestión documental</span>
+        </div>
+        <button class="role-btn" onclick="openLogin('Secretario')">
+          <span>Ingresar</span>
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="role-number">04</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ARCHITECTURE STRIP -->
+<section class="arch-strip">
+  <div class="arch-inner">
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>PostgreSQL</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>Demo estática</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>HTML · CSS · JS</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>Docker</span>
+    </div>
+    <div class="arch-sep">—</div>
+    <div class="arch-item">
+      <div class="arch-icon">⬡</div>
+      <span>Data Warehouse</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="footer-logo">OBRAS PÚBLICAS</span>
+      <span class="footer-mun">H. Ayuntamiento de Temascaltepec · Estado de México</span>
+    </div>
+    <div class="footer-right">
+      <span>Sistema Integral v1.0</span>
+      <span class="footer-dot">·</span>
+      <span>Datos protegidos bajo normativa federal</span>
+    </div>
+  </div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeLogin(event)">
+  <div class="login-modal" id="login-modal">
+    <button class="modal-close" onclick="closeLogin()">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-header">
+      <div class="modal-role-icon" id="modal-role-icon"></div>
+      <div class="modal-role-info">
+        <span class="modal-role-tag" id="modal-role-tag"></span>
+        <h3 class="modal-role-name" id="modal-role-name"></h3>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="login-form">
+        <div class="form-group">
+          <label class="form-label">Usuario / Clave de acceso</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="modal-login-user" placeholder="Tu clave de usuario" class="form-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V7a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="password" id="modal-login-pass" placeholder="••••••••" class="form-input" />
+            <button class="toggle-pass" onclick="togglePass()" type="button">
+              <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="login-error" id="login-error"></div>
+        <button class="login-submit" id="login-submit" onclick="handleLogin()">
+          <span id="btn-text">Acceder al sistema</span>
+          <div class="btn-loader" id="btn-loader"></div>
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer-note">
+      Sistema de acceso seguro · H. Ayuntamiento Temascaltepec
+    </div>
+  </div>
+</div>
+
+<!-- Contenedor SPA del modulo Presupuesto Participativo -->
+<div id="pp-root" class="pp-root" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="main.js"></script>
+<script src="js/cables.js"></script>
+<script src="js/propuestas.js"></script>
+</body>
+</html>

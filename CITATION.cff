@@ -1,0 +1,60 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the ICOKG 2026 chapter below."
+title: "Dimensional Data Warehouse for Geospatial Monitoring of Municipal Public Works"
+abstract: >-
+  Reference implementation and reproducibility artefacts for the ICOKG 2026 book
+  chapter. It includes the dimensional warehouse DDL (ten dimensions, five of them
+  SCD Type 2, two fact tables, five analytical views), SCD 2 synchronisation
+  triggers, seeded synthetic-data generators, the detection evaluation protocol,
+  and a serverless GitHub Pages demonstration.
+type: software
+license: MIT
+version: 1.1-icokg2026
+date-released: "2026-08-09"
+repository-code: "https://github.com/gabrielhuav/PublicMunicipalWorks_DWH"
+repository-artifact: "https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/"
+keywords:
+  - data warehouse
+  - dimensional modeling
+  - slowly changing dimensions
+  - geospatial monitoring
+  - open government data
+  - public works
+  - object storage
+  - lakehouse
+authors:
+  - family-names: "González Casiano"
+    given-names: "Uriel"
+    orcid: "https://orcid.org/0009-0009-8172-9584"
+    affiliation: "Escuela Superior de Cómputo (ESCOM), Instituto Politécnico Nacional"
+  - family-names: "Maldonado Mejía"
+    given-names: "Marco Tulio"
+    orcid: "https://orcid.org/0009-0005-4691-9607"
+    affiliation: "Escuela Superior de Cómputo (ESCOM), Instituto Politécnico Nacional"
+  - family-names: "Hurtado Avilés"
+    given-names: "Gabriel"
+    orcid: "https://orcid.org/0009-0002-5686-1822"
+    email: "gabrielhuav@gmail.com"
+    affiliation: "Escuela Superior de Cómputo (ESCOM), Instituto Politécnico Nacional"
+preferred-citation:
+  type: conference-paper
+  title: >-
+    A Dimensional Data Warehouse for Geospatial Monitoring of Municipal Public
+    Works, with an Evolution Path Toward a Lakehouse Architecture
+  authors:
+    - family-names: "González Casiano"
+      given-names: "Uriel"
+      orcid: "https://orcid.org/0009-0009-8172-9584"
+    - family-names: "Maldonado Mejía"
+      given-names: "Marco Tulio"
+      orcid: "https://orcid.org/0009-0005-4691-9607"
+    - family-names: "Hurtado Avilés"
+      given-names: "Gabriel"
+      orcid: "https://orcid.org/0009-0002-5686-1822"
+  collection-title: "Advances in Computer Science Applications and Research (ACSAR)"
+  conference:
+    name: "International Conference on Knowledge Graphs (ICOKG 2026)"
+  publisher:
+    name: "Springer"
+  year: 2026
+  # Add Springer-assigned volume, pages, and chapter DOI after publication.
