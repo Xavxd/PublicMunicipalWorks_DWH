@@ -1,0 +1,370 @@
+<section class="pp-shell" id="pp-shell" aria-label="Sistema de Presupuesto Participativo">
+  <div class="pp-noise" aria-hidden="true"></div>
+
+  <header class="pp-header">
+    <div class="pp-header__left">
+      <button class="pp-back" id="pp-back" type="button" aria-label="Regresar al inicio">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Volver al mapa
+      </button>
+      <div class="pp-user" id="pp-user" hidden>
+        <div class="pp-user__avatar" id="pp-user-avatar" aria-hidden="true"></div>
+        <div class="pp-user__meta">
+          <span class="pp-user__name" id="pp-user-name"></span>
+          <span class="pp-user__creds" id="pp-user-creds"></span>
+        </div>
+        <button class="pp-ghost" id="pp-logout" type="button">Salir</button>
+      </div>
+    </div>
+
+    <div class="pp-title-block">
+      <span class="pp-eyebrow">Presupuesto Participativo · Temascaltepec</span>
+      <h2 class="pp-title">Propuestas de la Comunidad</h2>
+      <p class="pp-subtitle">
+        Visualiza las obras que tus vecinos sienten urgentes y suma tus 3 votos
+        del cuatrimestre.
+      </p>
+    </div>
+
+    <div class="pp-session" id="pp-session">
+      <button class="pp-cta" id="pp-cta-login" type="button">Iniciar sesion / Registrarse</button>
+    </div>
+  </header>
+
+  <!-- ── TRENDING ── -->
+  <section class="pp-section" aria-labelledby="pp-trending-title">
+    <div class="pp-section-head">
+      <h3 id="pp-trending-title" class="pp-section-title">
+        <span class="pp-flame">🔥</span> Trending del cuatrimestre
+      </h3>
+      <span class="pp-period-pill" id="pp-period-pill" aria-live="polite"></span>
+    </div>
+    <div class="pp-carousel" id="pp-trending" role="list">
+      <div class="pp-skeleton-row">
+        <div class="pp-skeleton"></div>
+        <div class="pp-skeleton"></div>
+        <div class="pp-skeleton"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CERCANAS ── -->
+  <section class="pp-section" aria-labelledby="pp-nearby-title">
+    <div class="pp-section-head">
+      <h3 id="pp-nearby-title" class="pp-section-title">
+        <span>📍</span> Cercanas a ti
+      </h3>
+      <button class="pp-ghost pp-ghost--cta" id="pp-gps-btn" type="button">
+        Activar ubicacion
+      </button>
+    </div>
+    <p class="pp-helper" id="pp-nearby-hint">
+      Permite el acceso a tu GPS para encontrar propuestas en tu micro-region
+      de la sierra de Temascaltepec.
+    </p>
+    <div class="pp-grid pp-grid--nearby" id="pp-nearby" role="list"></div>
+  </section>
+
+  <!-- ── TODAS ── -->
+  <section class="pp-section" aria-labelledby="pp-all-title">
+    <div class="pp-section-head">
+      <h3 id="pp-all-title" class="pp-section-title">
+        <span>📋</span> Todas las propuestas
+      </h3>
+      <span class="pp-counter" id="pp-all-count" aria-live="polite"></span>
+    </div>
+    <div class="pp-grid pp-grid--all" id="pp-all" role="list">
+      <div class="pp-skeleton-row">
+        <div class="pp-skeleton"></div>
+        <div class="pp-skeleton"></div>
+        <div class="pp-skeleton"></div>
+        <div class="pp-skeleton"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BOTON FLOTANTE NUEVA PROPUESTA ── -->
+  <button class="pp-fab" id="pp-fab-new" type="button" hidden>
+    <span aria-hidden="true">➕</span>
+    Registrar nueva propuesta
+  </button>
+
+  <!-- ── TOAST ── -->
+  <div class="pp-toast" id="pp-toast" role="status" aria-live="polite"></div>
+
+  <!-- ── MODAL: DETALLE ── -->
+  <div class="pp-modal" id="pp-modal-detalle" hidden role="dialog" aria-modal="true"
+       aria-labelledby="pp-detail-title">
+    <div class="pp-modal__backdrop" data-close-modal></div>
+    <div class="pp-modal__card">
+      <button class="pp-modal__close" data-close-modal aria-label="Cerrar">×</button>
+      <span class="pp-modal__tag" id="pp-detail-region"></span>
+      <h4 class="pp-modal__title" id="pp-detail-title"></h4>
+
+      <dl class="pp-detail-list">
+        <div>
+          <dt>Obra</dt>
+          <dd id="pp-detail-obra"></dd>
+        </div>
+        <div>
+          <dt>Beneficiados</dt>
+          <dd id="pp-detail-benef"></dd>
+        </div>
+        <div>
+          <dt>Pros para la comunidad</dt>
+          <dd id="pp-detail-pros"></dd>
+        </div>
+        <div>
+          <dt>Votos en el periodo</dt>
+          <dd id="pp-detail-votos">0</dd>
+        </div>
+      </dl>
+
+      <button class="pp-cta pp-cta--vote" id="pp-detail-vote" type="button">
+        Votar por esta propuesta
+      </button>
+    </div>
+  </div>
+
+  <!-- ── MODAL: AUTH (login + registro) ── -->
+  <div class="pp-modal" id="pp-modal-auth" hidden role="dialog" aria-modal="true"
+       aria-labelledby="pp-auth-title">
+    <div class="pp-modal__backdrop" data-close-modal></div>
+    <div class="pp-modal__card pp-modal__card--wide">
+      <button class="pp-modal__close" data-close-modal aria-label="Cerrar">×</button>
+      <div class="pp-tabs" role="tablist" aria-label="Acceso">
+        <button class="pp-tab is-active" role="tab" id="tab-login"
+                aria-selected="true" data-tab="login">Iniciar sesion</button>
+        <button class="pp-tab" role="tab" id="tab-register"
+                aria-selected="false" data-tab="register">Crear cuenta</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form class="pp-form" id="pp-form-login" data-pane="login">
+        <h4 id="pp-auth-title" class="pp-form__title">Bienvenido de vuelta</h4>
+        <label class="pp-field">
+          <span>Nombre de usuario</span>
+          <input type="text" name="username" autocomplete="username" required />
+        </label>
+        <label class="pp-field">
+          <span>Contrasena</span>
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <p class="pp-form__error" id="pp-login-error" role="alert"></p>
+        <button type="submit" class="pp-cta">Entrar</button>
+      </form>
+
+      <!-- REGISTER -->
+      <form class="pp-form" id="pp-form-register" data-pane="register" hidden>
+        <h4 class="pp-form__title">Da de alta tu cuenta</h4>
+        <div class="pp-form__row">
+          <label class="pp-field">
+            <span>Nombre(s)</span>
+            <input type="text" name="nombre" required maxlength="100" />
+          </label>
+          <label class="pp-field">
+            <span>Apellidos</span>
+            <input type="text" name="apellidos" required maxlength="100" />
+          </label>
+        </div>
+        <label class="pp-field">
+          <span>Comunidad / Localidad</span>
+          <select name="comunidad" required>
+            <option value="" disabled selected>Selecciona tu comunidad</option>
+            <option value="Temascaltepec de González">Temascaltepec de González</option>
+            <option value="San Pedro Tenayac">San Pedro Tenayac</option>
+            <option value="San Mateo Almomoloa">San Mateo Almomoloa</option>
+            <option value="San Sebastián Carboneras">San Sebastián Carboneras</option>
+            <option value="San Lucas del Pulque">San Lucas del Pulque</option>
+            <option value="San Francisco Oxtotilpan">San Francisco Oxtotilpan</option>
+            <option value="San Francisco la Albarrada">San Francisco la Albarrada</option>
+            <option value="San Andrés de los Gama">San Andrés de los Gama</option>
+            <option value="San Miguel Oxtotilpan">San Miguel Oxtotilpan</option>
+            <option value="San Martín Tequesquipan">San Martín Tequesquipan</option>
+            <option value="Ojo de Agua">Ojo de Agua</option>
+            <option value="Carnicería">Carnicería</option>
+            <option value="El Cerro Pelón">El Cerro Pelón</option>
+            <option value="Cieneguillas de Labra">Cieneguillas de Labra</option>
+            <option value="La Comunidad">La Comunidad</option>
+            <option value="La Estancia de Tequesquipan">La Estancia de Tequesquipan</option>
+            <option value="La Finca">La Finca</option>
+            <option value="La Guacamaya">La Guacamaya</option>
+            <option value="Jesús del Monte">Jesús del Monte</option>
+            <option value="Labor las Cabras">Labor las Cabras</option>
+            <option value="Lampazos">Lampazos</option>
+            <option value="Mesón Viejo">Mesón Viejo</option>
+            <option value="Milpas Viejas">Milpas Viejas</option>
+            <option value="Pedregales de Tequesquipan">Pedregales de Tequesquipan</option>
+            <option value="El Peñón">El Peñón</option>
+            <option value="Plan de Vigas">Plan de Vigas</option>
+            <option value="Potrero de San José">Potrero de San José</option>
+            <option value="Potrero de Tenayac">Potrero de Tenayac</option>
+            <option value="Real de Arriba">Real de Arriba</option>
+            <option value="Rincón de Atarasquillo">Rincón de Atarasquillo</option>
+            <option value="Rincón de San Andrés">Rincón de San Andrés</option>
+            <option value="Rincón de Tequesquipan">Rincón de Tequesquipan</option>
+            <option value="El Salitre">El Salitre</option>
+            <option value="San Antonio Albarranes">San Antonio Albarranes</option>
+            <option value="Telpintla">Telpintla</option>
+            <option value="Los Timbres">Los Timbres</option>
+            <option value="Manzana de Tequesquipan">Manzana de Tequesquipan</option>
+            <option value="San Juan">San Juan</option>
+            <option value="Cajones">Cajones</option>
+            <option value="Barrio la Magdalena">Barrio la Magdalena</option>
+            <option value="Los Ocotes">Los Ocotes</option>
+            <option value="Barrio de Cantarranas">Barrio de Cantarranas</option>
+            <option value="La Laguna">La Laguna</option>
+            <option value="Las Mesas de Real de Arriba">Las Mesas de Real de Arriba</option>
+            <option value="Santanas">Santanas</option>
+            <option value="Ejido Real de Arriba">Ejido Real de Arriba</option>
+            <option value="Manzana del Jabalí">Manzana del Jabalí</option>
+            <option value="Granjas de Cieneguillas">Granjas de Cieneguillas</option>
+            <option value="La Orejeta">La Orejeta</option>
+            <option value="Mina del Rincón">Mina del Rincón</option>
+            <option value="San Isidro">San Isidro</option>
+            <option value="Los Cedros">Los Cedros</option>
+            <option value="Las Cruces">Las Cruces</option>
+            <option value="La Joya">La Joya</option>
+            <option value="El Varal">El Varal</option>
+          </select>
+        </label>
+        <div class="pp-form__row">
+          <label class="pp-field">
+            <span>Usuario</span>
+            <input type="text" name="username" required minlength="4" maxlength="50" />
+          </label>
+          <label class="pp-field">
+            <span>Contrasena</span>
+            <input type="password" name="password" required minlength="6"
+                   autocomplete="new-password" />
+          </label>
+        </div>
+
+        <fieldset class="pp-curp">
+          <legend>Verificacion CURP</legend>
+          <p class="pp-curp__copy">
+            Ingresa tu CURP de 18 caracteres. Solo se aceptan registros de
+            residentes del <strong>Estado de Mexico</strong>.
+          </p>
+          <label class="pp-field">
+            <span>CURP</span>
+            <input
+              type="text"
+              id="pp-curp-input"
+              name="curp"
+              required
+              minlength="18"
+              maxlength="18"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Ej. GOML850101HMCMRR09"
+              style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"
+            />
+          </label>
+          <div class="pp-curp__status" id="pp-curp-status">
+            <span id="pp-curp-message"></span>
+          </div>
+        </fieldset>
+
+        <p class="pp-form__error" id="pp-register-error" role="alert"></p>
+        <button type="submit" class="pp-cta" id="pp-register-submit">
+          Crear cuenta
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL: NUEVA PROPUESTA ── -->
+  <div class="pp-modal" id="pp-modal-nueva" hidden role="dialog" aria-modal="true"
+       aria-labelledby="pp-nueva-title">
+    <div class="pp-modal__backdrop" data-close-modal></div>
+    <div class="pp-modal__card pp-modal__card--wide">
+      <button class="pp-modal__close" data-close-modal aria-label="Cerrar">×</button>
+      <h4 id="pp-nueva-title" class="pp-form__title">Registrar nueva propuesta</h4>
+      <form class="pp-form" id="pp-form-nueva">
+        <label class="pp-field">
+          <span>Titulo de la obra</span>
+          <input type="text" name="titulo" required maxlength="150" />
+        </label>
+        <label class="pp-field">
+          <span>Region / Comunidad</span>
+          <select name="region" required>
+            <option value="" disabled selected>Selecciona la comunidad beneficiada</option>
+            <option value="Temascaltepec de González">Temascaltepec de González</option>
+            <option value="San Pedro Tenayac">San Pedro Tenayac</option>
+            <option value="San Mateo Almomoloa">San Mateo Almomoloa</option>
+            <option value="San Sebastián Carboneras">San Sebastián Carboneras</option>
+            <option value="San Lucas del Pulque">San Lucas del Pulque</option>
+            <option value="San Francisco Oxtotilpan">San Francisco Oxtotilpan</option>
+            <option value="San Francisco la Albarrada">San Francisco la Albarrada</option>
+            <option value="San Andrés de los Gama">San Andrés de los Gama</option>
+            <option value="San Miguel Oxtotilpan">San Miguel Oxtotilpan</option>
+            <option value="San Martín Tequesquipan">San Martín Tequesquipan</option>
+            <option value="Ojo de Agua">Ojo de Agua</option>
+            <option value="Carnicería">Carnicería</option>
+            <option value="El Cerro Pelón">El Cerro Pelón</option>
+            <option value="Cieneguillas de Labra">Cieneguillas de Labra</option>
+            <option value="La Comunidad">La Comunidad</option>
+            <option value="La Estancia de Tequesquipan">La Estancia de Tequesquipan</option>
+            <option value="La Finca">La Finca</option>
+            <option value="La Guacamaya">La Guacamaya</option>
+            <option value="Jesús del Monte">Jesús del Monte</option>
+            <option value="Labor las Cabras">Labor las Cabras</option>
+            <option value="Lampazos">Lampazos</option>
+            <option value="Mesón Viejo">Mesón Viejo</option>
+            <option value="Milpas Viejas">Milpas Viejas</option>
+            <option value="Pedregales de Tequesquipan">Pedregales de Tequesquipan</option>
+            <option value="El Peñón">El Peñón</option>
+            <option value="Plan de Vigas">Plan de Vigas</option>
+            <option value="Potrero de San José">Potrero de San José</option>
+            <option value="Potrero de Tenayac">Potrero de Tenayac</option>
+            <option value="Real de Arriba">Real de Arriba</option>
+            <option value="Rincón de Atarasquillo">Rincón de Atarasquillo</option>
+            <option value="Rincón de San Andrés">Rincón de San Andrés</option>
+            <option value="Rincón de Tequesquipan">Rincón de Tequesquipan</option>
+            <option value="El Salitre">El Salitre</option>
+            <option value="San Antonio Albarranes">San Antonio Albarranes</option>
+            <option value="Telpintla">Telpintla</option>
+            <option value="Los Timbres">Los Timbres</option>
+            <option value="Manzana de Tequesquipan">Manzana de Tequesquipan</option>
+            <option value="San Juan">San Juan</option>
+            <option value="Cajones">Cajones</option>
+            <option value="Barrio la Magdalena">Barrio la Magdalena</option>
+            <option value="Los Ocotes">Los Ocotes</option>
+            <option value="Barrio de Cantarranas">Barrio de Cantarranas</option>
+            <option value="La Laguna">La Laguna</option>
+            <option value="Las Mesas de Real de Arriba">Las Mesas de Real de Arriba</option>
+            <option value="Santanas">Santanas</option>
+            <option value="Ejido Real de Arriba">Ejido Real de Arriba</option>
+            <option value="Manzana del Jabalí">Manzana del Jabalí</option>
+            <option value="Granjas de Cieneguillas">Granjas de Cieneguillas</option>
+            <option value="La Orejeta">La Orejeta</option>
+            <option value="Mina del Rincón">Mina del Rincón</option>
+            <option value="San Isidro">San Isidro</option>
+            <option value="Los Cedros">Los Cedros</option>
+            <option value="Las Cruces">Las Cruces</option>
+            <option value="La Joya">La Joya</option>
+            <option value="El Varal">El Varal</option>
+          </select>
+        </label>
+        <label class="pp-field">
+          <span>Descripcion de la obra</span>
+          <textarea name="descripcion_obra" rows="3" required></textarea>
+        </label>
+        <label class="pp-field">
+          <span>Personas beneficiadas</span>
+          <textarea name="descripcion_beneficiados" rows="2" required></textarea>
+        </label>
+        <label class="pp-field">
+          <span>Pros para la comunidad</span>
+          <textarea name="pros_comunidad" rows="2" required></textarea>
+        </label>
+        <p class="pp-form__error" id="pp-nueva-error" role="alert"></p>
+        <button type="submit" class="pp-cta">Publicar propuesta</button>
+      </form>
+    </div>
+  </div>
+</section>

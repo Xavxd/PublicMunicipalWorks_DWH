@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Director de Obras — Panel de Gestión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <link rel="stylesheet" href="../css/director.css"/>
+  <link rel="stylesheet" href="../css/demo.css"/>
+
+  <style>
+    /* ── SECCIÓN FUENTES — estilos inline para no tocar director.css ── */
+
+    .fuentes-builder {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Fila de captura */
+    .fuente-input-row {
+      display: grid;
+      grid-template-columns: 180px 1fr auto;
+      gap: 10px;
+      align-items: end;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+    }
+
+    .fuente-input-row .form-group { margin: 0; }
+
+    .btn-agregar-fuente {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 18px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.35);
+      border-radius: var(--radius-sm);
+      color: var(--accent-director);
+      font-family: var(--font-body);
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      align-self: flex-end;
+    }
+    .btn-agregar-fuente:hover {
+      background: rgba(59,130,246,0.22);
+      transform: translateY(-1px);
+    }
+    .btn-agregar-fuente svg { width: 16px; height: 16px; }
+
+    /* Lista de fuentes ya agregadas */
+    .fuentes-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 20px;
+    }
+
+    .fuente-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      animation: fade-up 0.25s ease;
+    }
+    .fuente-chip.reused {
+      border-color: rgba(245,158,11,0.35);
+      background: rgba(245,158,11,0.05);
+    }
+    .fuente-chip-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .fuente-nivel-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .fuente-nivel-badge.federal   { background: rgba(59,130,246,0.15);  color: var(--accent-director); }
+    .fuente-nivel-badge.estatal   { background: rgba(245,158,11,0.15);  color: var(--accent-proyectista); }
+    .fuente-nivel-badge.municipal { background: rgba(16,185,129,0.15);  color: var(--accent-supervisor); }
+    .fuente-nivel-badge.otro      { background: rgba(139,92,246,0.15);  color: var(--accent-secretaria); }
+
+    .fuente-chip-programa {
+      font-size: 0.83rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .fuente-chip-id {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      flex-shrink: 0;
+    }
+    .fuente-chip-reused-tag {
+      font-size: 0.68rem;
+      color: var(--accent-proyectista);
+      background: rgba(245,158,11,0.12);
+      border-radius: 4px;
+      padding: 2px 7px;
+    }
+    .btn-remove-fuente {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-remove-fuente:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+    .fuentes-empty-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 1rem;
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Spinner inline en botón agregar */
+    .btn-agregar-fuente.loading .btn-agregar-text { opacity: 0; }
+    .btn-agregar-fuente .btn-agregar-spin {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(59,130,246,0.3);
+      border-top-color: var(--accent-director);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%,-50%);
+    }
+    .btn-agregar-fuente { position: relative; }
+    .btn-agregar-fuente.loading .btn-agregar-spin { display: block; }
+
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    /* ── FILTROS DE FECHA EN OBRAS ─────────────────────────── */
+    .obras-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+    .obras-filters .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .obras-filters .filter-group label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .obras-filters .filter-group input[type="date"] {
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color-scheme: dark;
+    }
+    .obras-filters .filter-group input[type="date"]:focus {
+      outline: none;
+      border-color: var(--accent-director);
+    }
+    .obras-filters .filter-actions {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+    }
+    .obras-filters .btn-filter {
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-body);
+    }
+    .obras-filters .btn-filter-primary {
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.4);
+      color: var(--accent-director);
+    }
+    .obras-filters .btn-filter-primary:hover {
+      background: rgba(59,130,246,0.25);
+    }
+    .obras-filters .btn-filter-secondary {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .obras-filters .btn-filter-secondary:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    @media (max-width: 640px) {
+      .fuente-input-row { grid-template-columns: 1fr; }
+      .obras-filters { flex-direction: column; align-items: stretch; }
+    }
+
+    /* ── DROPDOWN BUSCABLE DE COMUNIDAD ────────────────────── */
+    .comunidad-dropdown-wrap {
+      position: relative;
+    }
+    .comunidad-search-input {
+      width: 100%;
+      padding: 10px 14px;
+      padding-right: 32px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .comunidad-search-input:focus {
+      outline: none;
+      border-color: var(--accent-director);
+    }
+    .comunidad-search-input::placeholder {
+      color: var(--text-muted);
+    }
+    .comunidad-dropdown-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: transform 0.2s;
+    }
+    .comunidad-dropdown-wrap.open .comunidad-dropdown-icon {
+      transform: translateY(-50%) rotate(180deg);
+    }
+    .comunidad-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: 240px;
+      overflow-y: auto;
+      background: var(--bg-card, #1a1a24);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .comunidad-dropdown-wrap.open .comunidad-dropdown-menu {
+      display: block;
+    }
+    .comunidad-dropdown-menu .dropdown-search {
+      position: sticky;
+      top: 0;
+      padding: 8px 10px;
+      background: var(--bg-card, #1a1a24);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 2;
+    }
+    .comunidad-dropdown-menu .dropdown-search input {
+      width: 100%;
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+    }
+    .comunidad-dropdown-menu .dropdown-search input:focus {
+      outline: none;
+      border-color: var(--accent-director);
+    }
+    .comunidad-dropdown-menu .dropdown-search input::placeholder {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+    .comunidad-dropdown-menu .dropdown-item {
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+    .comunidad-dropdown-menu .dropdown-item:hover,
+    .comunidad-dropdown-menu .dropdown-item.active {
+      background: rgba(59,130,246,0.12);
+    }
+    .comunidad-dropdown-menu .dropdown-item.no-results {
+      color: var(--text-muted);
+      cursor: default;
+      text-align: center;
+      font-style: italic;
+    }
+    .comunidad-dropdown-menu .dropdown-item.no-results:hover {
+      background: transparent;
+    }
+    .comunidad-dropdown-menu::-webkit-scrollbar {
+      width: 6px;
+    }
+    .comunidad-dropdown-menu::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .comunidad-dropdown-menu::-webkit-scrollbar-thumb {
+      background: var(--border-medium);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+<!-- Aviso permanente: la versión publicada es un entorno aislado por pestaña. -->
+<div class="demo-strip" role="status">
+  <span class="demo-strip__tag">Demostración</span>
+  <span class="demo-strip__text">Acceso abierto y sin servidor. Puedes crear, editar y borrar
+    libremente: los cambios viven sólo en esta pestaña y se descartan al cerrarla.</span>
+  <a class="demo-strip__link" href="../index.html">Volver al inicio</a>
+</div>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follower" id="cursor-follower"></div>
+<div class="noise-overlay" style="pointer-events:none;"></div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-block">
+      <a href="../index.html" class="back-home">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="logo-emblem">
+        <svg viewBox="0 0 48 48" fill="none"><polygon points="24,4 44,14 44,34 24,44 4,34 4,14" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="24" cy="24" r="4" fill="currentColor"/></svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-main">Director de Obras</span>
+        <span class="logo-sub">H. Ayuntamiento de Temascaltepec</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div id="user-header-badge" class="user-session-badge"></div>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+</header>
+
+<div class="page-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Gestión</div>
+      <a class="nav-item active" data-panel="nueva-obra" onclick="showPanel('nueva-obra')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Nueva Obra
+      </a>
+      <a class="nav-item" data-panel="obras-list" onclick="showPanel('obras-list')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="2.5" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2.5" rx="1" fill="currentColor"/><rect x="3" y="13" width="9" height="2.5" rx="1" fill="currentColor"/></svg>
+        Obras Registradas
+      </a>
+      <a class="nav-item" data-panel="constructoras" onclick="showPanel('constructoras')">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M2 17V8l8-5 8 5v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Constructoras
+      </a>
+      <div class="nav-section-label" style="margin-top:1.5rem">Consultas</div>
+      <a class="nav-item" data-panel="fuentes" onclick="showPanel('fuentes')">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="9" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 016 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Fuentes Presupuestarias
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- ============================================================
+         PANEL: NUEVA OBRA — WIZARD DE 3 PASOS
+         ============================================================ -->
+    <div class="panel active" id="panel-nueva-obra">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Registrar Nueva Obra</h1>
+          <p class="page-subtitle">El registro se realiza en tres pasos para garantizar la integridad de los datos.</p>
+        </div>
+        <div class="panel-meta">
+          <span id="obra-count-badge" class="obra-badge">— obras registradas</span>
+        </div>
+      </div>
+
+      <!-- INDICADOR DE PASOS -->
+      <div class="wizard-stepper">
+        <div class="step-pill active" data-step="1">
+          <span class="step-num">1</span>
+          <span class="step-label">Constructora</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-pill" data-step="2">
+          <span class="step-num">2</span>
+          <span class="step-label">Región</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-pill" data-step="3">
+          <span class="step-num">3</span>
+          <span class="step-label">Datos de Obra</span>
+        </div>
+      </div>
+
+      <!-- BREADCRUMB DINÁMICO -->
+      <div class="wizard-breadcrumb" id="wizard-breadcrumb"></div>
+
+      <!-- ── PASO 1: CONSTRUCTORA EJECUTORA ────────────────────── -->
+      <div class="wizard-step active" id="wizard-step-1">
+        <div class="card">
+          <div class="card-title">
+            <span class="step-badge">01</span>
+            Constructora Ejecutora de la Obra
+          </div>
+          <p class="step-desc">
+            Registra los datos completos de la empresa o entidad que ejecutará la obra.
+            Esta información quedará vinculada de forma permanente al expediente.
+          </p>
+
+          <div class="form-grid form-grid-2">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Nombre / Razón Social *</label>
+              <input type="text" class="form-input" id="c-nombre"
+                     placeholder="Ej. Constructora Vías del Sur S.A. de C.V."
+                     style="padding-left:14px"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">RFC *
+                <span class="form-hint">Formato: 3–4 letras + 6 números + 3 caracteres</span>
+              </label>
+              <input type="text" class="form-input" id="c-rfc"
+                     placeholder="Ej. CVS020415T34" maxlength="13"
+                     style="padding-left:14px;text-transform:uppercase"
+                     oninput="this.value=this.value.toUpperCase()"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo de Ejecutor *</label>
+              <select class="form-select" id="c-tipo">
+                <option value="">Seleccionar tipo…</option>
+                <option value="Empresa Externa">Empresa Externa</option>
+                <option value="Gobierno Municipal">Gobierno Municipal (ejecución propia)</option>
+                <option value="Organismo Público">Organismo Público</option>
+                <option value="Cooperativa Local">Cooperativa Local</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="step1-confirm"></div>
+
+          <div class="form-actions">
+            <div class="actions-note">Los datos se enviarán a la base de datos al presionar "Continuar"</div>
+            <button type="button" id="btn-step1" class="btn-primary btn-wizard"
+                    onclick="submitConstructora()">
+              <span class="btn-text-inner">Registrar y Continuar</span>
+              <span class="btn-loader-inner"></span>
+              <svg class="btn-arrow" viewBox="0 0 20 20" fill="none">
+                <path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PASO 2: REGIÓN / COMUNIDAD ───────────────────────── -->
+      <div class="wizard-step" id="wizard-step-2">
+        <div class="card">
+          <div class="card-title">
+            <span class="step-badge">02</span>
+            Región y Comunidad de la Obra
+          </div>
+          <p class="step-desc">
+            Especifica el área geográfica donde se ejecutará la obra.
+            Los datos de región se almacenan de forma independiente para su reutilización.
+          </p>
+
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Comunidad / Localidad *</label>
+              <!-- Dropdown buscable con scroll de comunidades -->
+              <div class="comunidad-dropdown-wrap" id="comunidad-dropdown-wrap">
+                <input
+                  type="text"
+                  class="comunidad-search-input"
+                  id="r-comunidad"
+                  placeholder="Buscar y seleccionar comunidad…"
+                  readonly
+                  onclick="toggleComunidadDropdown()"
+                  oninput="filterComunidadList(this.value)"
+                  autocomplete="off"
+                />
+                <span class="comunidad-dropdown-icon">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <div class="comunidad-dropdown-menu" id="comunidad-dropdown-menu">
+                  <div class="dropdown-search">
+                    <input
+                      type="text"
+                      id="comunidad-search-box"
+                      placeholder="Escribe para buscar…"
+                      oninput="filterComunidadList(this.value)"
+                      onclick="event.stopPropagation()"
+                    />
+                  </div>
+                  <div id="comunidad-list-container">
+                    <!-- Se llena dinámicamente via JS -->
+                  </div>
+                </div>
+              </div>
+              <!-- Input oculto para almacenar el valor real seleccionado -->
+              <input type="hidden" id="r-comunidad-value" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Barrio / Sección *</label>
+              <input type="text" class="form-input" id="r-barrio"
+                     placeholder="Ej. Barrio Temeroso" style="padding-left:14px"/>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Colonia (opcional)</label>
+              <input type="text" class="form-input" id="r-colonia"
+                     placeholder="Ej. Col. Centro" style="padding-left:14px"/>
+            </div>
+          </div>
+
+          <div id="step2-confirm"></div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" onclick="goBackStep(1)">
+              <svg viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
+                <path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Regresar
+            </button>
+            <div class="actions-note">Los datos de región se guardarán al continuar</div>
+            <button type="button" id="btn-step2" class="btn-primary btn-wizard"
+                    onclick="submitRegion()">
+              <span class="btn-text-inner">Registrar y Continuar</span>
+              <span class="btn-loader-inner"></span>
+              <svg class="btn-arrow" viewBox="0 0 20 20" fill="none">
+                <path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PASO 3: DATOS DE OBRA ─────────────────────────────── -->
+      <div class="wizard-step" id="wizard-step-3">
+        <form id="form-obra" onsubmit="submitObra(event)">
+
+          <!-- Resumen de pasos anteriores -->
+          <div class="prev-steps-summary card" id="obra-prev-summary"
+               style="margin-bottom:1.25rem;padding:1.25rem 1.5rem;"></div>
+
+          <!-- Datos principales de la obra -->
+          <div class="card">
+            <div class="card-title">
+              <span class="step-badge">03</span>
+              Datos Específicos de la Obra
+            </div>
+
+            <div class="form-grid form-grid-2">
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Nombre de la Obra *</label>
+                <input type="text" class="form-input" id="obra-nombre"
+                       placeholder="Ej. Pavimento Hidráulico en Calle Principal, Albarranes"
+                       style="padding-left:14px" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Etapa</label>
+                <select class="form-select" id="obra-etapa">
+                  <option value="1">Etapa 1</option>
+                  <option value="2">Etapa 2</option>
+                  <option value="3">Etapa 3</option>
+                  <option value="4">Etapa 4</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Supervisor Asignado *</label>
+                <select class="form-select" id="obra-supervisor" required>
+                  <option value="">Cargando supervisores…</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha de Inicio *</label>
+                <input type="date" class="form-input" id="obra-fecha-inicio"
+                       style="padding-left:14px" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha de Finalización *</label>
+                <input type="date" class="form-input" id="obra-fecha-fin"
+                       style="padding-left:14px" required/>
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label class="form-label">Presupuesto Total Asignado ($)</label>
+                <input type="number" class="form-input" id="obra-presupuesto"
+                       placeholder="0.00" step="0.01" min="0"
+                       style="padding-left:14px"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════════════════
+               FUENTES DE FINANCIAMIENTO
+               El director registra n fuentes presupuestarias.
+               Cada una se persiste en Supabase al pulsar "+".
+               El ID es determinista: misma fuente = mismo ID → sin duplicados.
+               ════════════════════════════════════════════════════ -->
+          <div class="card">
+            <div class="card-title">Fuentes de Financiamiento</div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.5rem">
+              Agrega las fuentes que financian esta obra. Puedes agregar tantas como sean necesarias.
+              Si una fuente ya existe en el sistema, el registro se reutilizará automáticamente.
+            </p>
+
+            <div class="fuentes-builder">
+
+              <!-- Fila de captura -->
+              <div class="fuente-input-row">
+                <div class="form-group">
+                  <label class="form-label">Nivel *</label>
+                  <select class="form-select" id="fuente-nivel"
+                          onchange="this.value=this.value.toUpperCase()">
+                    <option value="">Seleccionar…</option>
+                    <option value="FEDERAL">FEDERAL</option>
+                    <option value="ESTATAL">ESTATAL</option>
+                    <option value="MUNICIPAL">MUNICIPAL</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Programa / Nombre de la Fuente *</label>
+                  <input type="text" class="form-input" id="fuente-programa"
+                         placeholder="Ej. FONDO DE INFRAESTRUCTURA SOCIAL MUNICIPAL"
+                         style="padding-left:14px;text-transform:uppercase"
+                         oninput="this.value=this.value.toUpperCase()"
+                         onkeydown="if(event.key==='Enter'){event.preventDefault();agregarFuente();}"/>
+                </div>
+
+                <button type="button" id="btn-agregar-fuente"
+                        class="btn-agregar-fuente"
+                        onclick="agregarFuente()">
+                  <span class="btn-agregar-text">
+                    <svg viewBox="0 0 20 20" fill="none">
+                      <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Agregar
+                  </span>
+                  <span class="btn-agregar-spin"></span>
+                </button>
+              </div>
+
+              <!-- Lista de fuentes ya agregadas -->
+              <div class="fuentes-lista" id="fuentes-lista">
+                <div class="fuentes-empty-note" id="fuentes-empty">
+                  Aún no se ha agregado ninguna fuente. Usa el formulario de arriba.
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Descripción y beneficiarios -->
+          <div class="card">
+            <div class="card-title">Descripción y Beneficiarios</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Descripción general de la obra</label>
+                <textarea class="form-textarea" id="obra-desc" rows="4"
+                          placeholder="Describe el alcance y propósito de la obra, tipo de trabajos, longitud, superficie, etc."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Beneficiarios *</label>
+                <input type="text" class="form-input" id="obra-beneficiarios"
+                       placeholder="Ej. 450 habitantes de la comunidad de Albarranes"
+                       style="padding-left:14px" required/>
+              </div>
+            </div>
+          </div>
+
+          <div id="step3-confirm"></div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" onclick="goBackStep(2)">
+              <svg viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
+                <path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Regresar
+            </button>
+            <button type="submit" id="btn-submit-obra" class="btn-primary btn-wizard"
+                    style="background:var(--accent-director)">
+              <span class="btn-text-inner">
+                <svg viewBox="0 0 20 20" fill="none" style="width:16px;height:16px">
+                  <path d="M5 10l4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Registrar Obra
+              </span>
+              <span class="btn-loader-inner"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: OBRAS REGISTRADAS (con filtros de fecha)
+         ============================================================ -->
+    <div class="panel" id="panel-obras-list">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Obras Registradas</h1>
+          <p class="page-subtitle">Historial completo de obras en el sistema.</p>
+        </div>
+        <div class="panel-search">
+          <input type="text" class="search-input" id="search-obras"
+                 placeholder="Buscar por nombre, expediente…"
+                 oninput="filterObras(this.value)"/>
+        </div>
+      </div>
+
+      <!-- Filtros de rango de fechas -->
+      <div class="obras-filters">
+        <div class="filter-group">
+          <label>Fecha Inicio</label>
+          <input type="date" id="filter-fecha-desde" />
+        </div>
+        <div class="filter-group">
+          <label>Fecha Fin</label>
+          <input type="date" id="filter-fecha-hasta" />
+        </div>
+        <div class="filter-actions">
+          <button class="btn-filter btn-filter-primary" onclick="applyDateFilter()">
+            <svg viewBox="0 0 20 20" fill="none" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px">
+              <path d="M2 5h16M5 5V3M15 5V3M4 9h12M4 13h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Filtrar
+          </button>
+          <button class="btn-filter btn-filter-secondary" onclick="clearDateFilter()">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="obras-table-wrap">
+        <table class="obras-table">
+          <thead>
+            <tr>
+              <th>Expediente</th>
+              <th>Nombre de la Obra</th>
+              <th>Región</th>
+              <th>Constructora</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="obras-tbody">
+            <tr><td colspan="8" class="loading-row">
+              <div class="loading-spinner"></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: CONSTRUCTORAS (catálogo)
+         ============================================================ -->
+    <div class="panel" id="panel-constructoras">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Catálogo de Constructoras</h1>
+          <p class="page-subtitle">Empresas y entidades ejecutoras registradas en el sistema.</p>
+        </div>
+      </div>
+      <div class="constructoras-grid" id="constructoras-grid">
+        <div class="loading-inline">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: FUENTES PRESUPUESTARIAS (consulta global)
+         ============================================================ -->
+    <div class="panel" id="panel-fuentes">
+      <div class="panel-header">
+        <div>
+          <h1 class="page-title">Fuentes Presupuestarias</h1>
+          <p class="page-subtitle">Catálogo completo de fuentes de financiamiento registradas en el sistema.</p>
+        </div>
+      </div>
+      <div class="fuentes-catalog" id="fuentes-catalog">
+        <div class="loading-inline">Cargando…</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="../js/static_backend.js"></script>
+<script src="../js/api_client.js"></script>
+<script src="../main.js"></script>
+<script src="director.js"></script>
+
+<!-- ════════════════════════════════════════════════════════════
+     LÓGICA DE FUENTES — inline para no depender del orden de carga
+     de director.js. Usa las funciones globales de api_client.js.
+     ════════════════════════════════════════════════════════════ -->
+<script>
+/**
+ * Estado en memoria de las fuentes que el director ha agregado
+ * en la sesión actual del Paso 3.
+ * Cada entrada: { id, nivel, programa, reused }
+ */
+const fuentesAgregadas = [];
+
+/**
+ * agregarFuente()
+ * 1. Lee nivel + programa del formulario (ya en MAYÚSCULAS por oninput).
+ * 2. Llama POST /api/fuentes → backend genera ID determinista.
+ * 3. Si el backend responde reused:true → la fuente ya existía, se reutiliza.
+ * 4. Evita duplicados en la lista local (mismo ID no se agrega dos veces).
+ * 5. Renderiza el chip en la lista.
+ */
+async function agregarFuente() {
+  const nivelEl    = document.getElementById('fuente-nivel');
+  const programaEl = document.getElementById('fuente-programa');
+  const btn        = document.getElementById('btn-agregar-fuente');
+
+  const nivel    = (nivelEl.value   || '').toUpperCase().trim();
+  const programa = (programaEl.value || '').toUpperCase().trim();
+
+  if (!nivel) {
+    showToast('Selecciona el nivel de la fuente (Federal, Estatal, Municipal…)', 'error');
+    nivelEl.focus();
+    return;
+  }
+  if (!programa) {
+    showToast('Escribe el nombre del programa o fuente presupuestaria.', 'error');
+    programaEl.focus();
+    return;
+  }
+
+  // Activar spinner
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const res = await API.post('/api/fuentes', { nivel, programa });
+    const data = res.data;
+
+    // Evitar duplicado en lista local (mismo id ya en fuentesAgregadas)
+    if (fuentesAgregadas.some(f => f.id === data.id)) {
+      showToast(
+        `La fuente "${programa}" ya está en la lista de esta obra.`,
+        'error'
+      );
+      return;
+    }
+
+    // Agregar al estado local
+    fuentesAgregadas.push({
+      id:      data.id,
+      nivel:   data.nivel,
+      programa: data.programa,
+      reused:  data.reused || false,
+    });
+
+    renderFuentesLista();
+
+    // Limpiar campos
+    nivelEl.value    = '';
+    programaEl.value = '';
+    programaEl.focus();
+
+    const msg = data.reused
+      ? `Fuente reutilizada: "${programa}" (ya existía en el sistema).`
+      : `Fuente registrada: "${programa}" → ID ${data.id}`;
+    showToast(msg);
+
+  } catch (err) {
+    handleApiError(err);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+/**
+ * renderFuentesLista()
+ * Dibuja los chips de fuentes en #fuentes-lista.
+ */
+function renderFuentesLista() {
+  const lista = document.getElementById('fuentes-lista');
+  if (!lista) return;
+
+  if (!fuentesAgregadas.length) {
+    // Crear el mensaje vacío de nuevo si no existe o ya fue removido
+    let empty = document.getElementById('fuentes-empty');
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = 'fuentes-empty';
+      empty.className = 'fuentes-empty-note';
+      empty.textContent = 'Aún no se ha agregado ninguna fuente. Usa el formulario de arriba.';
+    }
+    lista.innerHTML = '';  // Limpia todo
+    lista.appendChild(empty);
+    return;
+  }
+
+  lista.innerHTML = fuentesAgregadas.map((f, idx) => `
+    <div class="fuente-chip ${f.reused ? 'reused' : ''}" id="fchip-${idx}">
+      <div class="fuente-chip-left">
+        <span class="fuente-nivel-badge ${f.nivel.toLowerCase()}">${f.nivel}</span>
+        <span class="fuente-chip-programa">${f.programa}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="fuente-chip-id">${f.id}</span>
+        ${f.reused ? '<span class="fuente-chip-reused-tag">Reutilizada</span>' : ''}
+        <button class="btn-remove-fuente" onclick="quitarFuente(${idx})"
+                title="Quitar de esta obra">✕</button>
+      </div>
+    </div>
+  `).join('');
+  
+}
+
+function quitarFuente(idx) {
+  fuentesAgregadas.splice(idx, 1);
+  renderFuentesLista();
+}
+
+/**
+ * getFuentesIds()
+ * Retorna el array de IDs para incluirlo en el body de submitObra().
+ * director.js ya lo llama así: body.fuentes = getFuentesIds()
+ */
+function getFuentesIds() {
+  return fuentesAgregadas.map(f => f.id);
+}
+
+/**
+ * resetFuentes()
+ * Limpia la lista al reiniciar el wizard.
+ * director.js la llama desde initWizard().
+ */
+function resetFuentes() {
+  fuentesAgregadas.length = 0;
+  renderFuentesLista();
+  document.getElementById('fuente-nivel').value    = '';
+  document.getElementById('fuente-programa').value = '';
+}
+
+/* ── COMUNIDAD DROPDOWN BUSCABLE ───────────────────────────── */
+
+const COMUNIDADES = [
+  'Cabecera Municipal',
+  'San Pedro Tenayac',
+  'San Mateo Almomoloa',
+  'San Sebastián Carboneras',
+  'San Lucas del Pulque',
+  'San Francisco Oxtotilpan',
+  'San Andrés de los Gama',
+  'San Miguel Oxtotilpan',
+  'San Martín Tequesquipan',
+  'La Albarrada',
+  'Cajones',
+  'La Comunidad',
+  'El Cerro Pelón',
+  'Cieneguillas de González',
+  'Cieneguillas de Labra',
+  'La Estancia de Tequesquipan',
+  'La Finca',
+  'Jesús del Monte',
+  'Labor las Cabras',
+  'Lampazos',
+  'Mesón Viejo',
+  'Potrero de Tenayac',
+  'Real de Arriba',
+  'Rincón de Tequesquipan',
+  'El Salitre'
+];
+
+function initComunidadDropdown() {
+  const container = document.getElementById('comunidad-list-container');
+  if (!container) return;
+  renderComunidadItems(COMUNIDADES);
+}
+
+function renderComunidadItems(items) {
+  const container = document.getElementById('comunidad-list-container');
+  if (!container) return;
+
+  if (!items.length) {
+    container.innerHTML = '<div class="dropdown-item no-results">No se encontraron comunidades</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(c =>
+    `<div class="dropdown-item" onclick="selectComunidad('${c.replace(/'/g, "\\'")}')">${c}</div>`
+  ).join('');
+}
+
+function toggleComunidadDropdown() {
+  const wrap = document.getElementById('comunidad-dropdown-wrap');
+  const isOpen = wrap.classList.contains('open');
+
+  // Cerrar si está abierto, abrir si está cerrado
+  if (isOpen) {
+    wrap.classList.remove('open');
+  } else {
+    wrap.classList.add('open');
+    // Enfocar el campo de búsqueda al abrir
+    setTimeout(() => {
+      const searchBox = document.getElementById('comunidad-search-box');
+      if (searchBox) {
+        searchBox.value = '';
+        searchBox.focus();
+        renderComunidadItems(COMUNIDADES);
+      }
+    }, 10);
+  }
+}
+
+function filterComunidadList(query) {
+  const q = (query || '').toLowerCase().trim();
+  const filtered = q
+    ? COMUNIDADES.filter(c => c.toLowerCase().includes(q))
+    : COMUNIDADES;
+  renderComunidadItems(filtered);
+}
+
+function selectComunidad(comunidad) {
+  const input = document.getElementById('r-comunidad');
+  const hidden = document.getElementById('r-comunidad-value');
+  const wrap = document.getElementById('comunidad-dropdown-wrap');
+
+  if (input) input.value = comunidad;
+  if (hidden) hidden.value = comunidad;
+  if (wrap) wrap.classList.remove('open');
+}
+
+// Cerrar el dropdown al hacer clic fuera
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('comunidad-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    wrap.classList.remove('open');
+  }
+});
+
+// Inicializar el dropdown al cargar la página
+document.addEventListener('DOMContentLoaded', initComunidadDropdown);
+</script>
+
+</body>
+</html>

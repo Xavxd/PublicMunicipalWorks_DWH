@@ -91,16 +91,25 @@ const roleConfig = {
 
 let currentRole = null;
 
+/** Public demonstration credentials, taken from the same list the local backend
+ *  publishes so the form and the documentation cannot drift apart. */
+function demoCredentialsFor(role) {
+  const list = (window.StaticBackend && window.StaticBackend.demoCredentials) || [];
+  return list.find(c => c.role === role) || { username: '', password: '' };
+}
+
 function openLogin(role) {
   currentRole = role;
   const config = roleConfig[role];
+  const creds = demoCredentialsFor(role);
   document.getElementById('modal-role-icon').textContent = config.icon;
   document.getElementById('modal-role-tag').textContent = config.tag;
   document.getElementById('modal-role-name').textContent = config.name;
   document.getElementById('login-submit').style.background = config.color;
   document.getElementById('login-error').textContent = '';
-  document.getElementById('modal-login-user').value = '';
-  document.getElementById('modal-login-pass').value = '';
+  // Prefilled and in plain sight: there is nothing here to keep secret.
+  document.getElementById('modal-login-user').value = creds.username;
+  document.getElementById('modal-login-pass').value = creds.password;
   const overlay = document.getElementById('modal-overlay');
   if (overlay) {
     overlay.classList.add('active');
@@ -109,13 +118,17 @@ function openLogin(role) {
 }
 
 function closeLogin(event) {
-  if (event && event.target !== document.getElementById('modal-overlay')) return;
-  document.getElementById('modal-overlay').classList.remove('active');
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay) return;
+  if (event && event.target !== overlay) return;
+  overlay.classList.remove('active');
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeLogin({ target: document.getElementById('modal-overlay') });
-  if (e.key === 'Enter' && document.getElementById('modal-overlay').classList.contains('active')) handleLogin();
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay) return;
+  if (e.key === 'Escape') closeLogin({ target: overlay });
+  if (e.key === 'Enter' && overlay.classList.contains('active')) handleLogin();
 });
 
 function togglePass() {
@@ -123,41 +136,45 @@ function togglePass() {
   input.type = input.type === 'password' ? 'text' : 'password';
 }
 
+/**
+ * Opens the selected role. Nothing is validated on purpose: an empty or wrong
+ * credential is still a valid way in, because the published artefact has no
+ * private data and no shared state to protect. See js/static_backend.js.
+ */
 async function handleLogin() {
-  if (document.getElementById('login-submit').classList.contains('loading')) return;
-  
+  const btn = document.getElementById('login-submit');
+  if (btn.classList.contains('loading')) return;
+
   const user = document.getElementById('modal-login-user').value.trim();
   const pass = document.getElementById('modal-login-pass').value;
   const errEl = document.getElementById('login-error');
-  const btn = document.getElementById('login-submit');
-
-  if (!user || !pass) {
-    errEl.textContent = 'Por favor completa todos los campos.';
-    shake(btn);
-    return;
-  }
 
   btn.classList.add('loading');
   errEl.textContent = '';
 
   try {
     const response = await loginUser(user, pass, currentRole);
-
     btn.classList.remove('loading');
-
-    if (response.success && response.data) {
-      showToast(`Bienvenido, ${response.data.nombre}`);
-      
-      setTimeout(() => {
-        errEl.textContent = 'Esta publicación es una demostración estática: no modifica datos ni requiere servidor.';
-      }, 450);
-    } 
+    showToast(`Bienvenido, ${response.data.nombre}`);
+    window.location.href = roleConfig[currentRole].redirect;
   } catch (err) {
     btn.classList.remove('loading');
-    
-    errEl.textContent = err.message || 'Error de conexión con el servidor.';
+    errEl.textContent = err.message || 'No se pudo abrir la demostración.';
     shake(btn);
   }
+}
+
+/** Discards everything this tab has written and restores the seeded dataset. */
+function resetDemoData() {
+  if (window.StaticBackend) window.StaticBackend.reset();
+  sessionStorage.removeItem('op_user');
+  sessionStorage.removeItem('op_static_blobs');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('user_name');
+  localStorage.removeItem('pp_token');
+  localStorage.removeItem('pp_user');
+  showToast('Demostración restablecida a los datos sintéticos iniciales.');
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -191,12 +208,6 @@ function showToast(message) {
   toast.querySelector('.toast-msg').textContent = message;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3500);
-}
-
-async function loginUser(username, password, role) {
-  const result = { success: true, data: { id: 'static-demo', role, nombre: `Demostración ${role}`, username } };
-  sessionStorage.setItem('op_user', JSON.stringify(result.data));
-  return result;
 }
 
 /* ═══════════════════════════════════════════════

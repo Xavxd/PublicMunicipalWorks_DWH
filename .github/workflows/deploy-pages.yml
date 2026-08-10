@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        with:
+          # Turns Pages on if it is off, instead of failing the run.
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs

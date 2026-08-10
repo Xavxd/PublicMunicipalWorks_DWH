@@ -1,0 +1,200 @@
+/* =========================================
+   demo.css — additions for the published artefact only.
+
+   main.css is kept byte-identical to the original prototype, so everything the
+   static demonstration needs on top of it lives here. Only the design tokens
+   already defined in main.css are used, which keeps the light and dark themes
+   working without touching the theme switch.
+   ========================================= */
+
+/* ---- OPEN ACCESS PANEL (roles section) ---- */
+.open-access {
+  max-width: 780px;
+  margin: 2.6rem auto 0;
+  padding: 1.6rem 1.8rem;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.open-access__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.open-access__badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-supervisor);
+  background: var(--accent-supervisor-glow);
+  border: 1px solid var(--accent-supervisor-glow);
+}
+
+.open-access__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.open-access__lead,
+.open-access__foot {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.open-access__list {
+  list-style: none;
+  margin: 1.15rem 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.open-access__item {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.open-access__role {
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.open-access__cred {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: var(--accent);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  user-select: all;
+  white-space: nowrap;
+}
+
+.open-access__foot {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.open-access__foot code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.open-access__reset {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed currentColor;
+  padding: 0;
+  cursor: pointer;
+}
+
+.open-access__reset:hover {
+  color: var(--accent-warm);
+}
+
+@media (max-width: 640px) {
+  .open-access {
+    padding: 1.25rem 1.1rem;
+  }
+  .open-access__item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .open-access__cred {
+    justify-self: start;
+  }
+}
+
+/* ---- SANDBOX STRIP (role pages) ---- */
+.demo-strip {
+  position: relative;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 20px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.demo-strip__tag {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-warm);
+  background: var(--accent-proyectista-glow);
+}
+
+.demo-strip__text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.demo-strip__link {
+  flex-shrink: 0;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.demo-strip__link:hover {
+  border-bottom-color: currentColor;
+}
+
+/* ---- LOGIN MODAL NOTE ---- */
+.modal-open-note {
+  margin-bottom: 1.1rem;
+  padding: 10px 13px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 2px solid var(--accent-supervisor);
+  border-radius: var(--radius-sm);
+}
+
+.modal-open-note strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}

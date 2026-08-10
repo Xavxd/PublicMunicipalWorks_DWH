@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/propuestas.css" />
+  <link rel="stylesheet" href="css/demo.css" />
   <script src="js/theme.js"></script>
 </head>
 <body>
@@ -298,6 +299,47 @@
     </div>
     <h2 class="section-title">Selecciona tu perfil<br/><em>de trabajo</em></h2>
     <p class="section-desc">Cada rol cuenta con permisos específicos que garantizan la integridad y trazabilidad de la información pública.</p>
+
+    <!-- Credenciales públicas: esta publicación es abierta por diseño. -->
+    <section class="open-access" aria-labelledby="open-access-title">
+      <header class="open-access__head">
+        <span class="open-access__badge">Acceso abierto</span>
+        <h3 class="open-access__title" id="open-access-title">Entra con cualquiera de estas credenciales</h3>
+      </header>
+      <p class="open-access__lead">
+        Están publicadas a propósito: esta demostración no consulta ningún servidor y no
+        guarda nada fuera de tu propia pestaña. Lo que registres se borra al cerrarla, y
+        nadie más lo ve. El formulario admite además cualquier valor, incluso vacío.
+      </p>
+      <ul class="open-access__list">
+        <li class="open-access__item">
+          <span class="open-access__role">Director de Obras</span>
+          <code class="open-access__cred">demo_director</code>
+          <code class="open-access__cred">Icokg2026-Dir</code>
+        </li>
+        <li class="open-access__item">
+          <span class="open-access__role">Supervisor</span>
+          <code class="open-access__cred">demo_supervisor</code>
+          <code class="open-access__cred">Icokg2026-Sup</code>
+        </li>
+        <li class="open-access__item">
+          <span class="open-access__role">Proyectista</span>
+          <code class="open-access__cred">demo_proyectista</code>
+          <code class="open-access__cred">Icokg2026-Pry</code>
+        </li>
+        <li class="open-access__item">
+          <span class="open-access__role">Secretaría</span>
+          <code class="open-access__cred">demo_secretario</code>
+          <code class="open-access__cred">Icokg2026-Sec</code>
+        </li>
+      </ul>
+      <p class="open-access__foot">
+        Las mismas cuentas existen en la API Flask de referencia (<code>backend/</code>), donde
+        el prefijo <code>DEMO-</code> las restringe a sólo lectura. Reiniciar los datos de esta
+        pestaña:
+        <button type="button" class="open-access__reset" onclick="resetDemoData()">restablecer demostración</button>
+      </p>
+    </section>
   </div>
 
   <div class="roles-grid">
@@ -486,6 +528,10 @@
       </div>
     </div>
     <div class="modal-body">
+      <div class="modal-open-note">
+        <strong>Acceso abierto.</strong> Las credenciales de este rol ya vienen escritas y
+        se muestran a la vista. Cualquier otro valor —o ninguno— también entra.
+      </div>
       <div class="login-form">
         <div class="form-group">
           <label class="form-label">Usuario / Clave de acceso</label>
@@ -498,7 +544,7 @@
           <label class="form-label">Contraseña</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V7a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <input type="password" id="modal-login-pass" placeholder="••••••••" class="form-input" />
+            <input type="text" id="modal-login-pass" placeholder="Contraseña pública del rol" class="form-input" />
             <button class="toggle-pass" onclick="togglePass()" type="button">
               <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke="currentColor" stroke-width="1.5"/></svg>
             </button>
@@ -512,7 +558,7 @@
       </div>
     </div>
     <div class="modal-footer-note">
-      Sistema de acceso seguro · H. Ayuntamiento Temascaltepec
+      Demostración sin servidor · H. Ayuntamiento Temascaltepec
     </div>
   </div>
 </div>
@@ -522,6 +568,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="js/static_backend.js"></script>
+<script src="js/api_client.js"></script>
 <script src="main.js"></script>
 <script src="js/cables.js"></script>
 <script src="js/propuestas.js"></script>

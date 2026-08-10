@@ -6,7 +6,9 @@ abstract: >-
   chapter. It includes the dimensional warehouse DDL (ten dimensions, five of them
   SCD Type 2, two fact tables, five analytical views), SCD 2 synchronisation
   triggers, seeded synthetic-data generators, the detection evaluation protocol,
-  and a serverless GitHub Pages demonstration.
+  and a serverless GitHub Pages demonstration whose credentials are published
+  openly: it runs entirely from a synthetic dataset scoped to the visitor's own
+  browser tab, so it has no shared state to protect.
 type: software
 license: MIT
 version: 1.1-icokg2026
