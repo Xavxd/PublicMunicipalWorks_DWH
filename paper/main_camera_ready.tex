@@ -186,7 +186,7 @@ Figure~\ref{fig:arquitectura} illustrates the four layers of the proposed archit
 \node[box] (act) at (0,3.55) {Actors: director, supervisor, secretary, planner, citizen};
 \node[box] (web) at (-2.2,2.55) {Role-specific web application\\HTML5/CSS3/JS};
 \node[box,minimum width=98mm] (api) at (0,1.45)
-  {Flask\,/\,Python REST API $\;\cdot\;$ 9 blueprints, 56 routes $\;\cdot\;$
+  {Flask\,/\,Python REST API $\;\cdot\;$ 9 blueprints, 56 routes\\
    11 unauthenticated read-only $\;\cdot\;$ role check + signed session token};
 \node[box] (oltp) at (-2.6,0.15) {Operational schema (OLTP)};
 \node[box] (r2)   at ( 2.6,0.15) {Object store --- Cloudflare R2\\(binary evidence)};
@@ -466,7 +466,7 @@ The static artefact is permanently online, so its delivery can be audited by
 anyone against a public URL. A Lighthouse audit of its two entry points, taken
 as the median of three runs each on 11 August 2026 (Lighthouse 12.8.2, headless
 Chrome 151, emulated mobile with simulated throttling, tag
-\texttt{v1.7.1-icokg2026}), gives the landing page 85 for performance and the
+\texttt{v1.7.2-icokg2026}), gives the landing page 85 for performance and the
 map 72, with 100 for accessibility, 96 and 93 for best practices and 90 and 100
 for SEO; both pages leave the main thread idle and shift no layout, and first
 contentful paint is 3.2~s and 3.6~s. What separates them is delivery weight:
