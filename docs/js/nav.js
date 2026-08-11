@@ -41,7 +41,11 @@
     }).join('');
 
     host.innerHTML =
-      '<a class="navsis__marca" href="../index.html">' +
+      /* El aria-label no es redundante con el texto de dentro: por debajo de
+         720 px mapa-tema.css oculta .navsis__texto y el enlace se queda sólo
+         con el emblema, que es decorativo. Sin él, en móvil el vínculo a la
+         portada no tiene nombre accesible. */
+      '<a class="navsis__marca" href="../index.html" aria-label="Obras Públicas — ir a la portada">' +
         '<span class="navsis__emblema">' + EMBLEMA + '</span>' +
         '<span class="navsis__texto">' +
           '<strong>Obras Públicas</strong>' +

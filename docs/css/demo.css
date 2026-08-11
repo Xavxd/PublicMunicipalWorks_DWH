@@ -140,6 +140,18 @@
   }
 }
 
+/* ---- FOOTER CONTRAST ----
+   main.css pinta todo el pie con --text-muted, que es el tono más apagado de
+   la paleta y sobre el fondo del pie se queda por debajo de 4.5:1 —lo detecta
+   Lighthouse, y el pie es donde está la atribución del ayuntamiento—. main.css
+   se conserva byte a byte, así que la corrección va aquí: el mismo pie, un
+   escalón más de contraste. */
+.footer-logo,
+.footer-mun,
+.footer-right {
+  color: var(--text-secondary);
+}
+
 /* ---- SANDBOX STRIP (role pages) ---- */
 .demo-strip {
   position: relative;
