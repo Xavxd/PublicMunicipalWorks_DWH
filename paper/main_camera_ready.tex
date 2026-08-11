@@ -151,7 +151,7 @@ The literature on Open Government Data (OGD)~\cite{Lourenco2015} emphasizes that
 A directly relevant body of practice is the family of infrastructure disclosure standards. The Open Contracting for Infrastructure Data Standard (OC4IDS)~\cite{OC4IDS}, developed by the Open Contracting Partnership with CoST~--- the Infrastructure Transparency Initiative, defines a JSON schema for publishing project- and contract-level information across the infrastructure lifecycle. OC4IDS and our proposal are complementary: OC4IDS specifies \emph{what} a government should disclose and in which interchange format, whereas we address \emph{how} a small municipality can produce, historise and analyse that information internally. A natural convergence (Section~\ref{sec:conclusiones}) is to expose the warehouse as an OC4IDS-conformant endpoint.
 \endgroup
 
-Four bodies of work bear directly on the design. Spatial OLAP~\cite{Rivest2005} has combined multidimensional analysis with cartographic navigation since the mid-2000s; our map is a SOLAP client in all but name, differing in scope rather than kind, since geometry is a display attribute of \texttt{dim\_region} and not a hierarchy to drill along. The trade-offs of slowly changing dimensions are surveyed by Faisal and Sarwar~\cite{Faisal2014}; ours is not the mechanism but its application at audit granularity. Ambituuni~\cite{Ambituuni2025} shows that disclosure alone does not curb irregularity, which is the argument for coupling publication with analysis. And indicator-based detection over procurement records has an empirical tradition~\cite{Fazekas2020} ---the family our C1--C3 rule belongs to, and against which its modest performance (Section~\ref{sec:eval-deteccion}) should be read. This same approach of consolidating official open data into a queryable analytical artifact has been applied before in other government domains in Mexico, such as seismic risk~\cite{Hurtado2026}, a methodological antecedent transferred here to the monitoring of public works.
+Four bodies of work bear directly on the design. Spatial OLAP~\cite{Rivest2005} has combined multidimensional analysis with cartographic navigation since the mid-2000s; our map is a SOLAP client in all but name, differing in scope rather than kind, since geometry is a display attribute of \texttt{dim\_region} and not a hierarchy to drill along. The trade-offs of slowly changing dimensions are surveyed by Faisal and Sarwar~\cite{Faisal2014}; ours is not the mechanism but its application at audit granularity. Ambituuni~\cite{Ambituuni2026} shows that disclosure alone does not curb irregularity, which is the argument for coupling publication with analysis. And indicator-based detection over procurement records has an empirical tradition~\cite{Fazekas2020} ---the family our C1--C3 rule belongs to, and against which its modest performance (Section~\ref{sec:eval-deteccion}) should be read. This same approach of consolidating official open data into a queryable analytical artifact has been applied before in other government domains in Mexico, such as seismic risk~\cite{Hurtado2026}, a methodological antecedent transferred here to the monitoring of public works.
 
 \subsection{Positioning with Respect to Comparable Systems}
 
@@ -466,7 +466,7 @@ The static artefact is permanently online, so its delivery can be audited by
 anyone against a public URL. A Lighthouse audit of its two entry points, taken
 as the median of three runs each on 11 August 2026 (Lighthouse 12.8.2, headless
 Chrome 151, emulated mobile with simulated throttling, tag
-\texttt{v1.7.0-icokg2026}), gives the landing page 85 for performance and the
+\texttt{v1.7.1-icokg2026}), gives the landing page 85 for performance and the
 map 72, with 100 for accessibility, 96 and 93 for best practices and 90 and 100
 for SEO; both pages leave the main thread idle and shift no layout, and first
 contentful paint is 3.2~s and 3.6~s. What separates them is delivery weight:
@@ -655,8 +655,8 @@ Rivest, S., B\'edard, Y., Proulx, M.-J., Nadeau, M., Hubert, F., Pastor, J.: SOL
 \bibitem{Faisal2014}
 Faisal, S., Sarwar, M.: Handling slowly changing dimensions in data warehouses. J. Syst. Softw. \textbf{94}, 151--160 (2014). \url{https://doi.org/10.1016/j.jss.2014.03.072}
 
-\bibitem{Ambituuni2025}
-Ambituuni, A.: Infrastructure transparency initiative and anticorruption in public infrastructure projects: a principal--agent perspective to the antecedents that enable (or hinder) the effectiveness of transparency. Eng. Constr. Archit. Manag. \textbf{33}(7), 5934--5957 (2025). \url{https://doi.org/10.1108/ECAM-02-2025-0273}
+\bibitem{Ambituuni2026}
+Ambituuni, A.: Infrastructure transparency initiative and anticorruption in public infrastructure projects: a principal--agent perspective to the antecedents that enable (or hinder) the effectiveness of transparency. Eng. Constr. Archit. Manag. \textbf{33}(7), 5934--5957 (2026). \url{https://doi.org/10.1108/ECAM-02-2025-0273}
 
 \bibitem{Fazekas2020}
 Fazekas, M., Kocsis, G.: Uncovering high-level corruption: cross-national objective corruption risk indicators using public procurement data. Br. J. Polit. Sci. \textbf{50}(1), 155--164 (2020). \url{https://doi.org/10.1017/S0007123417000461}

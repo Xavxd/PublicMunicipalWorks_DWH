@@ -95,7 +95,7 @@ python scripts/evaluacion/generar_dataset_obras.py
 python scripts/evaluacion/eval_deteccion_v2.py
 ```
 
-The generator simulates each work's execution month by month; anomalies are **latent process states** — a price inflated at award, an unproductive contractor, payments running ahead of execution, a work that stops, a work never built — whose magnitudes overlap the normal range. The previous generator wrote three of its four classes as the detector's own predicates, so their perfect recall was in the generator rather than measured; a reviewer found it, and the numbers fell from 0.9945/0.8411 to **0.463 ± 0.056 precision at 0.352 ± 0.031 recall** over ten seeds. Isolation Forest ranks better on both AUCs. The output supports the detection table in the paper; it is not evidence about Temascaltepec.
+The generator simulates each work's execution month by month; anomalies are **latent process states** — a price inflated at award, an unproductive contractor, payments running ahead of execution, a work that stops, a work never built — whose magnitudes overlap the normal range. The previous generator wrote three of its four classes as the detector's own predicates, so their perfect recall was in the generator rather than measured; a reviewer found it, and the numbers fell from 0.9945/0.8411 to **0.462 ± 0.056 precision at 0.351 ± 0.031 recall** over ten seeds — the figures in Table 2 of the chapter, reproduced by the command above. Isolation Forest ranks better on both AUCs. The output supports the detection table in the paper; it is not evidence about Temascaltepec.
 
 ## Checking the repository against the paper
 
