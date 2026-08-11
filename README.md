@@ -161,6 +161,14 @@ The SQL source implements a warehouse-centric design: five SCD Type 2 dimensions
 `paper/` contains only the final LaTeX source and two generated PDFs:
 
 - `main_final.pdf`: clean final version.
-- `main_with_changes.pdf`: corrected version with review changes shown in colour.
+- `main_with_changes.pdf`: the same chapter with everything that changed since the reviewed version marked — added text blue and underlined, deleted text red and struck through.
+
+The marks are not hand-placed. They come from comparing the source against the file submitted to the ICOKG 2026 committee:
+
+```bash
+python scripts/marcar_cambios.py
+```
+
+The earlier approach wrapped each rewritten passage in a `ev{}` macro that a preamble switch coloured. That marks whatever somebody remembered to wrap, not what actually changed, and after several rounds of corrections the two had drifted apart. The wrappers are gone from the source; [`scripts/marcar_cambios.py`](scripts/marcar_cambios.py) derives the marks with `latexdiff`, so they cannot fall behind the text. Tables and TikZ figures are compared as whole blocks rather than cell by cell — latexdiff's markup between `\midrule` and the rows does not compile — and the prose around each one carries the explanation.
 
 The repository contains no real municipal, personal, or production data. It is an academic prototype under the MIT license; see [LICENSE.md](LICENSE.md).
