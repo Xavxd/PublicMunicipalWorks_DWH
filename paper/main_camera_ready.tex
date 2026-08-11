@@ -110,15 +110,13 @@ This article presents a prototype for the geospatial monitoring of public works 
 \subsection*{Research Questions}
 
 \begingroup
-The work is guided by three research questions, which structure the design and the evaluation:
-
 \begin{description}
 \item[RQ1.] Can a dimensional Data Warehouse deployed on commodity managed services (PostgreSQL/Supabase plus S3-compatible object storage) provide auditable historical traceability of municipal public works at the scale of a rural Mexican municipality, without the enterprise platforms normally associated with lakehouse architectures?
 \item[RQ2.] Which dimensional design decisions ---fact grain, choice of Slowly Changing Dimension type per entity, and view materialisation strategy--- are required so that delay detection, budget alerting and citizen participation can all be served from a single analytical schema?
 \item[RQ3.] How effective is a threshold rule expressed over the warehouse's analytical views at recovering anomalies in public-works execution, compared with an unsupervised baseline, and which anomaly classes does it fail to recover?
 \end{description}
 
-RQ1 is addressed by the architecture and warehouse design (Sections~\ref{sec:arquitectura} and~\ref{sec:warehouse}) and by the cost and deployment discussion (Section~\ref{sec:conclusiones}); RQ2 by the grain, SCD and view-strategy analysis (Section~\ref{sec:warehouse}); and RQ3 by the evaluation of the detection module (Section~\ref{sec:eval-deteccion}).
+The three structure both the design and the evaluation: RQ1 is addressed by the architecture and warehouse design (Sections~\ref{sec:arquitectura} and~\ref{sec:warehouse}) and by the cost and deployment discussion (Section~\ref{sec:conclusiones}); RQ2 by the grain, SCD and view-strategy analysis (Section~\ref{sec:warehouse}); and RQ3 by the evaluation of the detection module (Section~\ref{sec:eval-deteccion}).
 \endgroup
 
 \subsection*{Contributions}
