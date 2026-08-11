@@ -218,7 +218,15 @@ def get_public_resumen():
         return _cors_preflight_response()
 
     try:
+        # Mismo motivo que en /api/public/obras: resolver el informe y el
+        # presupuesto obra por obra costaba doce segundos y medio.
         obras = Obra.query.all()
+        informes = _informes_por_obra()
+        presupuestos = {
+            (pid or "").strip(): float(total or 0)
+            for pid, total in db.session.query(
+                PresupuestoObra.id_obra, PresupuestoObra.presupuesto_total).all()
+        }
 
         obra_data_list = []
         region_budget_map = {}
@@ -230,9 +238,9 @@ def get_public_resumen():
         communities = set()
 
         for obra in obras:
-            informe_data = _get_latest_informe_data(obra.id_obra)
-            presupuesto = PresupuestoObra.query.filter_by(id_obra=obra.id_obra).first()
-            presupuesto_total = float(presupuesto.presupuesto_total) if presupuesto else 0
+            clave = (obra.id_obra or "").strip()
+            informe_data = informes.get(clave, SIN_INFORME)
+            presupuesto_total = presupuestos.get(clave, 0)
             status = _derive_obra_status(obra, informe_data["avance_fisico"])
 
             comunidad = (obra.region.comunidad or "").strip() if obra.region else ""

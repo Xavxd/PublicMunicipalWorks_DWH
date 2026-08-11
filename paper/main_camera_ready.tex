@@ -90,7 +90,7 @@ Gabriel Hurtado Avil\'es\thanks{Corresponding author: \href{mailto:gabrielhuav@g
 \maketitle
 
 \begin{abstract}
-The accelerated growth of public infrastructure data in municipal governments generates heterogeneous volumes that are difficult to manage with isolated spreadsheets or transactional systems. This article presents the design and prototype implementation of a dimensional Data Warehouse for the geospatial monitoring of municipal public works, complemented by object storage (Cloudflare R2) for unstructured evidence ---photographic reports and PDF documents--- linked bidirectionally to the warehouse. The warehouse adopts a star schema with ten dimensions (five Slowly Changing Dimension Type~2, two Type~1, three Type~0) and two fact tables, and exposes OLAP queries and five analytical views for delay detection, budget alerts, and citizen participation through a single REST API, released as reference code rather than as a hosted service. A published geospatial viewer offers graph-like exploration across works, communities, budgets and citizen proposals. Rather than claiming a full enterprise lakehouse, we deliberately scope the contribution as a warehouse-centric design and outline its evolution toward a lakehouse (an open table format ---Iceberg/Parquet--- queried directly over the object store) as future work. The prototype was exercised over a seeded synthetic dataset of 1,247 public works from 55 communities and evaluated through a documented, seeded protocol for the analytical detection module, which recovers 84.1\% of the injected anomalies with 99.5\% precision. The design enables transparent, auditable, and citizen-oriented oversight of public works without the infrastructure costs of enterprise platforms.
+The accelerated growth of public infrastructure data in municipal governments generates heterogeneous volumes that are difficult to manage with isolated spreadsheets or transactional systems. This article presents the design and prototype implementation of a dimensional Data Warehouse for the geospatial monitoring of municipal public works, complemented by object storage (Cloudflare R2) for unstructured evidence ---photographic reports and PDF documents--- linked bidirectionally to the warehouse. The warehouse adopts a star schema with ten dimensions (five Slowly Changing Dimension Type~2, three Type~1, two Type~0) and two fact tables, and exposes OLAP queries and six analytical views for delay detection, budget alerts, and citizen participation through a single REST API, released as reference code rather than as a hosted service. A published geospatial viewer offers graph-like exploration across works, communities, budgets and citizen proposals. Rather than claiming a full enterprise lakehouse, we deliberately scope the contribution as a warehouse-centric design and outline its evolution toward a lakehouse (an open table format ---Iceberg/Parquet--- queried directly over the object store) as future work. The prototype was exercised over a seeded synthetic dataset of 1,247 public works from 55 communities and evaluated through a documented, multi-seed protocol for the analytical detection module. Against anomalies generated as latent process states rather than as the detector's own predicates, the rule reaches 0.46 precision at 0.35 recall and does not dominate an unsupervised baseline. The design enables transparent, auditable, and citizen-oriented oversight of public works without the infrastructure costs of enterprise platforms.
 
 \keywords{Data Warehouse \and Dimensional Modeling \and Slowly Changing
 Dimensions \and Geospatial Monitoring \and Open Government Data \and Public
@@ -121,7 +121,7 @@ The three structure both the design and the evaluation: RQ1 is addressed by the 
 
 \subsection*{Contributions}
 
-The main contribution is threefold: (1)~a reference architecture centered on a dimensional \emph{Data Warehouse} with slowly changing dimensions (SCD 0/1/2), complemented with S3-compatible object storage for unstructured evidence and exposed through a public/private REST API (RQ1); (2)~an interactive geospatial map that acts as a graph-like exploration interface, linking public works, communities, budgets, supervisors, construction companies, and citizen proposals (RQ2); and (3)~a reproducible, non-circular evaluation of the analytical detection module against an independently injected ground truth, together with a failure analysis by anomaly class (RQ3).
+The contribution is threefold: (1)~a reference architecture centered on a dimensional \emph{Data Warehouse} with slowly changing dimensions, complemented with S3-compatible object storage for evidence and exposed through a REST API (RQ1); (2)~a geospatial map acting as a graph-like exploration interface over works, communities, budgets and proposals (RQ2); and (3)~a non-circular evaluation of the detection module against latent causes, with a failure analysis by class (RQ3).
 
 Over a seeded test scenario, the prototype organizes 1,247 simulated public works with an accumulated budget of \$127.4~million pesos (Section~\ref{sec:resultados} details the full population). All figures reported in this article were obtained over synthetic data generated with a fixed seed; they characterise the behaviour of the system, not the municipality of Temascaltepec, and no claim about real public-works execution in that municipality is made or implied.
 
@@ -151,38 +151,16 @@ The literature on Open Government Data (OGD)~\cite{Lourenco2015} emphasizes that
 A directly relevant body of practice is the family of infrastructure disclosure standards. The Open Contracting for Infrastructure Data Standard (OC4IDS)~\cite{OC4IDS}, developed by the Open Contracting Partnership with CoST~--- the Infrastructure Transparency Initiative, defines a JSON schema for publishing project- and contract-level information across the infrastructure lifecycle. OC4IDS and our proposal are complementary: OC4IDS specifies \emph{what} a government should disclose and in which interchange format, whereas we address \emph{how} a small municipality can produce, historise and analyse that information internally. A natural convergence (Section~\ref{sec:conclusiones}) is to expose the warehouse as an OC4IDS-conformant endpoint, with \texttt{dim\_work} as the project entity and \texttt{fact\_audit\_events} as the source of lifecycle transitions.
 \endgroup
 
-This same approach of consolidating official open data into a queryable analytical artifact has been applied before in other government domains in Mexico, such as seismic risk~\cite{Hurtado2026}, a methodological antecedent transferred here to the monitoring of public works.
+Four bodies of work bear on the design and were absent from the previous version. Spatial OLAP~\cite{Rivest2005} has combined multidimensional analysis with cartographic navigation since the mid-2000s; our map is a SOLAP client in all but name, differing in scope rather than kind, since geometry is a display attribute of \texttt{dim\_region} and not a hierarchy to drill along. The trade-offs of slowly changing dimensions are surveyed by Faisal and Sarwar~\cite{Faisal2014}; ours is not the mechanism but its application at audit granularity. Ambituuni~\cite{Ambituuni2025} shows that disclosure alone does not curb irregularity, which is the argument for coupling publication with analysis. And indicator-based detection over procurement records has an empirical tradition~\cite{Fazekas2020} ---the family our C1--C3 rule belongs to, and against which its modest performance (Section~\ref{sec:eval-deteccion}) should be read. This same approach of consolidating official open data into a queryable analytical artifact has been applied before in other government domains in Mexico, such as seismic risk~\cite{Hurtado2026}, a methodological antecedent transferred here to the monitoring of public works.
 
 \subsection{Positioning with Respect to Comparable Systems}
 
 \begingroup
-Table~\ref{tab:comparacion} contrasts the proposal with representative systems along the dimensions that matter for municipal public-works oversight: the underlying data model, whether entity history is preserved, whether unstructured field evidence is a first-class citizen, whether a geospatial interface is provided, whether a formal semantic layer exists, and the deployment scale targeted.
+Set against representative systems ---the geospatial knowledge graphs, the OC4IDS disclosure standard, the geospatial-lakehouse architecture and the download portal typical of Latin American open-government sites--- the proposal differs on two axes and coincides on the rest. Those systems variously offer a formal semantic layer, a richer interchange format or far greater scale; none preserves entity state at audit granularity, and none manages binary field evidence as a first-class citizen linked back to the analytical store.
 
-Two gaps emerge. The semantic-web systems~\cite{Janowicz2022,Poveda2020,Rajabi2023} provide a formal layer that we lack, but none historises entity state at audit granularity (``what did this record look like the day the budget was modified?''), which is what SCD~2 provides. And none links binary field evidence bidirectionally to the analytical store: in OGD portals and OC4IDS implementations, documents are referenced by URL without a managed lifecycle. This work fills the intersection of \emph{temporal auditability} and \emph{evidence linkage} at a scale where enterprise platforms are not economically viable.
+The semantic-web systems~\cite{Janowicz2022,Poveda2020,Rajabi2023} provide a formal layer we lack, but none answers ``what did this record look like the day the budget was modified?'', which is what SCD~2 provides; and in OGD portals and OC4IDS implementations documents are referenced by URL without a managed lifecycle. The intersection of \emph{temporal auditability} and \emph{evidence linkage} at municipal scale is where this work sits. We state that as the position of the proposal, not as a claim of vacancy: the comparison covers a small and deliberately heterogeneous set ---knowledge graphs, a disclosure standard, an engineering blog and a portal archetype--- and establishing that no comparable system exists would require a systematic review that we have not carried out. This work fills the intersection of \emph{temporal auditability} and \emph{evidence linkage} at a scale where enterprise platforms are not economically viable.
 \endgroup
 
-\begin{table}[tb]
-\centering
-
-\caption{Comparison with representative systems. SCD~2 $=$ Slowly Changing Dimension Type~2; ``Ev.'' $=$ managed bidirectional link between binary field evidence and the analytical store; ``Sem.'' $=$ semantic layer.}
-\label{tab:comparacion}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{p{2.55cm}p{2.3cm}p{1.6cm}p{1.1cm}p{1.1cm}p{1.35cm}}
-\toprule
-\textbf{System} & \textbf{Data model} & \textbf{History} & \textbf{Ev.} & \textbf{Geo UI} & \textbf{Sem.} \\
-\midrule
-KnowWhere\\Graph~\cite{Janowicz2022} & RDF knowledge graph & Snapshot & No & Yes & OWL/\\RDF \\
-Zaragoza KG~\cite{Poveda2020} & RDF knowledge graph & Partial & No & Partial & Ontology \\
-Nova Scotia OGD KG~\cite{Rajabi2023} & RDF from OGD sets & No & No & No & Ontology \\
-OC4IDS~\cite{OC4IDS} & JSON disclosure schema & Lifecycle stages & By URL & Portal-dep. & JSON Schema \\
-Geospatial lakehouse~\cite{Palkar2021} & Delta/Parquet tables & Table versions & Raster/\\vector & Via BI & None \\
-Typical LatAm OGD portal & CSV/PDF downloads & No & No & Rare & None \\
-\textbf{This work} & Dimensional star schema & \textbf{SCD~2 (5 dims)} & \textbf{Yes} & \textbf{Yes} & None (future work) \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 % =====================================================================
 \section{System Architecture}
@@ -190,10 +168,10 @@ Typical LatAm OGD portal & CSV/PDF downloads & No & No & Rare & None \\
 
 Figure~\ref{fig:arquitectura} illustrates the four layers of the proposed architecture, which follows a layered pattern with a clear separation of responsibilities. It is described as a reference architecture and prototype: the analytical core is the dimensional Data Warehouse, and the object store operates as an evidence layer. The subsections below correspond one-to-one to the four layers labelled in the figure, so that the terminology of figure and text coincides.
 
-\begin{figure}[tb]
+\begin{figure}[htbp]
 \centering
 
-\resizebox{\textwidth}{!}{%
+\resizebox{0.86\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
   box/.style={draw,rounded corners=2pt,align=center,minimum height=6.5mm,
@@ -240,8 +218,8 @@ Figure~\ref{fig:arquitectura} illustrates the four layers of the proposed archit
 \caption{System architecture (warehouse-centric), redrawn in English. The four
 layers L1--L4 correspond to Sections~\ref{sec:l1}--\ref{sec:l4}. Solid arrows: structured-data
 flow; dashed arrows: unstructured (binary) evidence flow. Released role-specific
-pages read operational endpoints, while the warehouse serves detection and OLAP;
-the geospatial prototype is not a released artefact.}
+pages read operational endpoints; the warehouse serves detection and OLAP through
+	exttt{/api/analitica}. The geospatial viewer is part of the released artefact.}
 \label{fig:arquitectura}
 \end{figure}
 
@@ -284,7 +262,7 @@ The rule applied to a work--period record flags it as anomalous if \emph{any} of
 \item[C2.] \emph{Extreme delay}: the recorded slippage exceeds 120 days.
 \item[C3.] \emph{Progress inconsistency}: physical progress below 30\% together with financial progress above 80\%.
 \end{enumerate}
-The corresponding anomaly score is $s_i=\max\left(\frac{|b_i-\mu_b|}{\sigma_b},\ \frac{d_i}{120}\mathbb{1}[d_i>120],\ 3.5\cdot\mathbb{1}[\text{C3}]\right)$, where $d_i$ is the slippage in days; the module flags $s_i>3$. The score is used for the ranking-based metrics reported in Section~\ref{sec:eval-deteccion}. The alert stream is designed for presentation through the API.
+The corresponding anomaly score is $s_i=\max\left(\frac{|b_i-\mu_b|}{\sigma_b},\ \frac{d_i}{120}\mathbb{1}[d_i>120],\ 3.5\cdot\mathbb{1}[\text{C3}]\right)$, where $d_i$ is the slippage in days; the module flags $s_i>3$. The score is used for the ranking-based metrics reported in Section~\ref{sec:eval-deteccion}. C1--C3 are implemented as \texttt{v\_anomalies\_detection} over the monthly fact table and served read-only at \texttt{/api/analitica/anomalias}, so the rule evaluated in Section~\ref{sec:eval-deteccion} is the rule an operator runs. Until this revision they were different objects: the criteria lived only in the evaluation script and the snapshot left the columns C3 reads at \texttt{NULL}.
 \endgroup
 
 \subsection{A Note on Identifiers}
@@ -297,35 +275,13 @@ This article uses English identifiers for tables, columns and views; the publish
 \section{Data Warehouse Design}
 \label{sec:warehouse}
 
-The warehouse adopts a dimensional star model~\cite{Kimball2013} with two fact tables and ten dimensions (Table~\ref{tab:dimensiones}), shown schematically in Figure~\ref{fig:esquema_warehouse}.
+The warehouse adopts a dimensional star model~\cite{Kimball2013} with two fact tables and ten dimensions, shown in Figure~\ref{fig:esquema_warehouse} with the SCD type of each.
 
-\begin{table}[tb]
-\centering
-\caption{Warehouse dimensions and the type of SCD implemented.}
-\label{tab:dimensiones}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{llc}
-\toprule
-\textbf{Dimension} & \textbf{Modeled entity} & \textbf{SCD} \\
-\midrule
-\texttt{dim\_time} & Calendar period & 0 \\
-\texttt{dim\_work} & Public work & 2 \\
-\texttt{dim\_region} & Community/neighborhood & 2 \\
-\texttt{dim\_company} & Construction company & 2 \\
-\texttt{dim\_staff} & Public-works department staff & 2 \\
-\texttt{dim\_source} & Funding source & 0 \\
-\texttt{dim\_budget} & Budget line & 2 \\
-\texttt{dim\_citizen} & Registered citizen & 1 \\
-\texttt{dim\_proposal} & Citizen proposal & 1 \\
-\texttt{dim\_event\_type} & Catalog of 17 event types & 0 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
-\begin{figure}[tb]
+\begin{figure}[htbp]
 \centering
 
-\resizebox{\textwidth}{!}{%
+\resizebox{0.86\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
   d/.style={draw,rounded corners=2pt,align=center,minimum width=27mm,
@@ -385,7 +341,7 @@ The SCD~2 dimensions~\cite{Kimball2013} (five in total: works, regions, companie
 \begingroup
 Three representative use cases motivate this choice, none answerable with a Type~1 dimension. In a \emph{budget-modification audit}, \texttt{dim\_budget} closes the current version and opens a new one, so an auditor can ask which amount was in force on the date a payment was authorised, not merely the amount in force today. Under \emph{contractor reassignment}, \texttt{dim\_company} preserves both versions, so progress recorded before the change stays attributed to the original contractor ---a precondition for any performance analysis by contractor. Under \emph{territorial reorganisation}, where communities are merged or renamed, \texttt{dim\_region} versioning prevents a historical investment series from being silently rewritten.
 
-The remaining dimensions need no versioning: \texttt{dim\_time}, \texttt{dim\_source} and \texttt{dim\_event\_type} are fixed catalogues (Type~0), while \texttt{dim\_citizen} and \texttt{dim\_proposal} are Type~1 because only their current state is analytically meaningful and retaining superseded personal records would be undesirable.
+The remaining five do not version. \texttt{dim\_time} and \texttt{dim\_event\_type} are fixed catalogues (Type~0). \texttt{dim\_source} is Type~1: it carries running totals of works financed and amount assigned, which are overwritten as they change. \texttt{dim\_citizen} and \texttt{dim\_proposal} are Type~1 because only their current state is analytically meaningful and, since they hold names and national identity codes, retaining superseded versions would create a personal-data liability with no analytical return. The distribution is five Type~2, three Type~1 and two Type~0. An earlier version reported 5/2/3 while the SQL implemented 7/1/2, versioning the citizen dimensions against the privacy argument just given; \texttt{scripts/verificar\_scd.py} now checks the schema against this classification.
 \endgroup
 
 \subsection{Analytical Views and Refresh Strategy}
@@ -403,7 +359,7 @@ These are standard SQL views rather than materialized ones. The choice is delibe
 
 The object layer uses Cloudflare R2, a service compatible with the Amazon S3 API, selected for its zero egress cost and reduced global latency. In its current state it functions as an object repository for binary evidence (images and PDFs) linked to the warehouse, and not as a queryable analytical lake: analytical queries are resolved in the Data Warehouse, not over R2. Adopting an open table format~\cite{Armbrust2020} that enables direct queries over the lake is proposed as future work (Section~\ref{sec:conclusiones}). The path design follows the \textit{hive-partitioned} convention~\cite{Palkar2021} of Equation~\eqref{eq:ruta-lake}.
 
-Ingestion is direct from the web form: the supervisor attaches images or PDFs when creating a progress report; the API computes the object key, uploads it through the S3 SDK, records the metadata in the warehouse, and returns the public URL, all in a single atomic transaction. If the PostgreSQL insert fails, the upload to R2 is rolled back.
+Ingestion is direct from the web form: the supervisor attaches images or PDFs when creating a progress report; the API computes the object key, uploads it through the S3 SDK, records the metadata in the warehouse, and returns the public URL. This is not an atomic transaction across the two stores: object storage and PostgreSQL cannot enlist in one. The implementation compensates ---on a database failure it issues a best-effort delete of the objects just uploaded--- so a crash between the two steps can still leave an orphaned object. Reconciling them would need a sweep against the metadata table, which is not implemented.
 
 % =====================================================================
 \section{Geospatial Interface Prototype}
@@ -413,9 +369,9 @@ The geospatial display is an \emph{implicit} graph at the interface level ---the
 
 Figure~\ref{fig:mapa_interfaz} shows the main interface, with markers color-coded by the state of the work and the technical-card popup that displays physical and financial progress indicators when a node is selected. It is part of the released artefact, reachable from the navigation bar of every page. Each marker sits at the real coordinates of its community, resolved from OpenStreetMap, with a deterministic offset of at most 150~m so that two works in the same community do not overlap. The community is therefore real; the exact site within it is not surveyed.
 
-\begin{figure}[tb]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{mapa_publicado.png}
+\includegraphics[width=0.74\textwidth]{mapa_publicado.png}
 \caption{The published geospatial viewer, in light mode. Markers are color-coded by state ---green completed, amber in progress, red delayed--- over the six works of the demonstration dataset, with the indicator panel below. Live at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/mapa/?modo=claro}}, which reproduces this exact view.}
 \label{fig:mapa_interfaz}
 \end{figure}
@@ -434,58 +390,143 @@ Figure~\ref{fig:mapa_interfaz} shows the main interface, with markers color-code
 \subsection{Scope of the Evaluation}
 \label{sec:alcance}
 \begingroup
-Measured results, design targets and projections are kept strictly apart in what follows. We label every figure in this section as \textbf{measured} (obtained by executing published code or auditing the published artefact, and reproducible by a third party: Sections~\ref{sec:lighthouse} and~\ref{sec:eval-deteccion}), \textbf{target} (derived from architectural sizing and spot measurements of individual components, never from an end-to-end benchmark of a deployed system: the latency figures of Section~\ref{sec:objetivos}), or \textbf{projected} (an expected operational outcome not yet observed in any deployment: Section~\ref{sec:impacto-social}). No number in this article is a measurement taken on real municipal data.
+Measured results and projections are kept strictly apart in what follows. The previous version also carried a third category, design targets; every figure in it has been either measured (Section~\ref{sec:objetivos}) or withdrawn. We label every figure in this section as \textbf{measured} (obtained by executing published code or auditing the published artefact, and reproducible by a third party: Sections~\ref{sec:objetivos}, \ref{sec:lighthouse} and~\ref{sec:eval-deteccion}) or \textbf{projected} (an expected operational outcome not yet observed in any deployment: Section~\ref{sec:impacto-social}). No number in this article is a measurement taken on real municipal data.
+
+Three synthetic populations appear here and must not be conflated. The
+\emph{published site} holds six works in the visitor's browser tab and supports
+only interface claims and the delivery audit of Section~\ref{sec:lighthouse}.
+The \emph{seeded warehouse} ---1,247 works, 55 communities, \$127.4~M, 29,928
+monthly fact rows--- supports the structural claims and the latencies of
+Section~\ref{sec:objetivos}. The \emph{detection dataset} is a separate
+simulation of about 2,580 work--period records per seed and supports
+Table~\ref{tab:eval-deteccion-anomalias} and nothing else.
 \endgroup
 
-\subsection{Performance Targets (Design, not Measured)}
+
+\subsection{End-to-End Latency (Measured)}
 \label{sec:objetivos}
 
-The design targets for a reference configuration (50 concurrent users, 95th percentile) are: 187~ms response time on \texttt{/api/public/obras}; 1.42~s initial map load; 543~ms for a four-image gallery; 127~req/s sustained; 89~ms to execute \texttt{v\_delayed\_works}; 34~ms for an insert firing the SCD~2 trigger; and 112~ms read latency from the object layer. They derive from architectural sizing and spot measurements on individual components, are targets in the sense of Section~\ref{sec:alcance}, and must not be read as a benchmark: none is a measurement of a deployed system, and the Flask+Supabase+R2 backend is distributed as a reference implementation whose permanent deployment is not guaranteed. The test population reproduces the intended operating structure: 1,247 works across 55 communities, 8,934 seeded audit events, 3,421 photographic pieces of evidence, \$127.4~million pesos in budget, 2,156 citizen proposals, and 8,723 votes cast.
+The previous version of this chapter reported seven latency figures ---187~ms
+on \texttt{/api/public/obras}, 1.42~s of map load, 543~ms for a gallery,
+127~req/s sustained, 89~ms for the delayed-works view, 34~ms for an insert
+firing the SCD~2 trigger and 112~ms of object-store read--- as design targets
+derived from architectural sizing. No hardware, workload, repetition count or
+raw output accompanied them, which makes them unfalsifiable. They are replaced
+here by measurements taken against the stack in \texttt{docker/}, reproducible
+with \texttt{scripts/medir\_rendimiento.py}.
 
-\subsection{Evaluation of the Published Frontend (Measured)}
-\label{sec:lighthouse}
-\begingroup
-The static artefact is permanently online, so its delivery can be audited by anyone against a public URL. Table~\ref{tab:lighthouse} reports Google Lighthouse over its two entry points, the landing page and the vendored viewer. These are measurements in the sense of Section~\ref{sec:alcance}, not targets.
-
-\begin{table}[tb]
+\begin{table}[htbp]
 \centering
-
-\caption{Lighthouse audit of the published artefact, median of three runs per page. Reproducible over the public URL.}
-\label{tab:lighthouse}
+\caption{Measured against the reference stack. API figures are 100 serial
+requests over the seeded population (1,247 works); view figures are the server
+execution time reported by \texttt{EXPLAIN ANALYZE} over 25 runs.}
+\label{tab:latencias}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.1}
-\begin{tabular}{lrrrrr rrrr}
+\begin{tabular}{l r r l}
 \toprule
-& \multicolumn{5}{c}{\textbf{Core Web Vitals}} & \multicolumn{4}{c}{\textbf{Scores (0--100)}} \\
-\cmidrule(lr){2-6}\cmidrule(lr){7-10}
-\textbf{Page} & FCP & LCP & SI & TBT & CLS & Perf. & A11y & B.P. & SEO \\
+\textbf{Operation} & \textbf{Mean} & \textbf{p95} & \textbf{Previously claimed} \\
 \midrule
-Landing & 3.2 s & 3.3 s & 4.0 s & 0 ms & 0.000 & 85 & 100 & 96 & 90 \\
-Map     & 3.6 s & 5.3 s & 3.7 s & 0 ms & 0.000 & 72 & 100 & 93 & 100 \\
+\texttt{/api/public/obras} (753~kB)   & 566~ms & 610~ms & 187~ms \\
+\texttt{/api/public/resumen}          & 544~ms & 589~ms & --- \\
+\texttt{/api/public/regiones}         & 10.9~ms & 17.7~ms & --- \\
+\texttt{/api/analitica/anomalias}     & 18.3~ms & 33.4~ms & --- \\
+\texttt{v\_delayed\_works}            & 2.0~ms & 2.2~ms & 89~ms \\
+\texttt{v\_anomalies\_detection}      & 23.8~ms & 24.5~ms & --- \\
+\texttt{v\_budget\_executed}          & 5.2~ms & 5.4~ms & --- \\
+Insert firing the SCD~2 trigger       & 0.1~ms & 0.1~ms & 34~ms \\
+Sustained throughput (10 clients)     & \multicolumn{2}{c}{3.4~req/s} & 127~req/s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Both pages score 100 on accessibility, leave the main thread idle and shift no layout, so only delivery weight separates them: the landing page waits on render-blocking web fonts and a CDN animation library, the map on a 533~kB bundle. Neither is a property of the warehouse: both are traits of an unoptimised front end, remediable without touching the architecture.
+Environment: Windows~10 host, Docker~29.6, PostgreSQL~16.14 in a container with
+12 CPUs, Flask behind gunicorn with two synchronous workers, 1,247 works,
+14,885 progress reports and 29,928 monthly fact rows.
 
-Conditions: Lighthouse 12.8.2, headless Chrome 151, emulated mobile with simulated throttling, 11 August 2026, tag \texttt{v1.4.0-icokg2026}; the artefact is static, so a re-run audits the same page. Lighthouse measures delivery, not query latency.
-\endgroup
+The result answers RQ1 in a way the targets did not, and it does not flatter
+the design uniformly. The warehouse is far quicker than claimed: the
+delayed-works view runs in 2~ms against a claimed 89, and an insert firing the
+SCD~2 synchroniser costs 0.1~ms against a claimed 34. The delivery layer is far
+slower: \texttt{/api/public/obras} takes 566~ms against a claimed 187 because
+it serialises the entire portfolio in one unpaginated response, and sustained
+throughput is 3.4~req/s rather than 127 ---which is simply what two synchronous
+workers and a 566~ms response give. Pagination and more workers are the
+remedy, and neither touches the dimensional design. Reaching even these figures required removing a query-per-work pattern that
+cost the two portfolio endpoints 7.5 and 12.5 seconds; the bottleneck was the
+number of round trips, not PostgreSQL. Three of the original seven figures
+---map load, gallery and object-store read--- are not reported: they need a
+deployed map backend and an R2 bucket, and we prefer a gap to an unfalsifiable
+number.
+
+The seeded warehouse holds 1,247 works across 55 communities, 8,934 audit events, 3,421
+photographic pieces of evidence, \$127.4~million pesos in budget, 2,156 citizen
+proposals and 8,723 votes cast.
+
+\subsection{Delivery of the Published Frontend (Measured)}
+\label{sec:lighthouse}
+
+The static artefact is permanently online, so its delivery can be audited by
+anyone against a public URL. A Lighthouse audit of its two entry points, taken
+as the median of three runs each on 11 August 2026 (Lighthouse 12.8.2, headless
+Chrome 151, emulated mobile with simulated throttling, tag
+\texttt{v1.5.0-icokg2026}), gives the landing page 85 for performance and the
+map 72, with 100 for accessibility, 96 and 93 for best practices and 90 and 100
+for SEO; both pages leave the main thread idle and shift no layout, and first
+contentful paint is 3.2~s and 3.6~s. What separates them is delivery weight:
+render-blocking fonts and a CDN animation library on one side, a 533~kB bundle
+on the other. Reaching 100 on accessibility meant fixing what the audit
+reported ---a brand link with no accessible name below 720~px, an attribution
+painted below 4.5:1, two icon-only buttons, and map markers that are
+\texttt{role="button"} elements with no text--- rather than restating the
+score.
+
+This audit measures the delivery of a static page. It executes no Flask, no
+PostgreSQL and no warehouse query, so it is evidence about the front end alone;
+the architecture is exercised in Section~\ref{sec:objetivos}.
+
 
 \subsection{Evaluation of the Delay/Alert Detection Module (Measured)}
 \label{sec:eval-deteccion}
 
-\begingroup
-\paragraph{Ground truth.} Deriving the ground truth from the same predicate used by the detector would make precision equal to 1 by construction and the comparison uninformative. We therefore take the ground truth from an independent source: the data generator injects anomalies, with probability $0.15$ and in four classes ---\emph{cost overrun} (the executed budget is multiplied by a factor drawn from $[1.5, 3.0]$), \emph{delay} (slippage drawn from $[120, 365]$ days), \emph{inconsistency} (physical progress forced to $[5,25]\%$) and \emph{ghost work} (physical progress forced to $0$)--- and records the class in a label field that the detector never observes. That label is our ground truth. Over the seeded dataset, 214 of 1,421 work--period records (15.06\%) are anomalous.
+\paragraph{What changed and why.} The protocol reported previously was
+circular: three of its four injected classes were written as the detector's own
+predicates, so their perfect recall was in the generator rather than measured.
+Keeping the label in a column the detector never reads prevents leakage; it
+does not make an evaluation non-circular.
 
-\paragraph{Setting.} The dataset comprises 1,421 work--period records across the 55 communities of Temascaltepec, generated with seed 42. It is a distinct artefact from the 1,247-work warehouse dataset used elsewhere in this section, and the two must not be conflated. The detector is the rule of Section~\ref{sec:modulo-deteccion}. The baseline is an Isolation Forest (100 estimators, contamination $0.15$, seed 42) over five normalised features: executed budget, physical progress, financial progress, slippage and the community development index.
-\endgroup
+\paragraph{Generator.} Anomalies are now latent states of a simulated execution
+process, and what the detector sees are their observable consequences. A work
+is drawn with a contract price, a planned duration and a productivity
+parameter, and is then executed month by month under seasonal and remoteness
+effects; payment follows progress with a mobilisation advance, a lag and noise.
+Five latent causes are injected: a price inflated at award, an unproductive
+contractor, payments running ahead of execution, a work that stops, and a work
+contracted and paid but never built. Their magnitudes are drawn from
+distributions that \emph{overlap the normal range}, so some anomalies are
+undetectable in the recorded data and some healthy works look irregular. That
+overlap is the condition for the evaluation to be informative.
 
-\begin{table}[tb]
+\paragraph{Protocol.} Ten seeds and four latent prevalences (5, 10, 15 and
+20\%); the main configuration is 15\%, which yields about 2,580 work--period
+records per seed of which 17.2\% are anomalous. We report the mean over seeds
+with a 95\% confidence interval. The baseline is an Isolation
+Forest~\cite{Liu2008} (100 estimators, contamination set to the latent
+prevalence) over five normalised features. Because comparing a rule at a fixed
+threshold against a baseline at its default threshold compares two operating
+points rather than two detectors, the baseline is also evaluated at a
+\emph{matched alert budget}: the $k$ highest-scoring records, with $k$ the
+number of alerts the rule raises.
+
+\begin{table}[htbp]
 \centering
-
-\caption{Detection performance against an independently injected ground truth (synthetic dataset, 1,421 records, seed 42). Reproducible with the published script.}
+\caption{Detection performance at 15\% latent prevalence. Mean over ten seeds
+with a 95\% confidence interval; anomalies are latent process states, not
+detector predicates. Reproducible with the published scripts.}
 \label{tab:eval-deteccion-anomalias}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{l r r r r r}
 \toprule
@@ -496,37 +537,74 @@ Conditions: Lighthouse 12.8.2, headless Chrome 151, emulated mobile with simulat
 \multicolumn{1}{c}{\textbf{ROC-AUC}} &
 \multicolumn{1}{c}{\textbf{PR-AUC}} \\
 \midrule
-Threshold rule (this work)  & 0.9945 & 0.8411 & 0.9114 & 0.9356 & 0.8702 \\
-Isolation Forest (baseline) & 0.8545 & 0.8505 & 0.8525 & 0.9855 & 0.9289 \\
+Threshold rule (this work)        & $.463 \pm .056$ & $.352 \pm .031$ & $.398 \pm .038$ & $.628 \pm .022$ & $.307 \pm .053$ \\
+Isolation Forest (default)        & $.369 \pm .053$ & $.321 \pm .031$ & $.342 \pm .037$ & $.650 \pm .029$ & $.342 \pm .052$ \\
+Isolation Forest (matched budget) & $.387 \pm .054$ & $.295 \pm .033$ & $.333 \pm .039$ & $.650 \pm .029$ & $.342 \pm .052$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begingroup
-\paragraph{Explanation of the results.} Table~\ref{tab:eval-deteccion-anomalias} shows a clear division of labour between the two methods, and the interesting content of the experiment is in that division rather than in the headline F1.
+\paragraph{Results.} Table~\ref{tab:eval-deteccion-anomalias} is a much weaker
+result than the one this chapter previously reported, and it is the one the
+data supports. The rule alerts on about a third of the
+anomalies and is right slightly less than half the time. It does not dominate
+the baseline: Isolation Forest ranks better on both AUCs at every prevalence
+tested, so as a scoring function the rule is the poorer of the two. Its
+advantage is the operating point ---at the same alert budget it is more precise
+(.463 against .387) and recovers more (.352 against .295)--- which matters
+because an oversight office reviews a fixed number of files per period, not a
+ranking. Both improve with prevalence (the rule from .219 to .556 precision
+between 5 and 20\%).
 
-The threshold rule is almost perfectly precise (0.9945: a single false positive in 1,421 records) but recovers only 84.1\% of the anomalies. Its 34 misses are not distributed uniformly across classes. Decomposing recall by injected class, the rule recovers 65/65 ghost works, 57/57 inconsistencies and 43/43 delays ---all at recall $1.0$--- but only 15/49 cost overruns ($0.3061$). The reason is structural: criterion C1 flags a budget only beyond three standard deviations, whereas the injected overrun multiplies the budget by a factor of at most 3 over a distribution that is already right-skewed across heterogeneous work types. A moderate overrun on an already-expensive work therefore remains inside the $3\sigma$ envelope. This is a genuine and actionable design finding: a global $\sigma$ threshold is the wrong instrument for cost anomalies, and the criterion should be computed \emph{per work type} rather than over the whole population.
+\paragraph{Where it fails.} Per-cause recall is uneven in a way that is
+diagnostic. The rule recovers unproductive contractors at $.548 \pm .059$,
+ghost works at $.474 \pm .024$ and stopped works at $.388 \pm .011$, but
+overpricing at only $.096 \pm .042$ and payments running ahead of execution at
+$.061 \pm .034$. The reason is structural, not a matter of tuning. C1 compares an absolute
+amount against a \emph{global} mean, so it flags large works rather than
+overpriced ones: a school inflated by 30\% is still cheaper than an honest road.
+And no criterion examines the \emph{gap} between physical and financial progress
+unless the physical figure falls below 30\%, so a work paid steadily ahead of
+its execution passes unremarked if it eventually finishes. The rule is a
+schedule-failure filter with a narrow ghost-work check attached, not a
+cost-anomaly detector, and this chapter no longer claims otherwise.
 
-The Isolation Forest inverts the trade-off. Its recall is marginally higher (0.8505) but it produces 31 false positives against the rule's single one, and its precision drops to 0.8545. Its ranking quality is nevertheless clearly superior (ROC-AUC 0.9855 versus 0.9356; PR-AUC 0.9289 versus 0.8702), because it exploits the joint distribution of the five features rather than three independent axis-aligned cuts. For an oversight application the operating point matters more than the ranking: an alert panel that a municipal officer reviews manually is dominated by precision, since false alarms erode trust in the tool. The rule is therefore the better default, and the baseline indicates how much headroom a learned detector would offer if recall on cost overruns were the priority.
-\endgroup
+% =====================================================================
+
+\section*{Declaration on the Use of Generative AI}
+
+The authors used a generative AI assistant, under their direction, for language
+editing, \LaTeX{} formatting, drafting text subsequently revised and approved by
+the authors, and writing the auxiliary scripts distributed with the artefact, and generating the artefact's illustrative work images, each labelled as such in the file. The
+research questions, the dimensional design, the ETL, the data collection, the
+experiments and the interpretation of the results are the authors' own work.
+
+
+\section*{Disclosure of Interests}
+The authors declare that they have no conflicts of interest relevant to the content
+of this article.
+
+% =====================================================================
+\begingroup\scriptsize\setlength{\parskip}{0pt}
 
 \subsection{Illustrative Analytical Capability (Projected)}
 \label{sec:impacto-social}
 
-\textbf{Methodological note.} The results in this subsection were obtained over a synthetic dataset generated with Python's Faker library (seed~42), which replicates the dimensional structure and the volume the system would process in a real deployment in Temascaltepec. They demonstrate that the analytical pipeline runs end to end and produces the intended artefacts; they are not evidence about the municipality, and the patterns described below are properties of the generator, not findings.
-
-\begingroup
-\textbf{What the architecture can compute.} A controlled correlation was injected between the simulated socio-economic development index and the days of delay, and the pipeline recovers it ($\rho=-0.67$, $p<0.01$, $n=55$ communities). What this demonstrates is not the coefficient, which was placed there by construction, but that the system can compute Spearman correlations over dimensional data, join them to the region dimension, raise alerts and render them geospatially. A Pareto-style budget concentration analysis and a comparison of participation rates by connectivity were exercised in the same way. Whether such patterns exist in Temascaltepec is an empirical question this article does not answer.
-
-\textbf{Projected operational benefits.} We state these qualitatively rather than numerically, since any point estimate would require a derivation that the present evidence does not support. The system is designed to reduce the time needed to assemble a monthly progress report, to lower the volume of formal information requests by making the same data publicly queryable, and to surface budget anomalies early enough to act on them. Quantifying any of these requires a pre/post measurement in the municipal office, the first item of the validation plan below.
-\endgroup
+The warehouse answers questions a spreadsheet cannot: investment per
+inhabitant by community against the development index, budget concentration
+across funding sources, and participation rates by region. Over the seeded
+population these queries return coherent, plausible figures, which shows the
+analytical pipeline runs end to end. They are properties of the generator and
+nothing else: no claim about territorial inequality, budget concentration or
+savings in Temascaltepec is made or implied, and none can be until the model
+is populated with municipal records.
 
 % =====================================================================
 \section{Conclusions and Future Work}
 \label{sec:conclusiones}
 
 \subsection{Conclusions}
-This work presented a pragmatic architecture centered on a dimensional Data Warehouse for the geospatial monitoring of municipal public works, complementing the analytical store with S3-compatible object storage for unstructured evidence under a single REST API. Returning to the research questions: RQ1 is answered affirmatively at the design level ---ten dimensions, five of them SCD~2, two fact tables and five views on managed services at an estimated \$47~USD/month for 64,844 inhabitants--- with the caveat that no measurement on a stable production deployment exists yet. RQ2 is answered in Section~\ref{sec:warehouse}: an event-grain transaction fact table plus a work-month snapshot table, with SCD~2 restricted to the five audit-relevant entities, suffices to serve delay detection, budget alerting and participation analytics from one schema. RQ3 is answered in Section~\ref{sec:eval-deteccion}: the rule attains 0.9945 precision at 0.8411 recall against an independent ground truth, with failures concentrated in a single anomaly class whose criterion is mis-specified.
+This work presented a pragmatic architecture centered on a dimensional Data Warehouse for the geospatial monitoring of municipal public works, complementing the analytical store with S3-compatible object storage for unstructured evidence under a single REST API. Returning to the research questions: RQ1 is answered affirmatively at the design level ---ten dimensions, five of them SCD~2, two fact tables and five views on managed services at an estimated \$47~USD/month for 64,844 inhabitants--- with the caveat that no measurement on a stable production deployment exists yet. RQ2 is answered in Section~\ref{sec:warehouse}: an event-grain transaction fact table plus a work-month snapshot table, with SCD~2 restricted to the five audit-relevant entities, suffices to serve delay detection, budget alerting and participation analytics from one schema. RQ3 is answered in Section~\ref{sec:eval-deteccion}: the rule attains $0.46$ precision at $0.35$ recall against latent causes and is out-ranked by an unsupervised baseline, with its failures concentrated in cost anomalies, whose criterion is mis-specified.
 
 The proposal shows that it is possible to build a transparency system with analytical capability (OLAP views, SCD~2 history), georeferenced photographic evidence, and citizen participation, without relying on high-cost enterprise platforms.
 
@@ -560,7 +638,7 @@ of this article.
 
 % =====================================================================
 \begingroup\scriptsize\setlength{\parskip}{0pt}
-\begin{thebibliography}{11}
+\begin{thebibliography}{16}
 
 \bibitem{Zaharia2021}
 Zaharia, M., et al.: Lakehouse: a new generation of open platforms that unify data warehousing and advanced analytics. In: Proceedings of the 11th Conference on Innovative Data Systems Research (CIDR 2021). Online (2021)
@@ -594,6 +672,22 @@ Open Contracting Partnership, CoST --- the Infrastructure Transparency Initiativ
 
 \bibitem{Hurtado2026}
 Villa Vargas, J.M., Hurtado Avil\'es, G., Climent Hern\'andez, J.A.: Cuando M\'exico tiembla: la historia contada por los datos. AZCATL Rev. Divulg. Cienc. Ing. Innov. \textbf{4}(6), 28--33 (2026). \url{https://doi.org/10.24275/AZC2026E1004}
+
+
+\bibitem{Liu2008}
+Liu, F.T., Ting, K.M., Zhou, Z.-H.: Isolation forest. In: Proceedings of the 8th IEEE International Conference on Data Mining (ICDM 2008), pp. 413--422. IEEE Computer Society, Pisa (2008). \url{https://doi.org/10.1109/ICDM.2008.17}
+
+\bibitem{Rivest2005}
+Rivest, S., B\'edard, Y., Proulx, M.-J., Nadeau, M., Hubert, F., Pastor, J.: SOLAP technology: merging business intelligence with geospatial technology for interactive spatio-temporal exploration and analysis of data. ISPRS J. Photogramm. Remote Sens. \textbf{60}(1), 17--33 (2005). \url{https://doi.org/10.1016/j.isprsjprs.2005.10.002}
+
+\bibitem{Faisal2014}
+Faisal, S., Sarwar, M.: Handling slowly changing dimensions in data warehouses. J. Syst. Softw. \textbf{94}, 151--160 (2014). \url{https://doi.org/10.1016/j.jss.2014.03.072}
+
+\bibitem{Ambituuni2025}
+Ambituuni, A.: Infrastructure transparency initiative and anticorruption in public infrastructure projects: a principal--agent perspective to the antecedents that enable (or hinder) the effectiveness of transparency. Eng. Constr. Archit. Manag. \textbf{33}(7), 5934--5957 (2025). \url{https://doi.org/10.1108/ECAM-02-2025-0273}
+
+\bibitem{Fazekas2020}
+Fazekas, M., Kocsis, G.: Uncovering high-level corruption: cross-national objective corruption risk indicators using public procurement data. Br. J. Polit. Sci. \textbf{50}(1), 155--164 (2020). \url{https://doi.org/10.1017/S0007123417000461}
 
 \end{thebibliography}\endgroup
 

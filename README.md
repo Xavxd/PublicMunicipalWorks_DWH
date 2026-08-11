@@ -79,7 +79,7 @@ The same four accounts exist in the Flask reference API under `backend/`, create
 | Static public artefact | `docs/` | Visual interface preserved from the original prototype; the four role workspaces and the participation module run against `docs/js/static_backend.js`, an in-tab stand-in for the API. Bilingual (`docs/js/i18n.js`), two themes in light and dark (`docs/css/temas.css`, `docs/js/theme.js`) |
 | Deployment workflow | `.github/workflows/deploy-pages.yml` | Publishes `docs/` after pushes to `TestDefinitivo` |
 | Operational reference API | `backend/` | Flask/Python reference implementation; **not used by Pages** |
-| Dimensional warehouse | `db/arquitectura/` | 10 dimensions, 2 fact tables, SCD Type 2 triggers and 5 views |
+| Dimensional warehouse | `db/arquitectura/` | 10 dimensions (5 Type 2, 3 Type 1, 2 Type 0), 2 fact tables, SCD triggers and 6 views |
 | Synthetic generators | `scripts/` | Seeded datasets and evaluation protocol |
 | Paper package | `paper/` | Final source plus clean and revision-marked PDFs |
 
@@ -95,7 +95,7 @@ python scripts/evaluacion/generar_dataset_obras.py
 python scripts/evaluacion/eval_deteccion_v2.py
 ```
 
-Expected protocol population: 1,421 work–period records and 214 independently injected anomalies (seed 42). The output supports the detection table in the paper; it is not evidence about Temascaltepec.
+The generator simulates each work's execution month by month; anomalies are **latent process states** — a price inflated at award, an unproductive contractor, payments running ahead of execution, a work that stops, a work never built — whose magnitudes overlap the normal range. The previous generator wrote three of its four classes as the detector's own predicates, so their perfect recall was in the generator rather than measured; a reviewer found it, and the numbers fell from 0.9945/0.8411 to **0.463 ± 0.056 precision at 0.352 ± 0.031 recall** over ten seeds. Isolation Forest ranks better on both AUCs. The output supports the detection table in the paper; it is not evidence about Temascaltepec.
 
 ## Checking the repository against the paper
 
@@ -105,7 +105,15 @@ The population the chapter reports for the seeded scenario — 1,247 works acros
 python scripts/generate_synthetic_data.py --verificar
 ```
 
-The rest of the paper's structural claims are readable straight from the source: ten dimensions and two fact tables in [`db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql`](db/arquitectura/), five analytical views and twelve triggers (eight dimension-synchronising, four audit-emitting) in `FUNCIONES Y TRIGGERS.sql`, and 54 REST routes across eight blueprints — five of them public and read-only — under [`backend/routes/`](backend/routes/).
+The rest of the paper's structural claims are readable straight from the source: ten dimensions and two fact tables in [`db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql`](db/arquitectura/), six analytical views and twelve triggers (eight dimension-synchronising, four audit-emitting) in `FUNCIONES Y TRIGGERS.sql`, and REST routes across nine blueprints — five of them public and read-only — under [`backend/routes/`](backend/routes/).
+
+The declared slowly-changing-dimension types are checked against the schema rather than asserted:
+
+```bash
+python scripts/verificar_scd.py
+```
+
+That check exists because the two had drifted: the chapter declared 5 Type 2 / 2 Type 1 / 3 Type 0 while the SQL implemented 7/1/2, versioning the two citizen dimensions — retaining superseded names and CURP values — in direct contradiction of the privacy rationale the chapter gave for calling them Type 1. The implementation was corrected; the script keeps it honest.
 
 ## Auditing the published site (Lighthouse)
 
@@ -139,13 +147,22 @@ curl http://localhost:5000/api/health
 
 The schema, the warehouse and its triggers load automatically from `db/` on first start; `seed` creates the four demonstration accounts and the synthetic population. Verified against that container:
 
+The chapter's end-to-end latencies come from this stack and are reproducible:
+
+```bash
+python scripts/medir_rendimiento.py
+```
+
+The seven figures the chapter used to give as design targets are replaced by measurements. Two of them were wrong in opposite directions: `v_delayed_works` runs in 2.0 ms against a claimed 89, and an insert firing the SCD 2 trigger in 0.1 ms against a claimed 34; but `/api/public/obras` takes 566 ms against a claimed 187, and sustained throughput is 3.4 req/s against a claimed 127. Reaching even that meant removing a query-per-work pattern that cost the two portfolio endpoints 7.5 and 12.5 seconds.
+
 | Claim in the chapter | Measured in the container |
 |---|---|
 | 1,247 works across 55 communities | 1,247 works, 55 communities, 165 regions |
 | $127.4 M budget | `$127,400,000.00` exactly |
 | 3,421 pieces of photographic evidence | 3,421 |
 | 2,156 proposals, 8,723 votes | 2,156 / 8,723 |
-| Ten dimensions, two facts, five views | 10 / 2 / 5 |
+| Ten dimensions, two facts, six views | 10 / 2 / 6 |
+| C1–C3 run in the warehouse | `v_anomalias_deteccion`: C1 519, C2 2,481, C3 24 over 29,928 rows |
 | Five public read-only routes | 5 |
 | `DEMO-` accounts cannot write | `POST /api/constructoras` → **HTTP 403** |
 
@@ -169,6 +186,7 @@ The marks are not hand-placed. They come from comparing the source against the f
 python scripts/marcar_cambios.py
 ```
 
-The earlier approach wrapped each rewritten passage in a `ev{}` macro that a preamble switch coloured. That marks whatever somebody remembered to wrap, not what actually changed, and after several rounds of corrections the two had drifted apart. The wrappers are gone from the source; [`scripts/marcar_cambios.py`](scripts/marcar_cambios.py) derives the marks with `latexdiff`, so they cannot fall behind the text. Tables and TikZ figures are compared as whole blocks rather than cell by cell — latexdiff's markup between `\midrule` and the rows does not compile — and the prose around each one carries the explanation.
+The earlier approach wrapped each rewritten passage in a `
+ev{}` macro that a preamble switch coloured. That marks whatever somebody remembered to wrap, not what actually changed, and after several rounds of corrections the two had drifted apart. The wrappers are gone from the source; [`scripts/marcar_cambios.py`](scripts/marcar_cambios.py) derives the marks with `latexdiff`, so they cannot fall behind the text. Tables and TikZ figures are compared as whole blocks rather than cell by cell — latexdiff's markup between `\midrule` and the rows does not compile — and the prose around each one carries the explanation.
 
 The repository contains no real municipal, personal, or production data. It is an academic prototype under the MIT license; see [LICENSE.md](LICENSE.md).
