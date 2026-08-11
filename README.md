@@ -32,7 +32,7 @@ The viewer is authored by Uriel González Casiano ([`Urigc/mapa`](https://github
 
 Markers sit at the **real coordinates** of each community, resolved from OpenStreetMap and stored in the seed, with a deterministic offset of at most 150 m so two works in the same community do not overlap. The upstream viewer derived positions from a hash of the community name inside the municipal bounding box, which scattered works over places they had nothing to do with.
 
-Provenance, the exact upstream commit, the build command and the two source patches are recorded in [`docs/mapa/PROCEDENCIA.md`](docs/mapa/PROCEDENCIA.md).
+Provenance, the exact upstream commit, the build command and the six source patches are recorded in [`docs/mapa/PROCEDENCIA.md`](docs/mapa/PROCEDENCIA.md).
 
 The map carries the system navigation bar — brand, the four role workspaces, and the theme, mode and language controls — so that entering it is not a dead end and the whole thing reads as one system rather than two similar sites. Switching to light mode also switches the basemap (CARTO Dark Matter ↔ Positron) and the panel palette.
 
@@ -115,14 +115,16 @@ Table 5 of the chapter reports a Lighthouse audit of the two entry points. Becau
 npx lighthouse@12 https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/ --only-categories=performance,accessibility,best-practices,seo --chrome-flags="--headless=new"
 ```
 
-Last run 10 August 2026 — Lighthouse 12.8.2, headless Chrome 151, emulated mobile device (412×823, DPR 1.75), simulated throttling. Landing page figures are the median of three runs:
+Last run 11 August 2026 at tag `v1.3.1-icokg2026` — Lighthouse 12.8.2, headless Chrome 151, emulated mobile device (412×823, DPR 1.75), simulated throttling. Both rows are the median of three runs:
 
 | Page | FCP | LCP | SI | TBT | CLS | Perf. | A11y | Best pract. | SEO |
 |---|---|---|---|---|---|---|---|---|---|
-| Landing | 3.2 s | 3.2 s | 4.9 s | 0 ms | 0.082 | 83 | 90 | 96 | 90 |
-| Map | 2.6 s | 5.4 s | 3.0 s | 80 ms | 0.006 | 76 | 96 | 93 | 100 |
+| Landing | 3.2 s | 3.3 s | 4.0 s | 0 ms | 0.000 | 85 | 100 | 96 | 90 |
+| Map | 3.6 s | 5.3 s | 3.7 s | 0 ms | 0.000 | 72 | 100 | 93 | 100 |
 
-The two pages are limited by different things: the landing page by render-blocking web fonts and a CDN animation library, the map by its 533 kB bundle. Both are delivery traits of the inherited prototype front end, not properties of the warehouse design.
+Both pages score 100 on accessibility with no failing audit, keep the main thread idle and shift no layout, so what separates them is delivery weight: the landing page waits on render-blocking web fonts and a CDN animation library, the map on its 533 kB bundle. Both are delivery traits of the inherited prototype front end, not properties of the warehouse design.
+
+The audit reached 100 by fixing what it reported rather than by restating it: the map's brand link had no accessible name below 720 px, the footer painted the municipality's attribution below 4.5:1, two icon-only buttons in the login modal announced as just "button", and the map markers are `role="button"` divIcons with no text — see [`docs/js/mapa_a11y.js`](docs/js/mapa_a11y.js), which also records why their label is generic.
 
 
 ## Running the reference API

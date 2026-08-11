@@ -455,7 +455,7 @@ The static artefact, unlike the backend, is permanently online, so its delivery 
 \begin{table}[tb]
 \centering
 \revcol
-\caption{\rev{Lighthouse audit of the published artefact (median of three runs for the landing page). Reproducible over the public URL.}}
+\caption{\rev{Lighthouse audit of the published artefact, median of three runs per page. Reproducible over the public URL.}}
 \label{tab:lighthouse}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -466,15 +466,15 @@ The static artefact, unlike the backend, is permanently online, so its delivery 
 \cmidrule(lr){2-6}\cmidrule(lr){7-10}
 \textbf{Page} & FCP & LCP & SI & TBT & CLS & Perf. & A11y & B.P. & SEO \\
 \midrule
-Landing & 3.2 s & 3.2 s & 4.9 s & 0 ms  & 0.082 & 83 & 90 & 96 & 90 \\
-Map     & 2.6 s & 5.4 s & 3.0 s & 80 ms & 0.006 & 76 & 96 & 93 & 100 \\
+Landing & 3.2 s & 3.3 s & 4.0 s & 0 ms & 0.000 & 85 & 100 & 96 & 90 \\
+Map     & 3.6 s & 5.3 s & 3.7 s & 0 ms & 0.000 & 72 & 100 & 93 & 100 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The two pages fail in opposite ways. The landing page is delayed by render-blocking web fonts and a CDN animation library, yet leaves the main thread idle (0~ms blocking); the map barely delays first paint but pays for a 533~kB bundle with a 5.4~s largest element. Neither is a property of the warehouse: both are delivery traits of an unoptimised front end, remediable without touching the architecture. Lighthouse audits \emph{page delivery}, not query latency; the latter is in Section~\ref{sec:objetivos} and needs the deployed backend.
+Both pages score 100 on accessibility, leave the main thread idle and shift no layout, so only delivery weight separates them: the landing page waits on render-blocking web fonts and a CDN animation library, the map on a 533~kB bundle. Neither is a property of the warehouse: both are delivery traits of an unoptimised front end, remediable without touching the architecture. Lighthouse audits \emph{page delivery}, not query latency; the latter is in Section~\ref{sec:objetivos} and needs the deployed backend.
 
-Conditions: Lighthouse 12.8.2, headless Chrome 151, emulated mobile device with simulated throttling, 10 August 2026. The artefact is static and versioned, so re-running the audit yields the same page that produced these figures.
+Conditions: Lighthouse 12.8.2, headless Chrome 151, emulated mobile device with simulated throttling, 11 August 2026, tag \texttt{v1.3.1-icokg2026}. The artefact is static, so re-running the audit yields the same page that produced these figures.
 \endgroup
 
 \subsection{Evaluation of the Delay/Alert Detection Module (Measured)}
