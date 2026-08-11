@@ -24,6 +24,7 @@ def create_app() -> Flask:
     from routes.public      import public_bp
     from routes.propuestas  import propuestas_bp
     from routes.imagenes    import imagenes_bp
+    from routes.analitica   import analitica_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(director_bp)
@@ -33,6 +34,7 @@ def create_app() -> Flask:
     app.register_blueprint(public_bp)
     app.register_blueprint(propuestas_bp)
     app.register_blueprint(imagenes_bp)
+    app.register_blueprint(analitica_bp)
 
 
     @app.route("/api/health")

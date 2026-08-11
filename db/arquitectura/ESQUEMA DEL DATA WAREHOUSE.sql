@@ -284,31 +284,38 @@ CREATE INDEX idx_dim_presupuesto_id ON warehouse.dim_presupuesto(presupuesto_id)
 CREATE INDEX idx_dim_presupuesto_actual ON warehouse.dim_presupuesto(presupuesto_id, es_actual) WHERE es_actual = TRUE;
 
 -- ============================================================
--- 10. DIMENSIÓN POBLADOR (SCD Tipo 2)
+-- 10. DIMENSIÓN POBLADOR (SCD Tipo 1 - Sobrescribe)
+--
+-- Tipo 1 a propósito, no por descuido. Esta dimensión guarda nombre y CURP
+-- de personas: versionarla conservaría indefinidamente cada dato personal
+-- que alguien corrigiera, y para el análisis sólo importa el estado actual
+-- del padrón. Un histórico aquí sería un pasivo, no un activo.
 -- ============================================================
 CREATE TABLE warehouse.dim_poblador (
     poblador_key        BIGSERIAL PRIMARY KEY,
-    poblador_id         INTEGER NOT NULL,
+    poblador_id         INTEGER NOT NULL UNIQUE,
     
     nombre_completo     TEXT NOT NULL,
     comunidad           TEXT NOT NULL,
     curp                TEXT,
     
-    fecha_efectiva      TIMESTAMPTZ DEFAULT NOW(),
-    fecha_expiracion    TIMESTAMPTZ DEFAULT '9999-12-31'::TIMESTAMPTZ,
-    es_actual           BOOLEAN DEFAULT TRUE,
-    
-    creado_en           TIMESTAMPTZ DEFAULT NOW()
+    creado_en           TIMESTAMPTZ DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_dim_poblador_id ON warehouse.dim_poblador(poblador_id);
 
 -- ============================================================
--- 11. DIMENSIÓN PROPUESTA (SCD Tipo 2)
+-- 11. DIMENSIÓN PROPUESTA (SCD Tipo 1 - Sobrescribe)
+--
+-- Una propuesta ciudadana se analiza por lo que dice hoy y por los votos que
+-- acumula; sus redacciones anteriores no entran en ninguna consulta. Además
+-- va enlazada al poblador que la presentó, así que versionarla reintroduciría
+-- por la puerta de atrás el histórico personal que dim_poblador evita.
 -- ============================================================
 CREATE TABLE warehouse.dim_propuesta (
     propuesta_key       BIGSERIAL PRIMARY KEY,
-    propuesta_id        INTEGER NOT NULL,
+    propuesta_id        INTEGER NOT NULL UNIQUE,
     
     titulo              TEXT NOT NULL,
     region              TEXT NOT NULL,
@@ -318,11 +325,8 @@ CREATE TABLE warehouse.dim_propuesta (
     anio_convocatoria   INTEGER,
     poblador_key        BIGINT,                    
     
-    fecha_efectiva      TIMESTAMPTZ DEFAULT NOW(),
-    fecha_expiracion    TIMESTAMPTZ DEFAULT '9999-12-31'::TIMESTAMPTZ,
-    es_actual           BOOLEAN DEFAULT TRUE,
-    
-    creado_en           TIMESTAMPTZ DEFAULT NOW()
+    creado_en           TIMESTAMPTZ DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_dim_propuesta_id ON warehouse.dim_propuesta(propuesta_id);

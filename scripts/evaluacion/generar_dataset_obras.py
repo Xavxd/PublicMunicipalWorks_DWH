@@ -1,22 +1,50 @@
 """
-Generador de Dataset Sintético para Evaluación de Detección de Anomalías en Obras Públicas
-============================================================================================
-"""
+generar_dataset_obras.py
+=============================================================================
+Simula la ejecución mensual de obras públicas municipales y emite un registro
+por obra y periodo de observación, con la causa latente de cada anomalía
+guardada aparte como verdad de terreno.
 
+Por qué se reescribió
+---------------------
+La versión anterior inyectaba anomalías escribiendo directamente los valores
+que el detector busca: la clase «inconsistencia» forzaba el avance físico a
+5-25 % mientras el presupuestal quedaba en 100 % por construcción, que es
+exactamente el criterio C3; la clase «fantasma» ponía el avance en 0 y doblaba
+el presupuesto, otra vez C3; y la clase «retraso» sorteaba el retraso en
+[120, 365] días contra un criterio C2 de «más de 120 días». El recall perfecto
+que se obtenía en esas tres clases estaba escrito en el generador, no medido.
+Un revisor lo señaló, y tenía razón.
+
+Aquí las anomalías son estados latentes de un proceso de obra —un contratista
+poco productivo, un precio inflado en la adjudicación, pagos que se adelantan
+al avance, una obra que se detiene— y lo que el detector ve son las
+consecuencias observables de ese estado, no el estado. Las magnitudes se
+sortean de distribuciones que **se solapan con las normales**, de modo que
+algunas anomalías son indetectables y algunas obras sanas parecen anómalas.
+Ésa es la condición para que la evaluación diga algo.
+
+La etiqueta latente viaja en `causa_latente` y ningún detector la observa.
+
+Uso
+---
+    python scripts/evaluacion/generar_dataset_obras.py              # semilla 42
+    python scripts/evaluacion/generar_dataset_obras.py --semilla 7
+    python scripts/evaluacion/generar_dataset_obras.py --prevalencia 0.08
+"""
+import argparse
 import json
 import os
-import random
+
 import numpy as np
-from datetime import datetime, timedelta
 
-random.seed(42)
-np.random.seed(42)
-
-# ============================================================
-# DATOS BASE REALISTAS DE TEMASCALTEPEC, EDOMEX
-# ============================================================
-
-COMUNIDADES_TEMASCALTEPEC = [
+# ---------------------------------------------------------------------------
+# Base territorial. El índice de desarrollo es una covariable del contexto,
+# no una señal de anomalía: entra en el dataset porque el detector de la
+# línea base lo usa, y porque una obra en una comunidad remota avanza más
+# despacio sin que eso sea irregular.
+# ---------------------------------------------------------------------------
+COMUNIDADES = [
     'Temascaltepec de González', 'San Juan de las Huertas', 'San José Ixtapan',
     'San Diego del Nichi', 'San Francisco Oxtotilpan', 'San Lucas',
     'San Pedro de los Baños', 'Santa Ana Zicatecoyan', 'Santa María Nativitas',
@@ -30,11 +58,10 @@ COMUNIDADES_TEMASCALTEPEC = [
     'San José', 'San Miguel', 'San Nicolás', 'San Pablo',
     'San Pedro', 'San Rafael', 'San Sebastián', 'Santa Cruz',
     'Santa Elena', 'Santa Lucía', 'Santa Rosa', 'Santiago',
-    'Santo Domingo', 'Valle de Bravo', 'Centro'
+    'Santo Domingo', 'Valle de Bravo', 'Centro',
 ]
 
-# Índice de desarrollo socioeconómico por comunidad (0-100, simulado basado en CONEVAL)
-IDS_COMUNIDADES = {
+IDS = {
     'Temascaltepec de González': 65, 'San Juan de las Huertas': 42,
     'San José Ixtapan': 38, 'San Diego del Nichi': 35,
     'San Francisco Oxtotilpan': 40, 'San Lucas': 45,
@@ -54,236 +81,202 @@ IDS_COMUNIDADES = {
     'San Pablo': 52, 'San Pedro': 53, 'San Rafael': 54,
     'San Sebastián': 55, 'Santa Cruz': 56, 'Santa Elena': 57,
     'Santa Lucía': 58, 'Santa Rosa': 59, 'Santiago': 60,
-    'Santo Domingo': 61, 'Valle de Bravo': 75, 'Centro': 68
+    'Santo Domingo': 61, 'Valle de Bravo': 75, 'Centro': 68,
 }
 
-TIPOS_OBRA = [
-    'Pavimentación de calles', 'Construcción de muro de contención',
-    'Rehabilitación de camino rural', 'Construcción de drenaje pluvial',
-    'Ampliación de red de agua potable', 'Construcción de escuela primaria',
-    'Remodelación de plaza principal', 'Construcción de centro de salud',
-    'Mejoramiento de vivienda', 'Construcción de cancha deportiva',
-    'Instalación de alumbrado público', 'Construcción de puente peatonal',
-    'Rehabilitación de edificio municipal', 'Construcción de mercado municipal',
-    'Pavimentación de avenida principal', 'Construcción de sistema de alcantarillado',
-    'Remodelación de parque', 'Construcción de biblioteca pública',
-    'Mejoramiento de camino vecinal', 'Construcción de módulo de salud'
-]
+# tipo de obra -> (coste base en miles de pesos, duración prevista en meses)
+TIPOS_OBRA = {
+    'Pavimentación de calles': (2500, 8),
+    'Construcción de muro de contención': (3500, 10),
+    'Rehabilitación de camino rural': (1800, 6),
+    'Construcción de drenaje pluvial': (2200, 9),
+    'Ampliación de red de agua potable': (2800, 10),
+    'Construcción de escuela primaria': (4500, 14),
+    'Remodelación de plaza principal': (1500, 6),
+    'Construcción de centro de salud': (3800, 12),
+    'Mejoramiento de vivienda': (800, 4),
+    'Construcción de cancha deportiva': (1200, 5),
+    'Instalación de alumbrado público': (600, 3),
+    'Construcción de puente peatonal': (2000, 7),
+    'Rehabilitación de edificio municipal': (2500, 8),
+    'Construcción de mercado municipal': (3200, 12),
+    'Pavimentación de avenida principal': (3500, 10),
+    'Construcción de sistema de alcantarillado': (2800, 11),
+    'Remodelación de parque': (1000, 5),
+    'Construcción de biblioteca pública': (2200, 8),
+    'Mejoramiento de camino vecinal': (1500, 6),
+    'Construcción de módulo de salud': (1800, 7),
+}
 
-CONSTRUCTORAS = [
-    'Constructora del Valle S.A. de C.V.', 'Obras y Proyectos México S.A.',
-    'Infraestructura Moderna S.A. de C.V.', 'Constructora Toluca S.A.',
-    'Edificaciones del Estado S.A. de C.V.', 'Proyectos Urbanos México S.A.',
-    'Constructora Temascaltepec S.A. de C.V.', 'Obras Públicas Avanzadas S.A.',
-    'Infraestructura Rural S.A. de C.V.', 'Constructora del Altiplano S.A.'
-]
+CAUSAS = ('sobreprecio', 'baja_productividad', 'pago_adelantado', 'abandono',
+          'obra_fantasma')
+ANIOS = (2020, 2021, 2022, 2023, 2024)
 
-FUENTES_FINANCIAMIENTO = [
-    {'id': 'FISM-2024', 'grado': 'Federal', 'programa': 'FISM'},
-    {'id': 'FORTAMUN-2024', 'grado': 'Federal', 'programa': 'FORTAMUN'},
-    {'id': 'RAMO-33-2024', 'grado': 'Federal', 'programa': 'Ramo 33'},
-    {'id': 'ESTATAL-2024', 'grado': 'Estatal', 'programa': 'Fondo Estatal'},
-    {'id': 'MUNICIPAL-2024', 'grado': 'Municipal', 'programa': 'Recursos Propios'}
-]
-
-ANIOS = [2020, 2021, 2022, 2023, 2024]
-BIMESTRES = [1, 2, 3, 4, 5, 6]
+# Meses de lluvia en la sierra: la obra avanza más despacio y no es irregular.
+MESES_LLUVIA = (6, 7, 8, 9)
 
 
-def generar_consumo_base(comunidad, tipo_obra, anio, bimestre):
+def sortear_causa(rng, prevalencia):
+    """La causa latente. Ningún detector la observa."""
+    if rng.random() >= prevalencia:
+        return None
+    return CAUSAS[rng.integers(len(CAUSAS))]
+
+
+def simular_obra(rng, comunidad, tipo, anio, prevalencia):
+    """Simula una obra mes a mes y devuelve sus periodos observados.
+
+    Lo que devuelve son magnitudes observables —avance físico, presupuesto
+    ejercido, retraso acumulado—. La causa latente se adjunta sólo como
+    verdad de terreno.
     """
-    Genera consumo presupuestal base realista para una obra en un período dado.
-    
-    Factores:
-    - IDS de la comunidad (mayor IDS = mayor presupuesto)
-    - Tipo de obra (pavimentación > alumbrado)
-    - Estacionalidad (bimestre 3-4 = estiaje = más obras)
-    - Variación aleatoria normal
-    - Tendencia de crecimiento anual
-    """
-    ids = IDS_COMUNIDADES[comunidad]
-    
-    # Presupuesto base por tipo de obra (miles de pesos)
-    presupuesto_base_tipo = {
-        'Pavimentación de calles': 2500,
-        'Construcción de muro de contención': 3500,
-        'Rehabilitación de camino rural': 1800,
-        'Construcción de drenaje pluvial': 2200,
-        'Ampliación de red de agua potable': 2800,
-        'Construcción de escuela primaria': 4500,
-        'Remodelación de plaza principal': 1500,
-        'Construcción de centro de salud': 3800,
-        'Mejoramiento de vivienda': 800,
-        'Construcción de cancha deportiva': 1200,
-        'Instalación de alumbrado público': 600,
-        'Construcción de puente peatonal': 2000,
-        'Rehabilitación de edificio municipal': 2500,
-        'Construcción de mercado municipal': 3200,
-        'Pavimentación de avenida principal': 3500,
-        'Construcción de sistema de alcantarillado': 2800,
-        'Remodelación de parque': 1000,
-        'Construcción de biblioteca pública': 2200,
-        'Mejoramiento de camino vecinal': 1500,
-        'Construcción de módulo de salud': 1800
-    }
-    
-    presupuesto_base = presupuesto_base_tipo.get(tipo_obra, 2000)
-    
-    # Ajuste por IDS (comunidades con mayor IDS reciben más presupuesto)
-    ajuste_ids = 1 + (ids - 50) * 0.008  # ±40% de variación
-    
-    # Estacionalidad: más obras en bimestres 3-4 (estiaje, menos lluvias)
-    estacionalidad = 1.15 if bimestre in [3, 4] else 0.95
-    
-    # Tendencia de crecimiento anual (3% por año)
-    anio_factor = 1 + (anio - 2020) * 0.03
-    
-    # Variación aleatoria normal (±20%)
-    variacion = np.random.normal(1.0, 0.20)
-    
-    # Presupuesto final (en miles de pesos)
-    presupuesto = presupuesto_base * ajuste_ids * estacionalidad * anio_factor * variacion
-    
-    return max(500, presupuesto)  # Mínimo 500 mil pesos
+    coste_base, meses_previstos = TIPOS_OBRA[tipo]
+    ids = IDS[comunidad]
+    causa = sortear_causa(rng, prevalencia)
+
+    # --- adjudicación -----------------------------------------------------
+    # Ruido de precio normal: obras iguales cuestan distinto por terreno,
+    # acarreo y temporada. El sobreprecio se sortea de una distribución que
+    # SE SOLAPA con este ruido, así que un sobreprecio pequeño es, en los
+    # datos, indistinguible de una obra cara legítima.
+    ruido_precio = rng.lognormal(mean=0.0, sigma=0.22)
+    factor_ids = 1 + (ids - 50) * 0.006
+    presupuesto = coste_base * factor_ids * ruido_precio
+    if causa == 'sobreprecio':
+        presupuesto *= rng.lognormal(mean=np.log(1.25), sigma=0.30)
+
+    # --- productividad ----------------------------------------------------
+    # Fracción de obra que la constructora cierra en un mes tipo. Las
+    # comunidades remotas avanzan algo más despacio sin que sea irregular.
+    productividad = rng.normal(1.0, 0.18) * (0.92 + 0.0016 * ids)
+    if causa == 'baja_productividad':
+        productividad *= rng.uniform(0.35, 0.85)
+    productividad = max(0.15, productividad)
+
+    # Severidad del desvío de pagos: la mayoría son leves —indistinguibles
+    # del ruido de tesorería— y unos pocos son descarados. Sin esa cola no
+    # habría con qué evaluar el criterio de inconsistencia.
+    severidad_pago = rng.beta(1.4, 3.0) if causa == 'pago_adelantado' else 0.0
+
+    # Obra fantasma: contratada, pagada y esencialmente no ejecutada. Es un
+    # fenómeno real de la obra pública, no un umbral: lo que se fija es que la
+    # obra no se hace, y el avance que se reporta se sortea en un rango que
+    # cruza el umbral del criterio, de modo que unas se ven y otras no.
+    techo_fantasma = rng.uniform(0.02, 0.45) if causa == 'obra_fantasma' else None
+
+    mes_abandono = None
+    if causa == 'abandono':
+        # Se detiene en cualquier punto: pararse al 85 % es casi invisible,
+        # pararse al 20 % salta a la vista. Las dos cosas ocurren.
+        mes_abandono = int(np.ceil(meses_previstos * rng.uniform(0.20, 0.90)))
+
+    # --- ejecución mes a mes ---------------------------------------------
+    avance = 0.0
+    ejercido = 0.0
+    # Anticipo de arranque: entre el 10 % y el 30 % del contrato, normal en
+    # obra pública mexicana. Sin él, el avance financiero nunca adelanta al
+    # físico y la clase «pago adelantado» sería trivial.
+    anticipo = rng.uniform(0.10, 0.30)
+    ejercido += anticipo
+
+    mes_inicio = int(rng.integers(1, 13))
+    filas = []
+    limite = int(meses_previstos * 2.5) + 6
+    for m in range(1, limite + 1):
+        mes_calendario = (mes_inicio + m - 2) % 12 + 1
+        if techo_fantasma is not None and avance >= techo_fantasma:
+            paso = 0.0
+        elif mes_abandono is not None and m > mes_abandono:
+            paso = 0.0
+        else:
+            estacion = 0.62 if mes_calendario in MESES_LLUVIA else 1.0
+            paso = (1.0 / meses_previstos) * productividad * estacion
+            paso *= max(0.0, rng.normal(1.0, 0.25))
+        avance = min(1.0, avance + paso)
+
+        # El gasto persigue al avance con retardo y ruido; el anticipo se
+        # amortiza contra la obra ejecutada.
+        objetivo = anticipo + (1 - anticipo) * avance
+        if techo_fantasma is not None:
+            # Se paga contra obra inexistente: el gasto sigue al calendario
+            # contractual, no al avance.
+            objetivo = min(1.0, anticipo + (1 - anticipo) * (m / meses_previstos))
+        ejercido += (objetivo - ejercido) * rng.uniform(0.45, 0.85)
+        if causa == 'pago_adelantado':
+            # Se paga contra obra no ejecutada: el pago se acerca al total
+            # del contrato en proporción a la severidad, quede o no obra por
+            # hacer.
+            ejercido += severidad_pago * (1.0 - ejercido) * rng.uniform(0.3, 0.7)
+        ejercido = min(1.35, max(0.0, ejercido))
+
+        # Retraso acumulado: cuánto tiempo lleva de más frente al plan.
+        meses_planeados = avance * meses_previstos
+        retraso_dias = max(0.0, (m - meses_planeados) * 30.0)
+
+        # Se observa cada dos meses, como el reporte bimestral.
+        if m % 2 == 0 and (avance > 0.02 or mes_abandono is not None):
+            filas.append({
+                'comunidad': comunidad,
+                'tipo_obra': tipo,
+                'anio': anio,
+                'bimestre': ((mes_calendario - 1) // 2) + 1,
+                'mes_ejecucion': m,
+                'presupuesto_miles_pesos': round(presupuesto, 2),
+                'presupuesto_ejercido': round(presupuesto * ejercido, 2),
+                'avance_fisico_porcentaje': round(avance * 100, 2),
+                'avance_presupuestal_porcentaje': round(ejercido * 100, 2),
+                'dias_retraso': int(round(retraso_dias)),
+                'ids_comunidad': ids,
+                'es_anomalia_real': causa is not None,
+                'causa_latente': causa,
+            })
+        if avance >= 0.999:
+            break
+        # Una obra parada deja de reportar avance al cabo de unos meses; sin
+        # este corte las paradas dominarían el conjunto por pura duración.
+        if (mes_abandono is not None and m > mes_abandono + 6) or            (techo_fantasma is not None and m > meses_previstos + 2):
+            break
+    return filas
 
 
-def inyectar_anomalias(presupuesto, avance_fisico, dias_retraso, probabilidad_anomalia=0.15):
-    """
-    Inyecta anomalías con una probabilidad dada.
-    Tipos de anomalía:
-    - Sobrecosto (presupuesto 1.5-3x mayor)
-    - Retraso extremo (>120 días)
-    - Avance físico inconsistente (alto presupuesto, bajo avance)
-    - Obra fantasma (presupuesto ejercido, sin avance)
-    """
-    es_anomalia = False
-    tipo_anomalia = None
-    
-    if random.random() < probabilidad_anomalia:
-        tipo_anomalia = random.choice(['sobrecosto', 'retraso', 'inconsistencia', 'fantasma'])
-        es_anomalia = True
-        
-        if tipo_anomalia == 'sobrecosto':
-            factor = random.uniform(1.5, 3.0)
-            presupuesto = presupuesto * factor
-        elif tipo_anomalia == 'retraso':
-            dias_retraso = random.randint(120, 365)
-        elif tipo_anomalia == 'inconsistencia':
-            avance_fisico = random.randint(5, 25)  # Muy bajo avance
-        else:  # fantasma
-            avance_fisico = 0
-            presupuesto = presupuesto * 2
-    
-    return presupuesto, avance_fisico, dias_retraso, es_anomalia, tipo_anomalia
+def generar(semilla, prevalencia, obras_por_comunidad=(6, 14)):
+    rng = np.random.default_rng(semilla)
+    tipos = list(TIPOS_OBRA)
+    dataset = []
+    for comunidad in COMUNIDADES:
+        n = int(rng.integers(*obras_por_comunidad))
+        for _ in range(n):
+            tipo = tipos[rng.integers(len(tipos))]
+            anio = int(ANIOS[rng.integers(len(ANIOS))])
+            dataset.extend(simular_obra(rng, comunidad, tipo, anio, prevalencia))
+    return dataset
 
 
 def main():
-    print("=" * 70)
-    print("GENERADOR DE DATASET SINTÉTICO - OBRAS PÚBLICAS TEMASCALTEPEC")
-    print("=" * 70)
-    print()
-    
-    dataset = []
-    total_registros = 0
-    total_anomalias = 0
-    
-    print("Generando datos para 55 comunidades...")
-    
-    for comunidad in COMUNIDADES_TEMASCALTEPEC:
-        # Número de obras por comunidad (varía entre 15 y 35)
-        num_obras = random.randint(15, 35)
-        
-        print(f"  {comunidad}: {num_obras} obras")
-        
-        for i in range(num_obras):
-            tipo_obra = random.choice(TIPOS_OBRA)
-            anio = random.choice(ANIOS)
-            bimestre = random.choice(BIMESTRES)
-            
-            # Generar presupuesto base
-            presupuesto = generar_consumo_base(comunidad, tipo_obra, anio, bimestre)
-            
-            # Avance físico esperado (0-100%)
-            avance_fisico_esperado = random.randint(40, 95)
-            
-            # Días de retraso base (0-90 días)
-            dias_retraso_base = random.randint(0, 90)
-            
-            # Inyectar anomalías (15% de probabilidad)
-            presupuesto_final, avance_fisico, dias_retraso, es_anomalia, tipo_anomalia = \
-                inyectar_anomalias(presupuesto, avance_fisico_esperado, dias_retraso_base, 
-                                   probabilidad_anomalia=0.15)
-            
-            # Calcular avance presupuestal
-            avance_presupuestal = (presupuesto_final / presupuesto * 100) if presupuesto > 0 else 0
-            
-            registro = {
-                'comunidad': comunidad,
-                'tipo_obra': tipo_obra,
-                'anio': anio,
-                'bimestre': bimestre,
-                'presupuesto_miles_pesos': round(presupuesto, 2),
-                'presupuesto_ejercido': round(presupuesto_final, 2),
-                'avance_fisico_porcentaje': avance_fisico,
-                'avance_presupuestal_porcentaje': round(avance_presupuestal, 2),
-                'dias_retraso': dias_retraso,
-                'ids_comunidad': IDS_COMUNIDADES[comunidad],
-                'es_anomalia_real': es_anomalia,
-                'tipo_anomalia': tipo_anomalia
-            }
-            
-            dataset.append(registro)
-            total_registros += 1
-            
-            if es_anomalia:
-                total_anomalias += 1
-    
-    print()
-    print(f"Total de registros generados: {total_registros}")
-    print(f"Anomalías inyectadas: {total_anomalias} ({total_anomalias/total_registros*100:.2f}%)")
-    print()
-    
-    # Guardar dataset
-    # (crear el directorio si no existe: sin esto el script aborta con
-    #  FileNotFoundError en un clon limpio del repositorio)
-    os.makedirs('datos_sinteticos', exist_ok=True)
-    with open('datos_sinteticos/obras_temascaltepec.json', 'w', encoding='utf-8') as f:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--semilla", type=int, default=42)
+    ap.add_argument("--prevalencia", type=float, default=0.15)
+    ap.add_argument("--salida", default=os.path.join("datos_sinteticos",
+                                                     "obras_temascaltepec.json"))
+    args = ap.parse_args()
+
+    dataset = generar(args.semilla, args.prevalencia)
+    os.makedirs(os.path.dirname(args.salida), exist_ok=True)
+    with open(args.salida, "w", encoding="utf-8") as f:
         json.dump(dataset, f, indent=2, ensure_ascii=False)
-    
-    print("✓ Dataset guardado en: datos_sinteticos/obras_temascaltepec.json")
-    print()
-    
-    # Estadísticas por comunidad
-    print("Estadísticas por comunidad (Top 10 por presupuesto):")
-    print("-" * 70)
-    
-    comunidades_stats = []
-    for comunidad in COMUNIDADES_TEMASCALTEPEC:
-        registros_com = [r for r in dataset if r['comunidad'] == comunidad]
-        presupuestos = [r['presupuesto_ejercido'] for r in registros_com]
-        anomalias = sum(1 for r in registros_com if r['es_anomalia_real'])
-        ids = IDS_COMUNIDADES[comunidad]
-        
-        comunidades_stats.append({
-            'comunidad': comunidad,
-            'total_obras': len(registros_com),
-            'presupuesto_total': sum(presupuestos),
-            'presupuesto_promedio': np.mean(presupuestos),
-            'anomalias': anomalias,
-            'ids': ids
-        })
-    
-    # Ordenar por presupuesto total
-    comunidades_stats.sort(key=lambda x: x['presupuesto_total'], reverse=True)
-    
-    for stat in comunidades_stats[:10]:
-        print(f"{stat['comunidad']:35s} | Obras: {stat['total_obras']:2d} | "
-              f"Presupuesto: ${stat['presupuesto_total']:10,.0f}k | "
-              f"Anomalías: {stat['anomalias']:2d} ({stat['anomalias']/stat['total_obras']*100:.1f}%) | "
-              f"IDS: {stat['ids']:3d}")
-    
-    print("=" * 70)
+
+    positivos = sum(r["es_anomalia_real"] for r in dataset)
+    print(f"semilla {args.semilla}, prevalencia pedida {args.prevalencia:.0%}")
+    print(f"{len(dataset)} registros obra-periodo en {len(COMUNIDADES)} comunidades")
+    print(f"{positivos} anómalos ({positivos/len(dataset)*100:.2f}%)")
+    reparto = {}
+    for r in dataset:
+        if r["causa_latente"]:
+            reparto[r["causa_latente"]] = reparto.get(r["causa_latente"], 0) + 1
+    for causa, n in sorted(reparto.items()):
+        print(f"  {causa:20} {n}")
+    print(f"\nguardado en {args.salida}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

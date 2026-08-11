@@ -238,18 +238,17 @@ CREATE TRIGGER trg_sync_dim_presupuesto
     FOR EACH ROW
     EXECUTE FUNCTION warehouse.sync_dim_presupuesto();
 
--- Auto-generar dim_poblador
+-- Auto-generar dim_poblador (Tipo 1: sobrescribe, no versiona)
 CREATE OR REPLACE FUNCTION warehouse.sync_dim_poblador()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'UPDATE' THEN
-        UPDATE warehouse.dim_poblador
-        SET fecha_expiracion = NOW(), es_actual = FALSE
-        WHERE poblador_id = NEW.id AND es_actual = TRUE;
-    END IF;
-    
     INSERT INTO warehouse.dim_poblador (poblador_id, nombre_completo, comunidad, curp)
-    VALUES (NEW.id, NEW.nombre || ' ' || NEW.apellidos, NEW.comunidad, NEW.curp);
+    VALUES (NEW.id, NEW.nombre || ' ' || NEW.apellidos, NEW.comunidad, NEW.curp)
+    ON CONFLICT (poblador_id) DO UPDATE SET
+        nombre_completo = EXCLUDED.nombre_completo,
+        comunidad = EXCLUDED.comunidad,
+        curp = EXCLUDED.curp,
+        actualizado_en = NOW();
     
     RETURN NEW;
 END;
@@ -260,7 +259,7 @@ CREATE TRIGGER trg_sync_dim_poblador
     FOR EACH ROW
     EXECUTE FUNCTION warehouse.sync_dim_poblador();
 
--- Auto-generar dim_propuesta
+-- Auto-generar dim_propuesta (Tipo 1: sobrescribe, no versiona)
 CREATE OR REPLACE FUNCTION warehouse.sync_dim_propuesta()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -268,13 +267,7 @@ DECLARE
 BEGIN
     SELECT poblador_key INTO v_poblador_key
     FROM warehouse.dim_poblador
-    WHERE poblador_id = NEW.poblador_id AND es_actual = TRUE;
-    
-    IF TG_OP = 'UPDATE' THEN
-        UPDATE warehouse.dim_propuesta
-        SET fecha_expiracion = NOW(), es_actual = FALSE
-        WHERE propuesta_id = NEW.id AND es_actual = TRUE;
-    END IF;
+    WHERE poblador_id = NEW.poblador_id;
     
     INSERT INTO warehouse.dim_propuesta (
         propuesta_id, titulo, region, descripcion_obra,
@@ -282,7 +275,16 @@ BEGIN
     ) VALUES (
         NEW.id, NEW.titulo, NEW.region, NEW.descripcion_obra,
         NEW.descripcion_beneficiados, NEW.pros_comunidad, NEW.anio_convocatoria, v_poblador_key
-    );
+    )
+    ON CONFLICT (propuesta_id) DO UPDATE SET
+        titulo = EXCLUDED.titulo,
+        region = EXCLUDED.region,
+        descripcion_obra = EXCLUDED.descripcion_obra,
+        descripcion_beneficiados = EXCLUDED.descripcion_beneficiados,
+        pros_comunidad = EXCLUDED.pros_comunidad,
+        anio_convocatoria = EXCLUDED.anio_convocatoria,
+        poblador_key = EXCLUDED.poblador_key,
+        actualizado_en = NOW();
     
     RETURN NEW;
 END;
@@ -474,8 +476,8 @@ BEGIN
     INTO v_poblador_key, v_propuesta_key, v_region
     FROM warehouse.dim_poblador dp
     CROSS JOIN warehouse.dim_propuesta dpr
-    WHERE dp.poblador_id = NEW.poblador_id AND dp.es_actual = TRUE
-      AND dpr.propuesta_id = NEW.propuesta_id AND dpr.es_actual = TRUE;
+    WHERE dp.poblador_id = NEW.poblador_id
+      AND dpr.propuesta_id = NEW.propuesta_id;
     
     INSERT INTO warehouse.fact_eventos_auditoria (
         tiempo_key, tipo_evento_key, poblador_key, propuesta_key,
@@ -532,7 +534,29 @@ BEGIN
             COALESCE(SUM(c.costo), 0) as costo_acumulado,
             COUNT(DISTINCT i.id_informe) as informes_count,
             COUNT(DISTINCT img.id_imagen) as imagenes_count,
-            COUNT(DISTINCT p.id_oficio) as permisos_count
+            COUNT(DISTINCT p.id_oficio) as permisos_count,
+            -- Avance declarado en el informe más reciente de la obra hasta
+            -- el periodo. Sin estas dos columnas el criterio C3 de
+            -- v_anomalias_deteccion no puede evaluarse: comparaba dos campos
+            -- que el snapshot dejaba siempre en NULL.
+            (SELECT ui.porcentaje_avance_fisico
+               FROM public.informes ui
+              WHERE ui.id_obra = o.obra_id
+                AND (ui.ano_infor < p_anio
+                     OR (ui.ano_infor = p_anio
+                         AND EXTRACT(MONTH FROM TO_DATE(ui.mes, 'Month')) <= p_mes))
+              ORDER BY ui.ano_infor DESC,
+                       EXTRACT(MONTH FROM TO_DATE(ui.mes, 'Month')) DESC
+              LIMIT 1) as avance_fisico,
+            (SELECT ui.porcentaje_avance_presupuestario
+               FROM public.informes ui
+              WHERE ui.id_obra = o.obra_id
+                AND (ui.ano_infor < p_anio
+                     OR (ui.ano_infor = p_anio
+                         AND EXTRACT(MONTH FROM TO_DATE(ui.mes, 'Month')) <= p_mes))
+              ORDER BY ui.ano_infor DESC,
+                       EXTRACT(MONTH FROM TO_DATE(ui.mes, 'Month')) DESC
+              LIMIT 1) as avance_presup
         FROM warehouse.dim_obra o
         LEFT JOIN public.presupuesto_obra po ON o.obra_id = po.id_obra
         LEFT JOIN public.costos c ON po.id_presupuesto = c.id_presupuesto
@@ -547,6 +571,7 @@ BEGIN
             tiempo_key, obra_key,
             presupuesto_total, costo_acumulado, saldo_presupuesto,
             porcentaje_ejercido,
+            porcentaje_avance_fisico, porcentaje_avance_presup,
             dias_retraso,
             informes_registrados, imagenes_evidencia, permisos_obtenidos,
             tiene_retraso
@@ -560,6 +585,8 @@ BEGIN
                  THEN ROUND((rec.costo_acumulado / rec.presupuesto_total) * 100, 2)
                  ELSE 0 
             END,
+            rec.avance_fisico,
+            rec.avance_presup,
             EXTRACT(DAY FROM NOW() - rec.fecha_final)::INTEGER,
             rec.informes_count,
             rec.imagenes_count,
@@ -570,6 +597,8 @@ BEGIN
             costo_acumulado = EXCLUDED.costo_acumulado,
             saldo_presupuesto = EXCLUDED.saldo_presupuesto,
             porcentaje_ejercido = EXCLUDED.porcentaje_ejercido,
+            porcentaje_avance_fisico = EXCLUDED.porcentaje_avance_fisico,
+            porcentaje_avance_presup = EXCLUDED.porcentaje_avance_presup,
             dias_retraso = EXCLUDED.dias_retraso,
             informes_registrados = EXCLUDED.informes_registrados,
             imagenes_evidencia = EXCLUDED.imagenes_evidencia,
@@ -592,6 +621,63 @@ $$ LANGUAGE plpgsql;
 -- ============================================================
 -- VISTAS ANALÍTICAS PARA REPORTES DE AUDITORÍA
 -- ============================================================
+
+-- ------------------------------------------------------------
+-- Detección de anomalías: los criterios C1-C3 del capítulo.
+--
+-- Esta vista existe porque antes no existía. La regla evaluada en el
+-- capítulo vivía sólo en un script de Python que leía un JSON, de modo que
+-- la tabla de resultados medía ese script y no el almacén; v_alertas_auditoria
+-- clasificaba otra cosa (montos sobre un millón, obras canceladas, cambios de
+-- presupuesto, eventos de más de noventa días) y ninguno de esos criterios es
+-- el que se reportaba. Un revisor lo encontró leyendo el repositorio.
+--
+--   C1  el coste ejercido se aparta más de tres desviaciones típicas de la
+--       media del periodo. Es un umbral global y por eso apenas distingue
+--       una obra cara de una obra sobrepreciada; la Sección 7.4 del capítulo
+--       lo mide y lo dice.
+--   C2  más de 120 días de retraso frente a la fecha final planeada.
+--   C3  avance físico por debajo del 30 % con avance presupuestario por
+--       encima del 80 %: se ha pagado obra que no está hecha.
+--
+-- La media y la desviación de C1 se calculan sobre el mismo periodo que se
+-- evalúa, no sobre toda la historia, para que un año con obra mayor no
+-- desplace el umbral de los demás.
+-- ------------------------------------------------------------
+CREATE OR REPLACE VIEW warehouse.v_anomalias_deteccion AS
+WITH estadistica_periodo AS (
+    SELECT tiempo_key,
+           AVG(costo_acumulado)              AS media_costo,
+           STDDEV_POP(costo_acumulado)       AS desv_costo
+    FROM warehouse.fact_obra_mensual
+    GROUP BY tiempo_key
+)
+SELECT
+    fom.tiempo_key,
+    fom.obra_key,
+    o.obra_id,
+    o.nombre_obra,
+    fom.costo_acumulado,
+    fom.porcentaje_avance_fisico,
+    fom.porcentaje_avance_presup,
+    fom.dias_retraso,
+    CASE WHEN e.desv_costo > 0
+         THEN ABS(fom.costo_acumulado - e.media_costo) / e.desv_costo
+         ELSE 0 END                                        AS z_costo,
+    (e.desv_costo > 0
+     AND ABS(fom.costo_acumulado - e.media_costo) / e.desv_costo > 3.0)  AS c1_desviacion_costo,
+    (fom.dias_retraso > 120)                                             AS c2_retraso,
+    (fom.porcentaje_avance_fisico < 30
+     AND fom.porcentaje_avance_presup > 80)                              AS c3_inconsistencia,
+    (   (e.desv_costo > 0
+         AND ABS(fom.costo_acumulado - e.media_costo) / e.desv_costo > 3.0)
+     OR fom.dias_retraso > 120
+     OR (fom.porcentaje_avance_fisico < 30
+         AND fom.porcentaje_avance_presup > 80))                         AS es_anomalia
+FROM warehouse.fact_obra_mensual fom
+JOIN estadistica_periodo e ON e.tiempo_key = fom.tiempo_key
+JOIN warehouse.dim_obra o  ON o.obra_key = fom.obra_key AND o.es_actual = TRUE;
+
 
 -- Dashboard de obras con retraso
 CREATE OR REPLACE VIEW warehouse.v_obras_retraso AS
@@ -659,7 +745,6 @@ SELECT
 FROM warehouse.dim_propuesta dp
 LEFT JOIN warehouse.fact_eventos_auditoria v ON dp.propuesta_key = v.propuesta_key
     AND v.tipo_evento_key = (SELECT tipo_evento_key FROM warehouse.dim_tipo_evento WHERE codigo_evento = 'VOTO_EMITIDO')
-WHERE dp.es_actual = TRUE
 GROUP BY dp.region, dp.anio_convocatoria;
 
 -- Ejercicio presupuestario por fuente
