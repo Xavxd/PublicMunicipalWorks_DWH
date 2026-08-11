@@ -14,7 +14,7 @@ abstract: >-
   that needs no backend.
 type: software
 license: MIT
-version: v1.2.0-icokg2026
+version: v1.3.0-icokg2026
 date-released: "2026-08-10"
 repository-code: "https://github.com/gabrielhuav/PublicMunicipalWorks_DWH"
 repository-artifact: "https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/"
