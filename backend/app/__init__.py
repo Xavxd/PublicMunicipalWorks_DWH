@@ -41,17 +41,11 @@ def create_app() -> Flask:
     def health():
         return jsonify({"status": "ok", "service": "API Obras Públicas"}), 200
 
-    @app.route("/api/debug/r2")
-    def debug_r2():
-        from app.r2_storage import R2_PUBLIC_URL, R2_BUCKET_NAME, R2_ENDPOINT_URL, build_object_key
-        test_key = build_object_key("OBRA_TEST", 2026, 6, "test.jpg")
-        return jsonify({
-            "R2_PUBLIC_URL":   R2_PUBLIC_URL,
-            "R2_BUCKET_NAME":  R2_BUCKET_NAME,
-            "R2_ENDPOINT_URL": R2_ENDPOINT_URL,
-            "test_object_key": test_key,
-            "test_url_final":  f"{R2_PUBLIC_URL}/{test_key}",
-        }), 200
+    # Aquí vivía /api/debug/r2, que devolvía sin autenticación el nombre del
+    # bucket, el endpoint de R2 y la URL pública. Es información de
+    # configuración y no tiene por qué viajar a un cliente cualquiera; para
+    # depurar el almacenamiento de objetos están las variables de entorno del
+    # contenedor. Retirado.
 
 
     return app

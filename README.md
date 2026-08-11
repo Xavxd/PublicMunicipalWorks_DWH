@@ -105,7 +105,7 @@ The population the chapter reports for the seeded scenario — 1,247 works acros
 python scripts/generate_synthetic_data.py --verificar
 ```
 
-The rest of the paper's structural claims are readable straight from the source: ten dimensions and two fact tables in [`db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql`](db/arquitectura/), six analytical views and twelve triggers (eight dimension-synchronising, four audit-emitting) in `FUNCIONES Y TRIGGERS.sql`, and REST routes across nine blueprints — five of them public and read-only — under [`backend/routes/`](backend/routes/).
+The rest of the paper's structural claims are readable straight from the source: ten dimensions and two fact tables in [`db/arquitectura/ESQUEMA DEL DATA WAREHOUSE.sql`](db/arquitectura/), six analytical views and twelve triggers (eight dimension-synchronising, four audit-emitting) in `FUNCIONES Y TRIGGERS.sql`, and 56 REST route declarations across nine blueprints — eleven of them unauthenticated and read-only, the two analytical endpoints among them — under [`backend/routes/`](backend/routes/).
 
 The declared slowly-changing-dimension types are checked against the schema rather than asserted:
 
@@ -163,7 +163,7 @@ The seven figures the chapter used to give as design targets are replaced by mea
 | 2,156 proposals, 8,723 votes | 2,156 / 8,723 |
 | Ten dimensions, two facts, six views | 10 / 2 / 6 |
 | C1–C3 run in the warehouse | `v_anomalias_deteccion`: C1 519, C2 2,481, C3 24 over 29,928 rows |
-| Five public read-only routes | 5 |
+| Eleven unauthenticated read-only routes | 11 |
 | `DEMO-` accounts cannot write | `POST /api/constructoras` → **HTTP 403** |
 
 Getting there required fixing several things that had never been exercised against a clean database — see the commit history for `db/`, `scripts/` and `backend/app/database.py`.

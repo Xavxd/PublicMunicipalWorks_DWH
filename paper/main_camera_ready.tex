@@ -158,7 +158,7 @@ Four bodies of work bear directly on the design. Spatial OLAP~\cite{Rivest2005} 
 \begingroup
 Set against representative systems ---the geospatial knowledge graphs, the OC4IDS disclosure standard, the geospatial-lakehouse architecture and the download portal typical of Latin American open-government sites--- the proposal differs on two axes and coincides on the rest. Those systems variously offer a formal semantic layer, a richer interchange format or far greater scale; none preserves entity state at audit granularity, and none manages binary field evidence as a first-class citizen linked back to the analytical store.
 
-The semantic-web systems~\cite{Janowicz2022,Poveda2020,Rajabi2023} provide a formal layer we lack, but none answers ``what did this record look like the day the budget was modified?'', which is what SCD~2 provides; and in OGD portals and OC4IDS implementations documents are referenced by URL without a managed lifecycle. The intersection of \emph{temporal auditability} and \emph{evidence linkage} at municipal scale is where this work sits. We state that as the position of the proposal, not as a claim of vacancy: the comparison covers a small and deliberately heterogeneous set ---knowledge graphs, a disclosure standard, an engineering blog and a portal archetype--- and establishing that no comparable system exists would require a systematic review that we have not carried out. This work fills the intersection of \emph{temporal auditability} and \emph{evidence linkage} at a scale where enterprise platforms are not economically viable.
+The semantic-web systems~\cite{Janowicz2022,Poveda2020,Rajabi2023} provide a formal layer we lack, but none answers ``what did this record look like the day the budget was modified?'', which is what SCD~2 provides; and in OGD portals and OC4IDS implementations documents are referenced by URL without a managed lifecycle. The intersection of \emph{temporal auditability} and \emph{evidence linkage} at municipal scale is where this work sits. That is the position of the proposal, not a claim of vacancy: establishing that no comparable system exists would require a systematic review we have not carried out. This work fills the intersection of \emph{temporal auditability} and \emph{evidence linkage} at a scale where enterprise platforms are not economically viable.
 \endgroup
 
 
@@ -186,8 +186,8 @@ Figure~\ref{fig:arquitectura} illustrates the four layers of the proposed archit
 \node[box] (act) at (0,3.55) {Actors: director, supervisor, secretary, planner, citizen};
 \node[box] (web) at (-2.2,2.55) {Role-specific web application\\HTML5/CSS3/JS};
 \node[box,minimum width=98mm] (api) at (0,1.45)
-  {Flask\,/\,Python REST API $\;\cdot\;$ 8 blueprints, 54 routes $\;\cdot\;$
-   5 public read-only $\;\cdot\;$ role check + signed session token};
+  {Flask\,/\,Python REST API $\;\cdot\;$ 9 blueprints, 56 routes $\;\cdot\;$
+   11 unauthenticated read-only $\;\cdot\;$ role check + signed session token};
 \node[box] (oltp) at (-2.6,0.15) {Operational schema (OLTP)};
 \node[box] (r2)   at ( 2.6,0.15) {Object store --- Cloudflare R2\\(binary evidence)};
 \node[box] (dw)   at (-2.6,-1.15){Data Warehouse\\10 dims $\cdot$ 2 facts $\cdot$ 6 views};
@@ -230,7 +230,7 @@ The actors (directors, supervisors, secretaries, planners and registered citizen
 \subsection{Layer 2: REST API}
 \label{sec:l2}
 \begingroup
-A Flask/Python REST API organised in eight blueprints exposes 54 routes, of which five are public and read-only (\texttt{/api/public/obras}, \texttt{/api/public/re\-gio\-nes}, \texttt{/api/public/resumen} and two evidence-listing routes). Access control for staff is a \texttt{@require\_auth} decorator validating a role identifier carried in request headers; the citizen module uses HMAC-signed session tokens, and passwords are PBKDF2-HMAC-SHA256 hashes with a 16-byte salt. The scheme is deliberately lightweight and is \emph{not} a full token-based authentication service: hardening it ---token expiry, rotation, and moving the staff role check out of a header--- is listed among the limitations in Section~\ref{sec:limitaciones}.
+A Flask/Python REST API organised in nine blueprints declares 56 routes, plus a health check on the application. Eleven declarations carry no authentication decorator and expose only \texttt{GET}: five under \texttt{/api/pub\-lic/}, two under \texttt{/api/ana\-li\-ti\-ca/} serving the warehouse views of Section~\ref{sec:vistas}, and four citizen-participation reads, one of which returns data only against a valid session token. That analytical surface is public by design. Counts are of route declarations, so a route accepting two methods counts once. Access control for staff is a \texttt{@require\_auth} decorator validating a role identifier carried in request headers; the citizen module uses HMAC-signed session tokens, and passwords are PBKDF2-HMAC-SHA256 hashes with a 16-byte salt. The scheme is deliberately lightweight and is \emph{not} a full token-based authentication service: hardening it ---token expiry, rotation, and moving the staff role check out of a header--- is listed among the limitations in Section~\ref{sec:limitaciones}.
 \endgroup
 
 \subsection{Layer 3: Storage}
@@ -254,7 +254,7 @@ The released presentation layer consists of role-specific HTML/CSS/JavaScript pa
 \subsection{Analytical Detection Module}
 \label{sec:modulo-deteccion}
 \begingroup
-The component evaluated in Section~\ref{sec:eval-deteccion} is a stateless component that reads the warehouse and emits two artefacts: a \emph{delay set}, from \texttt{v\_delayed\_works}, containing every work whose latest monthly fact row carries the delay flag together with its slippage; and an \emph{alert stream}, from \texttt{v\_audit\_alerts}, which classifies audit events into five categories through a \texttt{CASE} expression over the fact table joined with the time, event-type and work dimensions.
+The module is stateless, reads the warehouse and emits three artefacts: a \emph{delay set} (\texttt{v\_delayed\_works}) of every work whose latest monthly row carries the delay flag with its slippage; an \emph{alert stream} (\texttt{v\_audit\_alerts}) classifying audit events into five categories through a \texttt{CASE} expression over the fact table; and an \emph{anomaly set} (\texttt{v\_anomalies\_detection}) applying the C1--C3 criteria below to each work--month row. The third, not the other two, is what Section~\ref{sec:eval-deteccion} evaluates.
 
 The rule applied to a work--period record flags it as anomalous if \emph{any} of three operational criteria holds:
 \begin{enumerate}
@@ -394,11 +394,11 @@ Measured results and projections are kept strictly apart in what follows. We lab
 
 Three synthetic populations appear here and must not be conflated. The
 \emph{published site} holds six works in the visitor's browser tab and supports
-only interface claims and the delivery audit of Section~\ref{sec:lighthouse}.
-The \emph{seeded warehouse} ---1,247 works, 55 communities, \$127.4~M, 29,928
+only interface claims and the audit of Section~\ref{sec:lighthouse}. The
+\emph{seeded warehouse} ---1,247 works, 55 communities, \$127.4~M, 29,928
 monthly fact rows--- supports the structural claims and the latencies of
-Section~\ref{sec:objetivos}. The \emph{detection dataset} is a separate
-simulation of about 2,580 work--period records per seed and supports
+Section~\ref{sec:objetivos}. The \emph{detection dataset}, a separate simulation
+of about 2,580 work--period records per seed, supports
 Table~\ref{tab:eval-deteccion-anomalias} and nothing else.
 \endgroup
 
@@ -412,26 +412,29 @@ reproducible with \texttt{scripts/medir\_rendimiento.py}.
 
 \begin{table}[htbp]
 \centering
-\caption{Measured against the reference stack. API figures are 100 serial
-requests over the seeded population (1,247 works); view figures are the server
-execution time reported by \texttt{EXPLAIN ANALYZE} over 25 runs.}
+\caption{Latency measured against the reference stack, with
+\texttt{scripts/medir\_rendimiento.py -{}-repeticiones 100}. API rows are 100
+serial requests over the seeded population of 1,247 works; view rows are the
+server execution time reported by \texttt{EXPLAIN ANALYZE} over 25 runs;
+throughput is 100 requests across ten concurrent clients.}\vspace{-2pt}
 \label{tab:latencias}
 \scriptsize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.1}
-\begin{tabular}{l r r l}
+\begin{tabular}{l r r}
 \toprule
-\textbf{Operation} & \textbf{Mean} & \textbf{p95} & \textbf{Previously claimed} \\
+\textbf{Operation} & \textbf{Mean} & \textbf{p95} \\
 \midrule
-\texttt{/api/public/obras} (753~kB)   & 566~ms & 610~ms & 187~ms \\
-\texttt{/api/public/resumen}          & 544~ms & 589~ms & --- \\
-\texttt{/api/public/regiones}         & 10.9~ms & 17.7~ms & --- \\
-\texttt{/api/analitica/anomalias}     & 18.3~ms & 33.4~ms & --- \\
-\texttt{v\_delayed\_works}            & 2.0~ms & 2.2~ms & 89~ms \\
-\texttt{v\_anomalies\_detection}      & 23.8~ms & 24.5~ms & --- \\
-\texttt{v\_budget\_executed}          & 5.2~ms & 5.4~ms & --- \\
-Insert firing the SCD~2 trigger       & 0.1~ms & 0.1~ms & 34~ms \\
-Sustained throughput (10 clients)     & \multicolumn{2}{c}{3.4~req/s} & 127~req/s \\
+\texttt{/api/public/obras} (753~kB response) & 566~ms & 610~ms \\
+\texttt{/api/public/resumen}                 & 544~ms & 589~ms \\
+\texttt{/api/public/regiones}                & 10.9~ms & 17.7~ms \\
+\texttt{/api/analitica/anomalias}            & 18.3~ms & 33.4~ms \\
+\texttt{v\_delayed\_works}                   & 2.0~ms & 2.2~ms \\
+\texttt{v\_anomalies\_detection}             & 23.8~ms & 24.5~ms \\
+\texttt{v\_budget\_executed}                 & 5.2~ms & 5.4~ms \\
+Insert firing the SCD~2 trigger              & 0.1~ms & 0.1~ms \\
+\midrule
+Sustained throughput, 10 clients & \multicolumn{2}{r}{3.4~req/s} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -440,19 +443,17 @@ Environment: Windows~10 host, Docker~29.6, PostgreSQL~16.14 in a container with
 12 CPUs, Flask behind gunicorn with two synchronous workers, 1,247 works,
 14,885 progress reports and 29,928 monthly fact rows.
 
-The result does not flatter the design uniformly. The warehouse is far quicker than claimed: the
-delayed-works view runs in 2~ms against a claimed 89, and an insert firing the
-SCD~2 synchroniser costs 0.1~ms against a claimed 34. The delivery layer is far
-slower: \texttt{/api/public/obras} takes 566~ms against a claimed 187 because
-it serialises the entire portfolio in one unpaginated response, and sustained
-throughput is 3.4~req/s rather than 127 ---which is simply what two synchronous
-workers and a 566~ms response give. Pagination and more workers are the
-remedy, and neither touches the dimensional design. Reaching even these figures required removing a query-per-work pattern that
-cost the two portfolio endpoints 7.5 and 12.5 seconds; the bottleneck was the
-number of round trips, not PostgreSQL. Three of the original seven figures
----map load, gallery and object-store read--- are not reported: they need a
-deployed map backend and an R2 bucket, and we prefer a gap to an unfalsifiable
-number.
+The result does not flatter the design uniformly. The warehouse answers in
+single-digit milliseconds: the delayed-works view runs in 2~ms and an insert
+firing the SCD~2 synchroniser costs 0.1~ms, so neither the star schema nor the
+versioning triggers are the limit at this scale. The delivery layer is where
+the time goes. \texttt{/api/public/obras} takes 566~ms because it serialises
+the entire portfolio in one unpaginated response, and sustained throughput is
+3.4~req/s, which is what two synchronous workers and a 566~ms response give.
+Pagination and more workers are the remedy, and neither touches the dimensional
+design. Map load, gallery rendering and object-store latency are not reported:
+measuring them needs a deployed map backend and an R2 bucket the artefact does
+not include, and a gap is preferable to an uncheckable number.
 
 The seeded warehouse holds 1,247 works across 55 communities, 8,934 audit events, 3,421
 photographic pieces of evidence, \$127.4~million pesos in budget, 2,156 citizen
@@ -465,7 +466,7 @@ The static artefact is permanently online, so its delivery can be audited by
 anyone against a public URL. A Lighthouse audit of its two entry points, taken
 as the median of three runs each on 11 August 2026 (Lighthouse 12.8.2, headless
 Chrome 151, emulated mobile with simulated throttling, tag
-\texttt{v1.6.0-icokg2026}), gives the landing page 85 for performance and the
+\texttt{v1.7.0-icokg2026}), gives the landing page 85 for performance and the
 map 72, with 100 for accessibility, 96 and 93 for best practices and 90 and 100
 for SEO; both pages leave the main thread idle and shift no layout, and first
 contentful paint is 3.2~s and 3.6~s. What separates them is delivery weight:
@@ -532,16 +533,14 @@ Isolation Forest (matched budget) & $.387 \pm .054$ & $.294 \pm .033$ & $.333 \p
 \end{tabular}
 \end{table}
 
-\paragraph{Results.} Table~\ref{tab:eval-deteccion-anomalias} is a much weaker
-result than the one this chapter previously reported, and it is the one the
-data supports. The rule alerts on about a third of the
+\paragraph{Results.} The rule alerts on about a third of the
 anomalies and is right slightly less than half the time. It does not dominate
 the baseline: Isolation Forest ranks better on both AUCs at every prevalence
 tested, so as a scoring function the rule is the poorer of the two. Its
 advantage is the operating point ---at the same alert budget it is more precise
 (.462 against .387) and recovers more (.351 against .294)--- which matters
 because an oversight office reviews a fixed number of files per period, not a
-ranking. Both improve with prevalence (the rule from .217 to .555 precision
+ranking. Both improve with prevalence (the rule from .217 to .557 precision
 between 5 and 20\%).
 
 \paragraph{Where it fails.} Per-cause recall is uneven in a way that is
