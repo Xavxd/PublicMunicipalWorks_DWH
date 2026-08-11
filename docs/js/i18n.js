@@ -57,6 +57,10 @@
       'galeria.cerrar': 'Cerrar',
       'galeria.abrir': 'Abrir galería de {titulo}',
       'galeria.alt': 'Foto {numero} de {total} de {titulo}',
+      'galeria.altAntes': 'Foto {numero} de {total} de {titulo}, antes de la obra',
+      'galeria.vista': 'Estado de la obra',
+      'galeria.antes': 'Antes',
+      'galeria.despues': 'Después',
       'galeria.noDisponible': 'Imagen no disponible'
     },
     en: {
@@ -80,6 +84,10 @@
       'galeria.cerrar': 'Close',
       'galeria.abrir': 'Open gallery for {titulo}',
       'galeria.alt': 'Photo {numero} of {total} of {titulo}',
+      'galeria.altAntes': 'Photo {numero} of {total} of {titulo}, before the work',
+      'galeria.vista': 'State of the work',
+      'galeria.antes': 'Before',
+      'galeria.despues': 'After',
       'galeria.noDisponible': 'Image unavailable'
     }
   };

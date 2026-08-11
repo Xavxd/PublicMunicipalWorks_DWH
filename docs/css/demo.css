@@ -223,4 +223,14 @@
 .obra-gallery-modal__close, .obra-gallery-modal__controls button { border: 1px solid var(--border-medium); border-radius: 8px; padding: .45rem .7rem; background: var(--bg-card-hover); color: var(--text-primary); cursor: pointer; }
 .obra-gallery-modal__close { position: absolute; top: .8rem; right: .8rem; }
 .obra-gallery-modal__controls { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .8rem; }
+.obra-gallery-modal__middle { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; justify-content: center; }
 .obra-gallery-modal__count { color: var(--text-secondary); font-size: .86rem; }
+
+/* Antes/después. Toma prestado .segmentado de temas.css, el mismo control que
+   llevan idioma y tema en la cabecera: allí ya está resuelto el contraste del
+   estado activo en los cuatro tema × modo, y repetirlo aquí sólo abriría la
+   puerta a que las dos copias se separaran.
+
+   El grupo se oculta —no se deshabilita— en las tomas que no tienen pareja:
+   un botón muerto sugiere que falta algo, y no falta. */
+.obra-gallery-modal__vista[hidden] { display: none; }

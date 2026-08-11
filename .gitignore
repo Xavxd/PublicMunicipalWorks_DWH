@@ -52,3 +52,17 @@ desktop.ini
 # El dataset de evaluación se reconstruye con
 #   python scripts/evaluacion/generar_dataset_obras.py
 datos_sinteticos/
+
+# ── LaTeX ─────────────────────────────────────────────────────
+# paper/ conserva sólo el fuente y los dos PDFs publicables
+# (main_final.pdf y main_with_changes.pdf); lo demás lo rehace pdflatex.
+paper/main_camera_ready.pdf
+*.aux
+*.bbl
+*.blg
+*.out
+*.toc
+*.synctex.gz
+
+# ── Herramientas locales ──────────────────────────────────────
+.claude/

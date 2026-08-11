@@ -44,7 +44,7 @@ recompilar con `VITE_API_URL=https://…`.
 
 ## Cambios aplicados al fuente
 
-Cinco, todos anotados aquí para que la compilación sea auditable:
+Seis, todos anotados aquí para que la compilación sea auditable:
 
 1. **`app/tailwind.config.js`** — el archivo usaba `require("tailwindcss-animate")`
    dentro de un paquete declarado `"type": "module"`, lo que impide compilar con
@@ -69,6 +69,12 @@ Cinco, todos anotados aquí para que la compilación sea auditable:
    `theme.js`; el juego de teselas y el color del lienzo pasan a depender de él.
    Es el único cambio que el CSS no podía hacer desde fuera, porque la URL de las
    teselas es una prop de React.
+6. **`app/src/App.tsx`** — la ficha técnica del popup describía la obra sólo con
+   texto. Ahora, cuando la fuente aporta el campo `imagenes`, muestra encima una
+   galería con flechas y puntos de posición, que lee las mismas rutas que las
+   vistas de rol (`../img/obras/…`, relativas a `/mapa/`). Enseña el estado
+   terminado; el conmutador antes/después vive en las vistas de rol, donde la
+   ficha de la obra tiene sitio para él y el visor cartográfico no.
 
 El resto de la adaptación no toca el código del visor:
 

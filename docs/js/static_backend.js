@@ -26,7 +26,7 @@
   "use strict";
 
   const STORE_KEY = "op_static_db";
-  const SEED_VERSION = 5;
+  const SEED_VERSION = 7;
 
   // ── Synthetic seed ────────────────────────────────────────────────────────
   // Illustrative records for Temascaltepec, State of Mexico. No real municipal,
@@ -76,6 +76,7 @@
           descripcion: "Pavimentación con concreto hidráulico de 620 metros lineales y guarniciones.",
           beneficiarios: "1,840 habitantes", fuentes: ["FTE-FED-001", "FTE-MUN-001"],
           imagenes: ["img/obras/obr-001-1.webp", "img/obras/obr-001-2.webp", "img/obras/obr-001-3.webp", "img/obras/obr-001-4.webp", "img/obras/obr-001-5.webp"],
+          imagenesAntes: ["img/obras/obr-001-antes-1.webp", "img/obras/obr-001-antes-2.webp", "img/obras/obr-001-antes-3.webp"],
         },
         {
           id: "OBR-002", expediente: "TEM-2025-OBR-002",
@@ -88,6 +89,7 @@
           descripcion: "Sustitución de 3.2 km de línea de conducción y rehabilitación del tanque de regulación.",
           beneficiarios: "2,410 habitantes", fuentes: ["FTE-FED-001", "FTE-EST-001"],
           imagenes: ["img/obras/obr-002-1.webp", "img/obras/obr-002-2.webp", "img/obras/obr-002-3.webp", "img/obras/obr-002-4.webp", "img/obras/obr-002-5.webp"],
+          imagenesAntes: ["img/obras/obr-002-antes-1.webp", "img/obras/obr-002-antes-2.webp", "img/obras/obr-002-antes-3.webp"],
         },
         {
           id: "OBR-003", expediente: "TEM-2025-OBR-003",
@@ -100,6 +102,7 @@
           descripcion: "Aula de 6 x 8 metros con instalación eléctrica, mobiliario y rampa de acceso.",
           beneficiarios: "320 habitantes", fuentes: ["FTE-EST-001"],
           imagenes: ["img/obras/obr-003-1.webp", "img/obras/obr-003-2.webp", "img/obras/obr-003-3.webp", "img/obras/obr-003-4.webp", "img/obras/obr-003-5.webp"],
+          imagenesAntes: ["img/obras/obr-003-antes-1.webp", "img/obras/obr-003-antes-2.webp", "img/obras/obr-003-antes-3.webp"],
         },
         {
           id: "OBR-004", expediente: "TEM-2024-OBR-014",
@@ -112,6 +115,7 @@
           descripcion: "Muro de mampostería de 145 metros con drenaje pluvial y señalización.",
           beneficiarios: "760 habitantes", fuentes: ["FTE-FED-002"],
           imagenes: ["img/obras/obr-004-1.webp", "img/obras/obr-004-2.webp", "img/obras/obr-004-3.webp", "img/obras/obr-004-4.webp", "img/obras/obr-004-5.webp"],
+          imagenesAntes: ["img/obras/obr-004-antes-1.webp", "img/obras/obr-004-antes-2.webp", "img/obras/obr-004-antes-3.webp"],
         },
         {
           id: "OBR-005", expediente: "TEM-2025-OBR-005",
@@ -124,6 +128,7 @@
           descripcion: "Sustitución de 210 luminarias de vapor de sodio por tecnología LED.",
           beneficiarios: "1,120 habitantes", fuentes: ["FTE-MUN-001", "FTE-EST-001"],
           imagenes: ["img/obras/obr-005-1.webp", "img/obras/obr-005-2.webp", "img/obras/obr-005-3.webp", "img/obras/obr-005-4.webp", "img/obras/obr-005-5.webp"],
+          imagenesAntes: ["img/obras/obr-005-antes-1.webp", "img/obras/obr-005-antes-2.webp", "img/obras/obr-005-antes-3.webp"],
         },
         {
           id: "OBR-006", expediente: "TEM-2025-OBR-006",
@@ -136,6 +141,7 @@
           descripcion: "Estructura metálica de 480 m² con cubierta translúcida y captación pluvial.",
           beneficiarios: "3,050 habitantes", fuentes: ["FTE-FED-002", "FTE-MUN-001"],
           imagenes: ["img/obras/obr-006-1.webp", "img/obras/obr-006-2.webp", "img/obras/obr-006-3.webp", "img/obras/obr-006-4.webp", "img/obras/obr-006-5.webp"],
+          imagenesAntes: ["img/obras/obr-006-antes-1.webp", "img/obras/obr-006-antes-2.webp", "img/obras/obr-006-antes-3.webp"],
         },
       ],
       informes: [

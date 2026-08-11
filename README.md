@@ -12,9 +12,15 @@ It is a deliberately **static** demonstration. It deploys the same HTML/CSS/Java
 
 It does **not** use Flask, Python, Render, Supabase, Cloudflare R2, or a live API. Thus it remains available even when no backend deployment exists — as of this writing the original Netlify map returns HTTP 500 because that API is down, while the copy published here keeps working. The geographic locations are illustrative, and every displayed record is synthetic.
 
-The six sample works include galleries of five **AI-generated illustrative images** each. They are not photographs of real public works; their role is to make the static interface and its image-gallery behaviour reproducible without publishing municipal evidence.
+The six sample works include galleries of **AI-generated illustrative images**: five views of the finished work and three of the same spots before it, so each work can be read as a before/after. They are not photographs of real public works; their role is to make the static interface and its image-gallery behaviour reproducible without publishing municipal evidence.
 
-Every one of them carries the legend `ILUSTRATIVO` burned into the file, not drawn in CSS, so it survives being downloaded or reused outside this site. The generator was asked for it and produced it on seventeen of thirty images, in varying positions, sizes and colours — image models are not reliable at rendering text, and here the legend is the only thing separating an illustration from evidence. [`scripts/marcar_ilustrativo.py`](scripts/marcar_ilustrativo.py) composites it deterministically instead, over a band that also covers whatever the generator had left there.
+Every one of the forty-eight carries the legend `ILUSTRATIVO` burned into the file, not drawn in CSS, so it survives being downloaded or reused outside this site. The generator was asked for it and produced it on seventeen of the first thirty images, in varying positions, sizes and colours — image models are not reliable at rendering text, and here the legend is the only thing separating an illustration from evidence. [`scripts/marcar_ilustrativo.py`](scripts/marcar_ilustrativo.py) composites it deterministically instead, over a band that also covers whatever the generator had left there.
+
+The before/after pairing is by position: `obr-001-antes-3.webp` is the earlier state of the spot in `obr-001-3.webp`, and the viewer offers the switch only on the views that have a pair. The two arrays in the seed are generated from the folder by [`scripts/registrar_imagenes.py`](scripts/registrar_imagenes.py) rather than edited by hand, so a gallery cannot end up naming a file that is not there — or ignoring one that is:
+
+```bash
+python scripts/registrar_imagenes.py --verificar
+```
 
 ### Smart Map
 
