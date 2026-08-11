@@ -83,7 +83,7 @@ The same four accounts exist in the Flask reference API under `backend/`, create
 | Synthetic generators | `scripts/` | Seeded datasets and evaluation protocol |
 | Paper package | `paper/` | Final source plus clean and revision-marked PDFs |
 
-The Flask implementation and Cloudflare R2 integration are retained as architecture/reference code. They are not a claim that a permanent backend is online.
+The Flask implementation and Cloudflare R2 integration are retained as architecture/reference code, runnable through `docker/`. There is no hosted dynamic deployment and none is planned: the GitHub Pages artefact is the permanent one, and the API is distributed to be run by whoever needs it.
 
 ## Reproducing the detection evaluation
 
@@ -115,7 +115,7 @@ Table 5 of the chapter reports a Lighthouse audit of the two entry points. Becau
 npx lighthouse@12 https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/ --only-categories=performance,accessibility,best-practices,seo --chrome-flags="--headless=new"
 ```
 
-Last run 11 August 2026 at tag `v1.3.1-icokg2026` — Lighthouse 12.8.2, headless Chrome 151, emulated mobile device (412×823, DPR 1.75), simulated throttling. Both rows are the median of three runs:
+Last run 11 August 2026 at tag `v1.4.0-icokg2026` — Lighthouse 12.8.2, headless Chrome 151, emulated mobile device (412×823, DPR 1.75), simulated throttling. Both rows are the median of three runs:
 
 | Page | FCP | LCP | SI | TBT | CLS | Perf. | A11y | Best pract. | SEO |
 |---|---|---|---|---|---|---|---|---|---|
@@ -129,7 +129,7 @@ The audit reached 100 by fixing what it reported rather than by restating it: th
 
 ## Running the reference API
 
-The chapter describes a Flask/PostgreSQL REST API. The published site does not use it — it is static on purpose — but the claim is only checkable if anyone can run it. `docker/` does that:
+The chapter describes a Flask/PostgreSQL REST API. The published site does not use it — it is static on purpose — but the claim is only checkable if anyone can run it, and an agency that wanted to actually operate the system needs somewhere to start. `docker/` is both:
 
 ```bash
 docker compose -f docker/compose.yml up -d --build     # PostgreSQL + API

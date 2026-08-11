@@ -244,20 +244,39 @@ function initScrollBlur() {
   }, { passive: true });
 }
 
+/* El título se parte en un <span> por letra para la animación de entrada, y eso
+   destruye la frase: después del reparto no queda ningún nodo de texto que diga
+   «Dirección de», sino doce que dicen una letra cada uno. El traductor por frase
+   de i18n.js no tiene entonces nada que reconocer, así que al cambiar de idioma
+   con el botón el título se quedaba en español mientras el resto de la página
+   cambiaba. Con ?idioma=en sí funcionaba, porque ahí i18n.js actúa antes de que
+   main.js parta nada — que es lo que hacía el fallo fácil de pasar por alto.
+
+   La frase de origen vive ahora en data-frase, en el HTML, y el reparto se hace
+   siempre a partir de ella pasada por el traductor. */
+function repartirTitulo(line) {
+  const fuente = line.dataset.frase || line.textContent;
+  const text = (window.I18N && window.I18N.frase) ? window.I18N.frase(fuente) : fuente;
+  line.innerHTML = '';
+  text.split('').forEach(char => {
+    const span = document.createElement('span');
+    span.className = 'char';
+    span.textContent = char === ' ' ? '\u00A0' : char;
+    // ← AÑADE ESTO: visible por defecto, GSAP lo overridea si está disponible
+    span.style.opacity = '1';
+    span.style.transform = 'none';
+    line.appendChild(span);
+  });
+}
+
 function initTitleAnimation() {
-  const lines = document.querySelectorAll('.title-line');
-  lines.forEach(line => {
-    const text = line.textContent;
-    line.innerHTML = '';
-    text.split('').forEach(char => {
-      const span = document.createElement('span');
-      span.className = 'char';
-      span.textContent = char === ' ' ? '\u00A0' : char;
-      // ← AÑADE ESTO: visible por defecto, GSAP lo overridea si está disponible
-      span.style.opacity = '1';
-      span.style.transform = 'none';
-      line.appendChild(span);
-    });
+  document.querySelectorAll('.title-line').forEach(repartirTitulo);
+
+  /* Al cambiar de idioma sólo se rehace el reparto: repetir la animación de
+     entrada cada vez que alguien pulsa ES/EN sería un sobresalto, y el título
+     ya está en su sitio. */
+  document.addEventListener('idiomacambiado', function () {
+    document.querySelectorAll('.title-line').forEach(repartirTitulo);
   });
 
   if (typeof gsap !== 'undefined') {

@@ -50,10 +50,11 @@ Seis, todos anotados aquí para que la compilación sea auditable:
    dentro de un paquete declarado `"type": "module"`, lo que impide compilar con
    Node 22 (`ReferenceError: require is not defined`). Se sustituyó por un
    `import`. No altera el resultado visual.
-2. **`app/src/App.tsx` y `app/src/utils/coordinates.ts`** — el reloj, las fechas
-   y las cifras estaban fijados a `'es-MX'`. Como el sitio que ahora aloja el
-   mapa es bilingüe, el locale pasa a seguir el idioma del documento
-   (`document.documentElement.lang`).
+2. **`app/src/utils/coordinates.ts`** — las cifras estaban fijadas a `'es-MX'`.
+   Como el sitio que ahora aloja el mapa es bilingüe, el locale pasa a seguir el
+   idioma del documento (`document.documentElement.lang`). El reloj de la
+   cabecera se quedó fuera de este parche —sigue formateando con `'es-MX'` a
+   mano— y se corrige desde fuera; véase más abajo.
 3. **`app/src/App.tsx`** — al pinchar un marcador no aparecía nada. El popup
    se renderizaba con `{isSelected && <Popup/>}`, es decir, se montaba después
    de que Leaflet ya había atendido el clic; nacía cerrado y nadie lo abría.
@@ -81,6 +82,17 @@ El resto de la adaptación no toca el código del visor:
 - **Idioma** — `docs/mapa/index.html` carga `../js/i18n.js`, el mismo motor de
   traducción por frase del resto del sitio, que actúa sobre el DOM que React
   genera.
+- **Fechas** — [`docs/js/mapa_locale.js`](../js/mapa_locale.js) envuelve los
+  formateadores de `Date` antes de que cargue el bundle: cuando alguien pide un
+  locale español y el documento está en otro idioma, lo sustituye. Existe porque
+  el reloj de la cabecera formatea con `'es-MX'` escrito a mano, de modo que con
+  la interfaz en inglés la fecha se quedaba en «LUN, 10 DE AGO DE 2026». El
+  arreglo de verdad está en el fuente; recompilar el bundle para cambiar una
+  cadena traía más riesgo que valor, y aquí queda anotado para quien lo
+  recompile.
+- **Accesibilidad** — [`docs/js/mapa_a11y.js`](../js/mapa_a11y.js) da nombre
+  accesible a los marcadores, que son `divIcon` con `role="button"` y ningún
+  texto dentro. Mismo motivo y mismo destino: el fuente.
 - **Temas** — [`docs/css/mapa-tema.css`](../css/mapa-tema.css) reescribe desde
   fuera las variables que el visor sí declara (`--text-*`, `--glass-*`) y las
   pocas reglas donde el color quedó fijo, siguiendo los mismos dos ejes que el
