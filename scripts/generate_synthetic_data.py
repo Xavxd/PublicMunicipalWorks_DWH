@@ -6,7 +6,7 @@ import os
 import random
 import sys
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from faker import Faker
 import psycopg2
 from psycopg2.extras import execute_values
@@ -92,6 +92,11 @@ ROLES_PERSONAL = ['Director', 'Supervisor', 'Proyectista', 'Secretario']
 # el repositorio y el artículo no pueden discrepar.
 #
 # Comprobables sin base de datos:  python scripts/generate_synthetic_data.py --verificar
+
+MESES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+CATEGORIAS_GASTO = ['Materiales', 'Mano de obra', 'Maquinaria',
+                    'Supervisión', 'Indirectos']
 
 TOTAL_OBRAS        = 1247
 TOTAL_COMUNIDADES  = 55
@@ -261,13 +266,16 @@ def generar_dimensiones(conn):
             personal_id
         ))
     
-    print("Generando dim_fuente...")
-    # Generar dim_fuente
+    print("Generando fuentes de financiamiento...")
+    # Se insertan en la tabla operacional y el disparador sync_dim_fuente
+    # llena la dimensión. Antes se escribía dim_fuente directamente, con lo
+    # que public.fuente_presupuestaria quedaba vacía y ninguna obra podía
+    # enlazarse a su fuente.
     for fuente in FUENTES_FINANCIAMIENTO:
         cur.execute("""
-            INSERT INTO warehouse.dim_fuente (fuente_id, grado_nivel, programa)
+            INSERT INTO public.fuente_presupuestaria (id_fuente, grado_nivel, programa)
             VALUES (%s, %s, %s)
-            ON CONFLICT (fuente_id) DO NOTHING
+            ON CONFLICT (id_fuente) DO NOTHING
         """, (fuente['id'], fuente['grado'], fuente['programa']))
     
     print("Generando dim_tipo_evento...")
@@ -403,14 +411,126 @@ def generar_obras(conn, num_obras=TOTAL_OBRAS):
         ))
         
         if cur.fetchone():
+            # Enlace obra <-> fuente. Sin estas filas
+            # warehouse.v_ejercicio_presupuestario devuelve cero registros
+            # siempre: una de las vistas analíticas que el capítulo anuncia
+            # estaba vacía en toda población sembrada.
+            for fuente in random.sample(FUENTES_FINANCIAMIENTO,
+                                        random.randint(1, 2)):
+                cur.execute("""
+                    INSERT INTO public.financia (id_obra, id_fuente)
+                    VALUES (%s, %s)
+                    ON CONFLICT DO NOTHING
+                """, (obra_id, fuente['id']))
+
             obras_data.append({
                 'obra_id': obra_id,
-                'presupuesto': presupuestos[i - 1]
+                'presupuesto': presupuestos[i - 1],
+                # La fecha final planeada viaja con la obra porque el snapshot
+                # mensual calcula el retraso contra ella.
+                'fecha_fin': fecha_final if isinstance(fecha_final, date)
+                             else fecha_final.date(),
             })
     
     conn.commit()
     print(f"✓ {len(obras_data)} obras generadas")
     return obras_data
+
+
+def generar_presupuestos_e_informes(conn, obras_data):
+    """Puebla presupuesto_obra, costos e informes en el esquema operacional.
+
+    Estas tres tablas estaban vacías. La consecuencia no era cosmética: la API
+    pública devolvía las 1,247 obras con presupuesto 0 y avance 0 porque lee
+    public.*, la vista v_ejercicio_presupuestario no tenía nada que agregar, y
+    el snapshot mensual no podía copiar el avance físico y presupuestario
+    —que salen del informe más reciente— de modo que el criterio C3 del
+    detector se quedaba sin datos aunque la columna existiera.
+
+    El avance se genera a partir del calendario de cada obra, no al azar: una
+    obra que empezó hace ocho meses y dura diez lleva alrededor del 80 %.
+    """
+    cur = conn.cursor()
+    print()
+    print("Generando presupuestos, costos e informes operacionales...")
+
+    cur.execute("SELECT codigo_personal FROM public.proyectista")
+    proyectistas = [r[0] for r in cur.fetchall()]
+    if not proyectistas:
+        cur.execute("""
+            INSERT INTO public.proyectista (codigo_personal, empresa, id_constructora)
+            SELECT p.codigo_personal, c.nombre_const, c.id_constructora
+            FROM public.personal p
+            CROSS JOIN LATERAL (
+                SELECT id_constructora, nombre_const FROM public.constructora LIMIT 1
+            ) c
+            WHERE p.rol = 'Proyectista'
+            ON CONFLICT (codigo_personal) DO NOTHING
+        """)
+        conn.commit()
+        cur.execute("SELECT codigo_personal FROM public.proyectista")
+        proyectistas = [r[0] for r in cur.fetchall()]
+
+    cur.execute("SELECT codigo_supervisor, id_obra, fecha_inicio, fecha_final FROM public.obra")
+    obras = cur.fetchall()
+    presupuesto_de = {o["obra_id"]: o["presupuesto"] for o in obras_data}
+
+    n_inf = 0
+    for supervisor, id_obra, inicio, final in obras:
+        total = presupuesto_de.get(id_obra.strip())
+        if total is None or not proyectistas:
+            continue
+        id_pres = f"PRE-{id_obra.strip()}"
+        cur.execute("""
+            INSERT INTO public.presupuesto_obra
+                (id_presupuesto, presupuesto_total, id_proyectista, id_obra)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (id_presupuesto) DO NOTHING
+        """, (id_pres, total, random.choice(proyectistas), id_obra))
+
+        # Un informe por mes transcurrido, hasta el cierre planeado o hasta hoy.
+        duracion = max(1, (final - inicio).days)
+        corte = min(final, date(2025, 12, 31))
+        mes_actual = date(inicio.year, inicio.month, 1)
+        acumulado = 0.0
+        while mes_actual <= corte:
+            transcurrido = (mes_actual - inicio).days
+            fisico = max(0, min(100, round(transcurrido / duracion * 100)))
+            # El avance financiero acompaña al físico con un anticipo inicial
+            # y algo de ruido, como en la ejecución real.
+            financiero = max(0, min(100, round(fisico * random.uniform(0.85, 1.12) + 8)))
+            id_inf = f"INF-{id_obra.strip()}-{mes_actual.year}{mes_actual.month:02d}"
+            cur.execute("""
+                INSERT INTO public.informes
+                    (id_informe, ano_infor, mes, porcentaje_avance_fisico,
+                     porcentaje_avance_presupuestario, doc_infome, descripcion,
+                     id_obra, codigo_supervisor)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_informe) DO NOTHING
+            """, (id_inf, mes_actual.year, MESES_ES[mes_actual.month - 1],
+                  fisico, financiero, f"{id_inf}.pdf",
+                  f"Avance físico {fisico}%, presupuestario {financiero}%.",
+                  id_obra, supervisor))
+            n_inf += 1
+
+            nuevo_gasto = float(total) * financiero / 100 - acumulado
+            if nuevo_gasto > 0:
+                cur.execute("""
+                    INSERT INTO public.costos
+                        (id_gasto, categoria, costo, descripcion, id_presupuesto)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (id_gasto) DO NOTHING
+                """, (f"GTO-{id_inf}", random.choice(CATEGORIAS_GASTO),
+                      round(nuevo_gasto, 2), "Erogación del periodo", id_pres))
+                acumulado += nuevo_gasto
+
+            mes_actual = (date(mes_actual.year + 1, 1, 1) if mes_actual.month == 12
+                          else date(mes_actual.year, mes_actual.month + 1, 1))
+
+    conn.commit()
+    for tabla in ("presupuesto_obra", "informes", "costos"):
+        cur.execute(f"SELECT COUNT(*) FROM public.{tabla}")
+        print(f"  public.{tabla}: {cur.fetchone()[0]:,}")
 
 
 def generar_eventos_auditoria(conn, obras_data, num_eventos=TOTAL_EVENTOS):
@@ -489,7 +609,10 @@ def generar_snapshot_mensual(conn, obras_data):
             tiempo_key = anio * 10000 + mes * 100 + 1
             
             # Calcular métricas simuladas
-            meses_transcurridos = (anio - 2024) * 12 + (mes - 1)
+            # max(0, ...) porque el rango puede quedar negativo en los meses
+            # anteriores al arranque de la serie y random.randint aborta con
+            # «empty range for randrange()».
+            meses_transcurridos = max(0, (anio - 2024) * 12 + (mes - 1))
             avance_fisico = min(100, meses_transcurridos * random.randint(3, 8))
             avance_presup = min(100, meses_transcurridos * random.randint(4, 9))
             
@@ -497,7 +620,18 @@ def generar_snapshot_mensual(conn, obras_data):
             costo_acumulado = presupuesto_total * (avance_presup / 100)
             saldo = presupuesto_total - costo_acumulado
             
-            dias_retraso = random.randint(-30, 120)  # Puede estar adelantada o retrasada
+            # El retraso sale de las fechas de la obra, no de un sorteo. La
+            # versión anterior lo sorteaba en [-30, 120] y el criterio C2 de
+            # v_anomalias_deteccion pide «más de 120», así que ese criterio no
+            # podía dispararse jamás sobre la población sembrada: la evaluación
+            # que corriera contra esta base habría medido una regla de dos
+            # criterios creyendo que medía tres.
+            fin_planeado = obra.get('fecha_fin')
+            corte = date(anio, mes, 1)
+            if fin_planeado:
+                dias_retraso = (corte - fin_planeado).days
+            else:
+                dias_retraso = random.randint(-30, 120)
             
             cur.execute("""
                 INSERT INTO warehouse.fact_obra_mensual
@@ -685,6 +819,9 @@ def main():
         # Generar eventos de auditoría
         generar_eventos_auditoria(conn, obras_data, num_eventos=8934)
         
+        # Presupuestos, costos e informes: el snapshot mensual lee de aquí.
+        generar_presupuestos_e_informes(conn, obras_data)
+
         # Generar snapshots mensuales
         generar_snapshot_mensual(conn, obras_data)
         

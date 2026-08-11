@@ -6,6 +6,8 @@ PUBLIC API ENDPOINTS — Smart City Map Module
 """
 
 from flask import Blueprint, make_response, jsonify, request
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from datetime import datetime, date
 from app.database import db
 from app.helpers import ok, db_error_response
@@ -58,6 +60,47 @@ def _derive_obra_status(obra: Obra, latest_avance_fisico: int) -> str:
     return "en_progreso"
 
 
+def _informes_por_obra() -> dict:
+    """El último informe y el total de informes de cada obra, en dos consultas.
+
+    Antes esto se resolvía obra por obra: por cada una de las 1,247 obras se
+    lanzaban una consulta para el último informe, otra para contarlos, otra
+    para el presupuesto y las cargas perezosas de región, constructora y
+    supervisor. Cerca de siete mil idas y vueltas para una sola respuesta, que
+    en la base sembrada tardaba diez segundos —contra los 187 ms que este
+    capítulo daba como objetivo—. El coste no estaba en PostgreSQL sino en el
+    número de viajes.
+    """
+    totales = dict(
+        db.session.query(Informe.id_obra, func.count(Informe.id_informe))
+        .group_by(Informe.id_obra).all()
+    )
+    ultimos = {}
+    for inf in (Informe.query
+                .order_by(Informe.id_obra, Informe.ano_infor, Informe.mes)
+                .all()):
+        ultimos[(inf.id_obra or "").strip()] = inf
+
+    datos = {}
+    for clave, inf in ultimos.items():
+        try:
+            mes_int = int(str(inf.mes).strip())
+            fecha = date(int(inf.ano_infor), mes_int, 1).isoformat()
+        except (ValueError, TypeError):
+            fecha = None
+        datos[clave] = {
+            "avance_fisico": inf.porcentaje_avance_fisico or 0,
+            "avance_financiero": inf.porcentaje_avance_presupuestario or 0,
+            "total_informes": totales.get(inf.id_obra, 0),
+            "ultimo_informe_fecha": fecha,
+        }
+    return datos
+
+
+SIN_INFORME = {"avance_fisico": 0, "avance_financiero": 0,
+               "total_informes": 0, "ultimo_informe_fecha": None}
+
+
 def _get_latest_informe_data(obra_id: str) -> dict:
     try:
         clean_id = obra_id.strip()
@@ -97,13 +140,23 @@ def get_public_obras():
         return _cors_preflight_response()
 
     try:
-        obras = Obra.query.all()
+        obras = (Obra.query
+                 .options(joinedload(Obra.region),
+                          joinedload(Obra.constructora),
+                          joinedload(Obra.supervisor).joinedload(Supervisor.personal))
+                 .all())
+        informes = _informes_por_obra()
+        presupuestos = {
+            (pid or "").strip(): float(total or 0)
+            for pid, total in db.session.query(
+                PresupuestoObra.id_obra, PresupuestoObra.presupuesto_total).all()
+        }
         result = []
 
         for obra in obras:
-            informe_data = _get_latest_informe_data(obra.id_obra)
-            presupuesto = PresupuestoObra.query.filter_by(id_obra=obra.id_obra).first()
-            presupuesto_total = float(presupuesto.presupuesto_total) if presupuesto else 0
+            clave = (obra.id_obra or "").strip()
+            informe_data = informes.get(clave, SIN_INFORME)
+            presupuesto_total = presupuestos.get(clave, 0)
 
             supervisor_nombre = ""
             if obra.supervisor and obra.supervisor.personal:

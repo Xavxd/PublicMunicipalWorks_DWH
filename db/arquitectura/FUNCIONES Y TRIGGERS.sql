@@ -571,7 +571,7 @@ BEGIN
             tiempo_key, obra_key,
             presupuesto_total, costo_acumulado, saldo_presupuesto,
             porcentaje_ejercido,
-            porcentaje_avance_fisico, porcentaje_avance_presup,
+            avance_fisico_acumulado, avance_presup_acumulado,
             dias_retraso,
             informes_registrados, imagenes_evidencia, permisos_obtenidos,
             tiene_retraso
@@ -587,7 +587,14 @@ BEGIN
             END,
             rec.avance_fisico,
             rec.avance_presup,
-            EXTRACT(DAY FROM NOW() - rec.fecha_final)::INTEGER,
+            -- Días de retraso al cierre del periodo del snapshot. Antes
+            -- decía EXTRACT(DAY FROM NOW() - fecha_final), que devuelve la
+            -- componente de días del intervalo y no el total —una obra con
+            -- cinco meses de retraso reportaba doce días— y además medía
+            -- contra hoy en vez de contra el mes que se está fotografiando,
+            -- de modo que todos los meses del histórico salían iguales.
+            ((make_date(p_anio, p_mes, 1) + INTERVAL '1 month - 1 day')::date
+             - rec.fecha_final::date)::INTEGER,
             rec.informes_count,
             rec.imagenes_count,
             rec.permisos_count,
@@ -597,8 +604,8 @@ BEGIN
             costo_acumulado = EXCLUDED.costo_acumulado,
             saldo_presupuesto = EXCLUDED.saldo_presupuesto,
             porcentaje_ejercido = EXCLUDED.porcentaje_ejercido,
-            porcentaje_avance_fisico = EXCLUDED.porcentaje_avance_fisico,
-            porcentaje_avance_presup = EXCLUDED.porcentaje_avance_presup,
+            avance_fisico_acumulado = EXCLUDED.avance_fisico_acumulado,
+            avance_presup_acumulado = EXCLUDED.avance_presup_acumulado,
             dias_retraso = EXCLUDED.dias_retraso,
             informes_registrados = EXCLUDED.informes_registrados,
             imagenes_evidencia = EXCLUDED.imagenes_evidencia,
@@ -658,8 +665,8 @@ SELECT
     o.obra_id,
     o.nombre_obra,
     fom.costo_acumulado,
-    fom.porcentaje_avance_fisico,
-    fom.porcentaje_avance_presup,
+    fom.avance_fisico_acumulado,
+    fom.avance_presup_acumulado,
     fom.dias_retraso,
     CASE WHEN e.desv_costo > 0
          THEN ABS(fom.costo_acumulado - e.media_costo) / e.desv_costo
@@ -667,13 +674,13 @@ SELECT
     (e.desv_costo > 0
      AND ABS(fom.costo_acumulado - e.media_costo) / e.desv_costo > 3.0)  AS c1_desviacion_costo,
     (fom.dias_retraso > 120)                                             AS c2_retraso,
-    (fom.porcentaje_avance_fisico < 30
-     AND fom.porcentaje_avance_presup > 80)                              AS c3_inconsistencia,
+    (fom.avance_fisico_acumulado < 30
+     AND fom.avance_presup_acumulado > 80)                              AS c3_inconsistencia,
     (   (e.desv_costo > 0
          AND ABS(fom.costo_acumulado - e.media_costo) / e.desv_costo > 3.0)
      OR fom.dias_retraso > 120
-     OR (fom.porcentaje_avance_fisico < 30
-         AND fom.porcentaje_avance_presup > 80))                         AS es_anomalia
+     OR (fom.avance_fisico_acumulado < 30
+         AND fom.avance_presup_acumulado > 80))                         AS es_anomalia
 FROM warehouse.fact_obra_mensual fom
 JOIN estadistica_periodo e ON e.tiempo_key = fom.tiempo_key
 JOIN warehouse.dim_obra o  ON o.obra_key = fom.obra_key AND o.es_actual = TRUE;
