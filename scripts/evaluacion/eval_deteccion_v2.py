@@ -57,13 +57,26 @@ AVANCE_PRESUP_ALTO = 80.0
 def regla(datos):
     """C1 desviación de coste, C2 retraso, C3 inconsistencia físico/financiero.
 
+    La media y la desviación de C1 se calculan **por periodo**, igual que hace
+    warehouse.v_anomalias_deteccion, que agrupa por tiempo_key. Antes se
+    calculaban sobre el conjunto completo: la diferencia mueve poco los
+    resultados, pero mientras las dos poblaciones estadísticas no coincidan no
+    puede decirse que el script y la vista evalúen la misma regla, y un revisor
+    lo señaló con razón. El periodo aquí es (año, bimestre), que es el grano al
+    que se observa cada obra.
+
     Devuelve la decisión binaria y una puntuación continua para las curvas.
     """
-    pres = np.array([r["presupuesto_ejercido"] for r in datos])
-    mu, sd = pres.mean(), pres.std()
+    por_periodo = {}
+    for r in datos:
+        por_periodo.setdefault((r["anio"], r["bimestre"]), []).append(
+            r["presupuesto_ejercido"])
+    estadistica = {k: (np.mean(v), np.std(v)) for k, v in por_periodo.items()}
+
     y = np.zeros(len(datos), dtype=int)
     s = np.zeros(len(datos))
     for i, r in enumerate(datos):
+        mu, sd = estadistica[(r["anio"], r["bimestre"])]
         z = abs(r["presupuesto_ejercido"] - mu) / (sd + EPS)
         puntos = z
         c2 = r["dias_retraso"] > DIAS_RETRASO

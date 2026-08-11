@@ -171,7 +171,7 @@ Getting there required fixing several things that had never been exercised again
 
 ## Data model
 
-The SQL source implements a warehouse-centric design: five SCD Type 2 dimensions (`obra`, `region`, `constructora`, `personal`, and `presupuesto`), two facts (`fact_eventos_auditoria` at audit-event grain and `fact_obra_mensual` at work × month grain), and five standard PostgreSQL views. Object storage is binary evidence storage, not a queryable lake. A complete lakehouse is future work.
+The SQL source implements a warehouse-centric design: five SCD Type 2 dimensions (`obra`, `region`, `constructora`, `personal`, and `presupuesto`), two facts (`fact_eventos_auditoria` at audit-event grain and `fact_obra_mensual` at work × month grain), three SCD Type 1 dimensions (`fuente`, `poblador`, `propuesta`), two Type 0 (`tiempo`, `tipo_evento`), and six standard PostgreSQL views — the five analytical ones plus `v_anomalias_deteccion`, which evaluates the chapter's C1–C3 criteria per work and month. Object storage is binary evidence storage, not a queryable lake. A complete lakehouse is future work.
 
 ## Paper package
 
