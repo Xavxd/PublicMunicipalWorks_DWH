@@ -67,3 +67,10 @@ paper/main_camera_ready.pdf
 # ── Herramientas locales ──────────────────────────────────────
 .claude/
 paper/_diff_*
+
+# Informes de Turnitin: llevan nombre y adscripción del autor y no forman
+# parte del artefacto. Se conservan en local, no se publican.
+paper/*Similitud*.pdf
+paper/*Escritura de IA*.pdf
+paper/Turnitin Results.zip
+paper/dw_obrasPublicas_icokg2026.zip
