@@ -371,8 +371,8 @@ Figure~\ref{fig:mapa_interfaz} shows the main interface, with markers color-code
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.74\textwidth]{mapa_publicado.png}
-\caption{The published geospatial viewer, in light mode. Markers are color-coded by state ---green completed, amber in progress, red delayed--- over the six works of the demonstration dataset, with the indicator panel below. Live at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/mapa/?modo=claro}}, which reproduces this exact view.}
+\includegraphics[width=0.88\textwidth]{mapa_publicado.png}
+\caption{The published geospatial viewer, in light mode. Markers are color-coded by state ---green completed, amber in progress, red delayed--- over the six works of the demonstration dataset, with the indicator panel below. Live at {\small\url{https://gabrielhuav.github.io/PublicMunicipalWorks_DWH/mapa/?modo=claro\&idioma=en}}; captured in a 1500$\times$938 viewport. The viewer opens on a fixed centre and zoom over the municipality, so the window size is what decides how much surrounding territory is in frame.}
 \label{fig:mapa_interfaz}
 \end{figure}
 
@@ -466,7 +466,7 @@ The static artefact is permanently online, so its delivery can be audited by
 anyone against a public URL. A Lighthouse audit of its two entry points, taken
 as the median of three runs each on 11 August 2026 (Lighthouse 12.8.2, headless
 Chrome 151, emulated mobile with simulated throttling, tag
-\texttt{v1.7.2-icokg2026}), gives the landing page 85 for performance and the
+\texttt{v1.7.3-icokg2026}), gives the landing page 85 for performance and the
 map 72, with 100 for accessibility, 96 and 93 for best practices and 90 and 100
 for SEO; both pages leave the main thread idle and shift no layout, and first
 contentful paint is 3.2~s and 3.6~s. What separates them is delivery weight:
