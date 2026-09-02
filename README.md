@@ -175,8 +175,9 @@ The SQL source implements a warehouse-centric design: five SCD Type 2 dimensions
 
 ## Paper package
 
-`paper/` contains only the final LaTeX source and two generated PDFs:
+`paper/` contains the LaTeX sources and the generated PDFs:
 
+- `Paper_37_1.tex` and `Paper_37_1.pdf`: the version sent to the ICOKG 2026 committee on 2 September 2026, under the naming they asked for (`Paper_<id>_<iteration>`). It differs from `main_camera_ready.tex` in form only, as their editing rubric required: keywords separated by commas, references in alphabetical order, cross-references written `Fig. x` rather than `Figure x`, an in-text call to Table 1 that the labelled table had never had, and the base-map attribution added to the caption of Figure 3. It compiles on its own against `llncs.cls` 2.26.
 - `main_final.pdf`: clean final version.
 - `main_with_changes.pdf`: the same chapter with everything that changed since the reviewed version marked — added text blue and underlined, deleted text red and struck through.
 
