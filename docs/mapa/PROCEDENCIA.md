@@ -93,6 +93,11 @@ El resto de la adaptación no toca el código del visor:
 - **Accesibilidad** — [`docs/js/mapa_a11y.js`](../js/mapa_a11y.js) da nombre
   accesible a los marcadores, que son `divIcon` con `role="button"` y ningún
   texto dentro. Mismo motivo y mismo destino: el fuente.
+- **Mapa base** — [`docs/js/mapa_teselas.js`](../js/mapa_teselas.js) se
+  carga antes del bundle, intercepta a Leaflet cuando éste se publica en
+  `window.L` y se queda con la capa de teselas que crea React. De la URL de
+  CARTO que el visor le pasa sólo toma el modo (claro u oscuro); qué
+  proveedor sirve las teselas lo decide él. Véase la sección siguiente.
 - **Temas** — [`docs/css/mapa-tema.css`](../css/mapa-tema.css) reescribe desde
   fuera las variables que el visor sí declara (`--text-*`, `--glass-*`) y las
   pocas reglas donde el color quedó fijo, siguiendo los mismos dos ejes que el
@@ -102,10 +107,36 @@ El resto de la adaptación no toca el código del visor:
 ## Datos y servicios externos
 
 Los registros son sintéticos e ilustrativos, como en toda la demostración. El
-mapa base sí es externo: teselas de **CARTO Dark Matter** sobre datos de
-**OpenStreetMap** (ODbL). Es la única dependencia de red del artefacto
-publicado, y es inherente a cualquier visor cartográfico; no es una API de
+mapa base sí es externo, y es la única dependencia de red del artefacto
+publicado; es inherente a cualquier visor cartográfico y no es una API de
 aplicación.
+
+El visor compilado pide teselas de **CARTO** (Positron y Dark Matter) sobre
+datos de **OpenStreetMap**, y a nadie más. En 2026 CARTO empezó a contestar a
+toda petición sin clave con un `200 OK` y una imagen con la leyenda «API KEY
+REQUIRED»; como para Leaflet eso no es un error, el mapa se quedó en blanco sin
+que nada lo notara. Desde entonces el proveedor no es uno solo:
+[`mapa_teselas.js`](../js/mapa_teselas.js) prueba cada uno antes de usarlo
+—dos teselas contiguas del centro del municipio tienen que llegar, ser imágenes
+y ser distintas, porque una marca de agua es la misma imagen en cualquier
+coordenada— y lo vigila mientras está en uso. El orden es:
+
+1. CARTO, el que cita el capítulo, mientras siga sirviendo mapa.
+2. Esri Canvas (gris claro y oscuro), OpenStreetMap, Esri World Street Map,
+   OpenStreetMap HOT, OpenTopoMap y Esri World Imagery. Todos gratuitos y sin
+   clave; los que no tienen versión oscura se invierten con un filtro CSS.
+3. Una **copia local**: un extracto de OpenStreetMap (ODbL) del municipio y su
+   entorno —límites, vías, ríos, cuerpos de agua y localidades— en
+   [`base/temascaltepec.json`](base/temascaltepec.json), servido desde este
+   mismo sitio y dibujado en el navegador. Lo genera
+   [`scripts/generar_mapa_base.py`](../../scripts/generar_mapa_base.py) desde
+   Overpass. Si ni ese archivo llegara, el contorno del municipio va escrito en
+   el propio script.
+
+El control «¿No carga el mapa? Probar otro proveedor», abajo a la derecha,
+enseña la lista con el estado de cada uno, y `?teselas=<id>` fija uno desde la
+URL (`carto`, `esri-gris`, `osm`, `esri-calles`, `osm-hot`, `topo`,
+`esri-satelite` o `local`).
 
 ## Autoría y licencia
 

@@ -74,3 +74,15 @@ paper/*Similitud*.pdf
 paper/*Escritura de IA*.pdf
 paper/Turnitin Results.zip
 paper/dw_obrasPublicas_icokg2026.zip
+
+# ── Presentación ICOKG 2026 ───────────────────────────────────
+# Sólo se publican las dos versiones finales, ES y EN, en
+# paper/presentacion/mejoradas/. Los borradores de origen y las carpetas
+# de trabajo con que se generaron se quedan en local.
+.presentation-build/
+paper/presentacion/*
+!paper/presentacion/mejoradas/
+paper/presentacion/mejoradas/*
+!paper/presentacion/mejoradas/*.pptx
+# Archivos de bloqueo que deja PowerPoint mientras el deck está abierto.
+~$*

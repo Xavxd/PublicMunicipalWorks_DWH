@@ -34,16 +34,27 @@ Markers sit at the **real coordinates** of each community, resolved from OpenStr
 
 Provenance, the exact upstream commit, the build command and the six source patches are recorded in [`docs/mapa/PROCEDENCIA.md`](docs/mapa/PROCEDENCIA.md).
 
-The map carries the system navigation bar — brand, the four role workspaces, and the theme, mode and language controls — so that entering it is not a dead end and the whole thing reads as one system rather than two similar sites. Switching to light mode also switches the basemap (CARTO Dark Matter ↔ Positron) and the panel palette.
+The map carries the system navigation bar — brand, the four role workspaces, and the theme, mode and language controls — so that entering it is not a dead end and the whole thing reads as one system rather than two similar sites. Switching to light mode also switches the basemap to its light variant and the panel palette.
 
 Appearance can be fixed from the URL, which is how the chapter's Figure 3 cites a view that a reader can reproduce exactly:
 
 ```text
 …/mapa/?modo=claro            light mode
 …/?tema=guinda&idioma=en      crimson theme, English
+…/mapa/?teselas=local         basemap from the local copy, no external server
 ```
 
-`tema`, `modo` and `idioma` work on every page and the choice is remembered afterwards. Its base tiles come from CARTO over OpenStreetMap data, and are the only network request the published artefact makes; that is inherent to any web map and is not an application API.
+`tema`, `modo` and `idioma` work on every page and the choice is remembered afterwards; `teselas` applies to the map.
+
+#### Basemap
+
+Base tiles are the only network request the published artefact makes; that is inherent to any web map and is not an application API. They no longer hang on a single provider. CARTO, the one the chapter cites, began answering every keyless request with an "API KEY REQUIRED" watermark served as `200 OK`, so the map went blank without anything failing at the HTTP level. [`docs/js/mapa_teselas.js`](docs/js/mapa_teselas.js) now checks each provider before using it — two adjacent tiles must arrive, be images, and differ, since a watermark is the same image at every coordinate — and keeps watching it afterwards, moving on by itself if tiles start failing or stall. In order it tries:
+
+1. CARTO (Positron / Dark Matter), while it keeps serving maps;
+2. Esri Canvas (light and dark grey), OpenStreetMap, Esri World Street Map, OpenStreetMap HOT, OpenTopoMap and Esri World Imagery — all free and keyless; those without a dark variant are inverted in dark mode;
+3. a **local copy**: an OpenStreetMap extract of the municipality (ODbL) served from this same site, [`docs/mapa/base/temascaltepec.json`](docs/mapa/base/temascaltepec.json), and drawn in the browser. If the page loaded, this loads. It is rebuilt with [`scripts/generar_mapa_base.py`](scripts/generar_mapa_base.py), and the municipal outline is also embedded in the script itself, so even without that file the map shows the municipality.
+
+The map carries a visible control, *Map not loading? Try another provider*, that lists every provider with its live status; the choice is remembered.
 
 ### Languages and themes
 
