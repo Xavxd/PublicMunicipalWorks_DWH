@@ -54,9 +54,13 @@ desktop.ini
 datos_sinteticos/
 
 # ── LaTeX ─────────────────────────────────────────────────────
-# paper/ conserva sólo el fuente y los dos PDFs publicables
-# (main_final.pdf y main_with_changes.pdf); lo demás lo rehace pdflatex.
-paper/main_camera_ready.pdf
+# Del capítulo se versiona sólo la versión final enviada al comité:
+# Paper_37_1.tex, Paper_37_1.pdf y la figura que el fuente incluye
+# (mapa_publicado.png). Cualquier otro PDF que se compile o genere en
+# paper/ —el de cambios marcados de scripts/marcar_cambios.py, borradores—
+# se queda en local; lo demás lo rehace pdflatex.
+paper/*.pdf
+!paper/Paper_37_1.pdf
 *.aux
 *.bbl
 *.blg
@@ -77,12 +81,10 @@ paper/dw_obrasPublicas_icokg2026.zip
 
 # ── Presentación ICOKG 2026 ───────────────────────────────────
 # Sólo se publican las dos versiones finales, ES y EN, en
-# paper/presentacion/mejoradas/. Los borradores de origen y las carpetas
-# de trabajo con que se generaron se quedan en local.
+# paper/presentacion/. Los borradores y las carpetas de trabajo con que se
+# generaron se quedan en local.
 .presentation-build/
 paper/presentacion/*
-!paper/presentacion/mejoradas/
-paper/presentacion/mejoradas/*
-!paper/presentacion/mejoradas/*.pptx
+!paper/presentacion/ICOKG2026_Paper37_*_Visual_Corregida.pptx
 # Archivos de bloqueo que deja PowerPoint mientras el deck está abierto.
 ~$*
