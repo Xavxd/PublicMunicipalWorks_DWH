@@ -11,8 +11,9 @@
      data-tema = original | guinda
      data-modo = oscuro   | claro
 
-   El juego de teselas lo cambia la propia aplicación (dark_all/light_all
-   de CARTO), porque es una prop de React y no algo que el CSS alcance.
+   El modo claro u oscuro de las teselas lo decide la propia aplicación,
+   porque es una prop de React; qué proveedor las sirve lo decide
+   js/mapa_teselas.js, y su control se pinta al final de este archivo.
    ===================================================================== */
 
 /* Acento de marca. En «original» es el azul del prototipo, de modo que sin
@@ -247,3 +248,161 @@ html[data-modo="claro"] .marker-cluster-custom > div {
 html[data-tema="guinda"] .navsis__controles { --accent-fuerte: #7a2450; }
 html[data-tema="original"] .navsis__controles { --accent-fuerte: #1d4ed8; }
 
+
+/* =====================================================================
+   MAPA BASE
+   js/mapa_teselas.js elige entre varios proveedores y deja a la vista el
+   control «¿No carga el mapa? Probar otro proveedor», abajo a la derecha,
+   sobre la atribución. Los proveedores que no tienen versión oscura se
+   invierten con un filtro cuando el visor está en modo oscuro.
+   ===================================================================== */
+.teselas-invertidas .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55);
+}
+
+.mapa-teselas {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text-primary, #e6edf5);
+  max-width: min(360px, calc(100vw - 20px));
+}
+
+.mapa-teselas__barra {
+  display: flex;
+  align-items: stretch;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--glass-bg, rgba(11, 15, 21, 0.86));
+  border: 1px solid rgba(var(--mapa-marca), 0.28);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.mapa-teselas button {
+  appearance: none;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mapa-teselas__probar,
+.mapa-teselas__abrir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background 0.16s ease;
+}
+
+.mapa-teselas__probar { color: var(--text-secondary, #b6c2d1) !important; }
+.mapa-teselas__probar strong { color: var(--text-primary, #e6edf5); font-weight: 600; }
+
+.mapa-teselas__abrir {
+  border-left: 1px solid rgba(var(--mapa-marca), 0.22) !important;
+  color: var(--text-muted, #8a97a8) !important;
+}
+
+.mapa-teselas__probar:hover,
+.mapa-teselas__abrir:hover,
+.mapa-teselas__abrir[aria-expanded="true"] {
+  background: rgba(var(--mapa-marca), 0.16) !important;
+}
+
+.mapa-teselas button:focus-visible {
+  outline: 2px solid rgb(var(--mapa-marca));
+  outline-offset: -2px;
+}
+
+.mapa-teselas svg { width: 14px; height: 14px; flex: none; }
+.mapa-teselas__probar svg { color: rgb(var(--mapa-marca)); }
+.mapa-teselas__abrir[aria-expanded="false"] svg { transform: rotate(180deg); }
+
+.mapa-teselas__panel,
+.mapa-teselas__aviso {
+  background: var(--glass-bg, rgba(11, 15, 21, 0.92));
+  border: 1px solid rgba(var(--mapa-marca), 0.28);
+  border-radius: 10px;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.mapa-teselas__panel { width: 100%; padding: 10px 8px 8px; }
+.mapa-teselas__panel[hidden],
+.mapa-teselas__aviso[hidden] { display: none; }
+
+.mapa-teselas__titulo {
+  margin: 0 6px 6px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a97a8);
+}
+
+.mapa-teselas__lista { list-style: none; margin: 0; padding: 0; }
+
+.mapa-teselas__opcion {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: 10px 1fr auto;
+  grid-template-areas: "punto nombre estado" "punto tipo estado";
+  column-gap: 8px;
+  align-items: center;
+  padding: 6px 8px !important;
+  border-radius: 7px;
+  text-align: left;
+}
+
+.mapa-teselas__opcion:hover { background: rgba(var(--mapa-marca), 0.12) !important; }
+.mapa-teselas__opcion[aria-pressed="true"] { background: rgba(var(--mapa-marca), 0.2) !important; }
+
+.mapa-teselas__punto {
+  grid-area: punto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted, #8a97a8);
+  opacity: 0.5;
+}
+
+.mapa-teselas__opcion[data-estado="uso"] .mapa-teselas__punto,
+.mapa-teselas__opcion[data-estado="ok"] .mapa-teselas__punto { background: #22c55e; opacity: 1; }
+.mapa-teselas__opcion[data-estado="falla"] .mapa-teselas__punto { background: #ef4444; opacity: 1; }
+.mapa-teselas__opcion[data-estado="comprobando"] .mapa-teselas__punto { background: #f59e0b; opacity: 1; }
+
+.mapa-teselas__nombre { grid-area: nombre; font-size: 0.78rem; font-weight: 600; }
+.mapa-teselas__tipo { grid-area: tipo; font-size: 0.66rem; color: var(--text-muted, #8a97a8); }
+.mapa-teselas__estado { grid-area: estado; font-size: 0.66rem; color: var(--text-secondary, #b6c2d1); }
+.mapa-teselas__opcion[data-estado="falla"] .mapa-teselas__estado { color: #ef4444; }
+
+.mapa-teselas__nota {
+  margin: 8px 6px 0;
+  font-size: 0.66rem;
+  line-height: 1.4;
+  color: var(--text-muted, #8a97a8);
+  white-space: normal;
+}
+
+.mapa-teselas__aviso {
+  padding: 7px 11px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+/* Estrecho: sólo la acción y el proveedor, sin la pregunta. */
+@media (max-width: 600px) {
+  .mapa-teselas__pregunta { display: none; }
+  .mapa-teselas__probar,
+  .mapa-teselas__abrir { padding: 7px 9px; }
+}
