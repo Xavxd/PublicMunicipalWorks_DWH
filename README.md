@@ -56,6 +56,10 @@ Base tiles are the only network request the published artefact makes; that is in
 
 The map carries a visible control, *Map not loading? Try another provider*, that lists every provider with its live status; the choice is remembered.
 
+#### Work photos
+
+The popup of each work shows its photo gallery. The compiled viewer gave up on a photo at its first failed request, replacing it with a 🛠️ icon, which on a slow network — typically right after switching basemap provider, when a full screen of tiles downloads at once — left works without a photo. [`docs/js/mapa_fotos.js`](docs/js/mapa_fotos.js) catches that error before the viewer does, shows *Loading photo…* and retries, alternating between a 640 px thumbnail and the 1600 px original, with growing waits and again as soon as the connection returns. It also preloads the map's 30 photos in the background once the map has loaded. The thumbnails live in `docs/img/obras/mini/`, about five times lighter than the originals, and are built by [`scripts/generar_miniaturas.py`](scripts/generar_miniaturas.py).
+
 ### Languages and themes
 
 The header carries the same controls as the companion water-warehouse artefact ([`gabrielhuav/Data_Warehouse_static`](https://github.com/gabrielhuav/Data_Warehouse_static)), and the preference is remembered across the landing page and the four role workspaces.
@@ -186,19 +190,18 @@ The SQL source implements a warehouse-centric design: five SCD Type 2 dimensions
 
 ## Paper package
 
-`paper/` contains the LaTeX sources and the generated PDFs:
+`paper/` holds the final chapter and nothing else:
 
-- `Paper_37_1.tex` and `Paper_37_1.pdf`: the version sent to the ICOKG 2026 committee on 2 September 2026, under the naming they asked for (`Paper_<id>_<iteration>`). It differs from `main_camera_ready.tex` in form only, as their editing rubric required: keywords separated by commas, references in alphabetical order, cross-references written `Fig. x` rather than `Figure x`, an in-text call to Table 1 that the labelled table had never had, and the base-map attribution added to the caption of Figure 3. It compiles on its own against `llncs.cls` 2.26.
-- `main_final.pdf`: clean final version.
-- `main_with_changes.pdf`: the same chapter with everything that changed since the reviewed version marked — added text blue and underlined, deleted text red and struck through.
+- `Paper_37_1.tex` and `Paper_37_1.pdf`: the version sent to the ICOKG 2026 committee on 2 September 2026, under the naming they asked for (`Paper_<id>_<iteration>`). It is the camera-ready text with the form changes their editing rubric required: keywords separated by commas, references in alphabetical order, cross-references written `Fig. x` rather than `Figure x`, an in-text call to Table 1, and the base-map attribution in the caption of Figure 3. It compiles on its own against `llncs.cls` 2.26.
+- `mapa_publicado.png`: Figure 3, which the source includes.
+- `presentacion/`: the conference deck, in Spanish and English (`ICOKG2026_Paper37_{ES,EN}_Visual_Corregida.pptx`).
 
-The marks are not hand-placed. They come from comparing the source against the file submitted to the ICOKG 2026 committee:
+A copy of the chapter with every change since the reviewed version marked — added text blue and underlined, deleted text red and struck through — can be generated locally; it is not versioned:
 
 ```bash
 python scripts/marcar_cambios.py
 ```
 
-The earlier approach wrapped each rewritten passage in a `
-ev{}` macro that a preamble switch coloured. That marks whatever somebody remembered to wrap, not what actually changed, and after several rounds of corrections the two had drifted apart. The wrappers are gone from the source; [`scripts/marcar_cambios.py`](scripts/marcar_cambios.py) derives the marks with `latexdiff`, so they cannot fall behind the text. Tables and TikZ figures are compared as whole blocks rather than cell by cell — latexdiff's markup between `\midrule` and the rows does not compile — and the prose around each one carries the explanation.
+The earlier approach wrapped each rewritten passage in a `\rev{}` macro that a preamble switch coloured. That marks whatever somebody remembered to wrap, not what actually changed, and after several rounds of corrections the two had drifted apart. The wrappers are gone from the source; [`scripts/marcar_cambios.py`](scripts/marcar_cambios.py) derives the marks with `latexdiff`, so they cannot fall behind the text. Tables and TikZ figures are compared as whole blocks rather than cell by cell — latexdiff's markup between `\midrule` and the rows does not compile — and the prose around each one carries the explanation.
 
 The repository contains no real municipal, personal, or production data. It is an academic prototype under the MIT license; see [LICENSE.md](LICENSE.md).

@@ -4,6 +4,10 @@ marcar_cambios.py
 Genera paper/main_with_changes.pdf: el capítulo con lo que cambió respecto a
 la versión que se envió a revisión, en color.
 
+Compara la versión final, paper/Paper_37_1.tex, contra la que se envió a
+revisión. El PDF resultante es de consulta local: no se versiona, porque el
+único PDF del capítulo en el repositorio es el final, Paper_37_1.pdf.
+
 Por qué no se hace a mano
 -------------------------
 Antes cada trozo reescrito se envolvía en `\\rev{}` y un interruptor del
@@ -13,8 +17,8 @@ cosas habían dejado de coincidir y el PDF «con cambios» daba una idea falsa
 de qué se había tocado. Aquí las marcas salen de comparar los dos ficheros,
 así que no dependen de la memoria de nadie y no pueden quedarse atrás.
 
-Los envoltorios manuales se retiraron del fuente: `main_camera_ready.tex` ya
-no tiene maquinaria de marcado, sólo el texto.
+Los envoltorios manuales se retiraron del fuente: `Paper_37_1.tex` no tiene
+maquinaria de marcado, sólo el texto.
 
 Qué produce
 -----------
@@ -43,7 +47,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 PAPER = RAIZ / "paper"
-ACTUAL = PAPER / "main_camera_ready.tex"
+ACTUAL = PAPER / "Paper_37_1.tex"
 SALIDA = PAPER / "main_with_changes.pdf"
 
 ORIGINAL = Path(
