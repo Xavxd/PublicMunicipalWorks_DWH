@@ -56,6 +56,10 @@ Base tiles are the only network request the published artefact makes; that is in
 
 The map carries a visible control, *Map not loading? Try another provider*, that lists every provider with its live status; the choice is remembered.
 
+#### Work photos
+
+The popup of each work shows its photo gallery. The compiled viewer gave up on a photo at its first failed request, replacing it with a 🛠️ icon, which on a slow network — typically right after switching basemap provider, when a full screen of tiles downloads at once — left works without a photo. [`docs/js/mapa_fotos.js`](docs/js/mapa_fotos.js) catches that error before the viewer does, shows *Loading photo…* and retries, alternating between a 640 px thumbnail and the 1600 px original, with growing waits and again as soon as the connection returns. It also preloads the map's 30 photos in the background once the map has loaded. The thumbnails live in `docs/img/obras/mini/`, about five times lighter than the originals, and are built by [`scripts/generar_miniaturas.py`](scripts/generar_miniaturas.py).
+
 ### Languages and themes
 
 The header carries the same controls as the companion water-warehouse artefact ([`gabrielhuav/Data_Warehouse_static`](https://github.com/gabrielhuav/Data_Warehouse_static)), and the preference is remembered across the landing page and the four role workspaces.

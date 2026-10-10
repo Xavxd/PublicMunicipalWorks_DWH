@@ -94,6 +94,11 @@ function derivarStatus(obra, avanceFisico) {
   return 'en_progreso';
 }
 
+/** img/obras/obr-001-1.webp -> img/obras/mini/obr-001-1.webp */
+function miniatura(ruta) {
+  return ruta.replace(/^img\/obras\//, 'img/obras/mini/');
+}
+
 function proyectarObras(db) {
   return db.obras.map((o) => {
     const inf = ultimoInforme(db, o.id);
@@ -123,7 +128,12 @@ function proyectarObras(db) {
       // derivarla de un hash. Véase la nota en docs/js/static_backend.js.
       lat: region ? region.lat : null,
       lng: region ? region.lng : null,
-      imagenes: Array.isArray(o.imagenes) ? o.imagenes : [],
+      // El popup del visor enseña la foto a 300 px de ancho: lee las
+      // miniaturas de img/obras/mini/ (scripts/generar_miniaturas.py), cinco
+      // veces más ligeras que los originales de 1600 px que usan las vistas de
+      // rol. Si una miniatura no llega, docs/js/mapa_fotos.js prueba el
+      // original.
+      imagenes: Array.isArray(o.imagenes) ? o.imagenes.map(miniatura) : [],
       totalInformes: inf.totalInformes,
       ultimoInformeFecha: inf.ultimoInformeFecha,
     };

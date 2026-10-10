@@ -72,10 +72,11 @@ Seis, todos anotados aquí para que la compilación sea auditable:
    teselas es una prop de React.
 6. **`app/src/App.tsx`** — la ficha técnica del popup describía la obra sólo con
    texto. Ahora, cuando la fuente aporta el campo `imagenes`, muestra encima una
-   galería con flechas y puntos de posición, que lee las mismas rutas que las
-   vistas de rol (`../img/obras/…`, relativas a `/mapa/`). Enseña el estado
-   terminado; el conmutador antes/después vive en las vistas de rol, donde la
-   ficha de la obra tiene sitio para él y el visor cartográfico no.
+   galería con flechas y puntos de posición, que lee las rutas que trae el
+   snapshot, relativas a `/mapa/` (hoy, las miniaturas de `img/obras/mini/`;
+   véase «Fotos» más abajo). Enseña el estado terminado; el conmutador
+   antes/después vive en las vistas de rol, donde la ficha de la obra tiene
+   sitio para él y el visor cartográfico no.
 
 El resto de la adaptación no toca el código del visor:
 
@@ -98,6 +99,19 @@ El resto de la adaptación no toca el código del visor:
   `window.L` y se queda con la capa de teselas que crea React. De la URL de
   CARTO que el visor le pasa sólo toma el modo (claro u oscuro); qué
   proveedor sirve las teselas lo decide él. Véase la sección siguiente.
+- **Fotos** — la galería del cambio 6 trata cualquier fallo de la imagen como
+  definitivo: su `onError` pone un icono 🛠️ y no vuelve a pedirla. Con red
+  lenta, y sobre todo al cambiar de proveedor de mapa, cuando el navegador
+  baja de golpe una pantalla de teselas, una obra podía quedarse sin foto.
+  [`docs/js/mapa_fotos.js`](../js/mapa_fotos.js) intercepta el error en fase
+  de captura, antes que React, enseña «Cargando foto…» y reintenta alternando
+  la miniatura y el original, con esperas crecientes y al recuperar la
+  conexión. Además precarga en segundo plano las 30 fotos del mapa en cuanto
+  éste termina de cargar. Las miniaturas (640 px, unas cinco veces más
+  ligeras que los originales de 1600 px) las genera
+  [`scripts/generar_miniaturas.py`](../../scripts/generar_miniaturas.py), y
+  el snapshot apunta a ellas. El arreglo de fondo —reintentar en el propio
+  `onError`— queda anotado para quien recompile el visor.
 - **Temas** — [`docs/css/mapa-tema.css`](../css/mapa-tema.css) reescribe desde
   fuera las variables que el visor sí declara (`--text-*`, `--glass-*`) y las
   pocas reglas donde el color quedó fijo, siguiendo los mismos dos ejes que el

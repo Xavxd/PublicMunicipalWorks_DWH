@@ -406,3 +406,27 @@ html[data-tema="original"] .navsis__controles { --accent-fuerte: #1d4ed8; }
   .mapa-teselas__probar,
   .mapa-teselas__abrir { padding: 7px 9px; }
 }
+
+/* =====================================================================
+   FOTO DE LA OBRA EN EL POPUP
+   Mientras la foto llega se ve un barrido suave en lugar del recuadro
+   vacío; queda detrás de la imagen y la foto lo tapa al cargar. El
+   reintento lo hace js/mapa_fotos.js.
+   ===================================================================== */
+.leaflet-popup-content img[src*="img/obras/"] {
+  background-image: linear-gradient(100deg,
+      rgba(138, 151, 168, 0.10) 20%,
+      rgba(138, 151, 168, 0.28) 50%,
+      rgba(138, 151, 168, 0.10) 80%) !important;
+  background-size: 200% 100% !important;
+  animation: foto-cargando 1.3s linear infinite;
+}
+
+@keyframes foto-cargando {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-popup-content img[src*="img/obras/"] { animation: none; }
+}
