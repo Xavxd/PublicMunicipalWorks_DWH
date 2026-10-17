@@ -2,7 +2,7 @@ name: Publish static demonstration
 
 on:
   push:
-    branches: [TestDefinitivo]
+    branches: [TestDefinitivo, main]
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-pages.yml'

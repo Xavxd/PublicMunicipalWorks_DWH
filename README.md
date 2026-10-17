@@ -92,7 +92,7 @@ The same four accounts exist in the Flask reference API under `backend/`, create
 | Component | Location | Status |
 |---|---|---|
 | Static public artefact | `docs/` | Visual interface preserved from the original prototype; the four role workspaces and the participation module run against `docs/js/static_backend.js`, an in-tab stand-in for the API. Bilingual (`docs/js/i18n.js`), two themes in light and dark (`docs/css/temas.css`, `docs/js/theme.js`) |
-| Deployment workflow | `.github/workflows/deploy-pages.yml` | Publishes `docs/` after pushes to `TestDefinitivo` |
+| Deployment workflow | `.github/workflows/deploy-pages.yml` | Publishes `docs/` after pushes to `main` |
 | Operational reference API | `backend/` | Flask/Python reference implementation; **not used by Pages** |
 | Dimensional warehouse | `db/arquitectura/` | 10 dimensions (5 Type 2, 3 Type 1, 2 Type 0), 2 fact tables, SCD triggers and 6 views |
 | Synthetic generators | `scripts/` | Seeded datasets and evaluation protocol |
