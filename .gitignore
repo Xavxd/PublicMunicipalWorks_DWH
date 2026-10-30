@@ -53,6 +53,11 @@ desktop.ini
 #   python scripts/evaluacion/generar_dataset_obras.py
 datos_sinteticos/
 
+# ── Datos fuente ef2023 (archivos pesados, no se versiona en git) ─
+# Los CSVs originales se distribuyen externamente.
+# Ver README.md para el enlace de descarga.
+ef2023/**/*.csv
+
 # ── LaTeX ─────────────────────────────────────────────────────
 # Del capítulo se versiona sólo la versión final enviada al comité:
 # Paper_37_1.tex, Paper_37_1.pdf y la figura que el fuente incluye
